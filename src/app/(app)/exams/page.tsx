@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Wand2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 interface Flashcard {
@@ -22,10 +22,11 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 26 } },
 };
 
-// Static exam predictions — these will later come from AI analysis of uploaded docs
+// Contoh prediksi — ditampilkan sebagai ilustrasi sebelum pengguna menyusun
+// prediksi dari materinya sendiri melalui Tutor AI.
 const predictions = [
-  { topic: "Regresi Linier & Asumsi Klasik", probability: 92, type: "Hitungan & Essay Kasus" },
-  { topic: "Uji Validitas & Reliabilitas", probability: 84, type: "Analisis Output SPSS" },
+  { topic: "Regresi Linier & Asumsi Klasik", probability: 92, type: "Hitungan & Studi Kasus" },
+  { topic: "Uji Validitas & Reliabilitas", probability: 84, type: "Analisis Keluaran SPSS" },
   { topic: "Etika Penelitian & Plagiarisme", probability: 58, type: "Teori Deskriptif" },
 ];
 
@@ -46,6 +47,79 @@ export default function ExamsPage() {
     courseName: "",
     difficulty: "medium" as "easy" | "medium" | "hard",
   });
+
+  // AI exam-prediction state.
+  const [predictCourse, setPredictCourse] = useState("");
+  const [predictTopic, setPredictTopic] = useState("");
+  const [predicting, setPredicting] = useState(false);
+  const [predictResult, setPredictResult] = useState("");
+  const [predictError, setPredictError] = useState("");
+
+  const handlePredict = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!predictCourse.trim() || predicting) return;
+
+    setPredicting(true);
+    setPredictResult("");
+    setPredictError("");
+
+    const message =
+      `Susun prediksi soal ujian (UTS/UAS) untuk mata kuliah "${predictCourse.trim()}"` +
+      (predictTopic.trim() ? ` dengan fokus topik "${predictTopic.trim()}"` : "") +
+      `. Sebutkan 4-6 topik yang kemungkinan besar keluar beserta jenis soalnya ` +
+      `(misalnya pilihan ganda, esai, hitungan, atau studi kasus), dan berikan estimasi tingkat kemungkinan ` +
+      `secara kualitatif (tinggi/sedang/rendah). Tulis dalam bahasa Indonesia baku, terstruktur, dan ringkas. ` +
+      `Tegaskan bahwa ini perkiraan, bukan bocoran soal.`;
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, mode: "helper" }),
+      });
+
+      if (!res.ok || !res.body) {
+        setPredictError("Gagal menyusun prediksi. Silakan coba lagi sebentar.");
+        setPredicting(false);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let done = false;
+
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        done = streamDone;
+        if (!value) continue;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const payload = trimmed.slice(5).trim();
+          if (payload === "[DONE]") {
+            done = true;
+            break;
+          }
+          try {
+            const parsed = JSON.parse(payload);
+            setPredictResult((prev) => prev + (parsed.text || ""));
+          } catch {
+            // Ignore malformed/partial SSE lines.
+          }
+        }
+      }
+    } catch {
+      setPredictError("Terjadi kendala koneksi. Silakan coba lagi.");
+    } finally {
+      setPredicting(false);
+    }
+  };
 
   useEffect(() => {
     if (!session?.user) return;
@@ -114,7 +188,7 @@ export default function ExamsPage() {
           Persiapan Ujian
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Buat flashcard dari materi kuliah kamu, dan lihat prediksi topik yang kemungkinan besar keluar.
+          Susun flashcard dari materi kuliah Anda dan buat perkiraan topik yang berpeluang muncul saat ujian.
         </p>
       </motion.div>
 
@@ -144,10 +218,81 @@ export default function ExamsPage() {
 
           {/* Predictions */}
           {activeTab === "predict" && (
-            <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
+            <div className="space-y-6">
+
+              {/* AI prediction generator */}
+              <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Wand2 size={16} className="text-primary" />
+                  <h2 className="font-bold text-foreground">Susun prediksi dari materi</h2>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Masukkan mata kuliah Anda, lalu Tutor AI akan menyusun perkiraan jenis soal dan topik
+                  yang berpeluang muncul pada UTS/UAS. Hasil ini bersifat perkiraan, bukan bocoran soal.
+                </p>
+
+                <form onSubmit={handlePredict} className="space-y-3">
+                  <input
+                    required
+                    placeholder="Mata kuliah (misal: Statistika Sosial)"
+                    value={predictCourse}
+                    onChange={(e) => setPredictCourse(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+                  />
+                  <input
+                    placeholder="Fokus topik (opsional, misal: Uji Hipotesis)"
+                    value={predictTopic}
+                    onChange={(e) => setPredictTopic(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+                  />
+                  <button
+                    type="submit"
+                    disabled={predicting || !predictCourse.trim()}
+                    className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {predicting ? (
+                      <>
+                        <RefreshCw size={15} className="animate-spin" /> Menyusun prediksi...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={15} /> Susun prediksi
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {predictError && (
+                  <p className="text-xs font-semibold text-destructive bg-destructive/10 border border-destructive/20 px-3 py-2 rounded-xl">
+                    {predictError}
+                  </p>
+                )}
+
+                <AnimatePresence>
+                  {(predictResult || predicting) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="rounded-2xl bg-muted/40 border border-border p-4"
+                    >
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest block mb-2">
+                        Prediksi Tutor AI
+                      </span>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                        {predictResult}
+                        {predicting && <span className="inline-block w-1.5 h-4 align-middle bg-primary/60 animate-pulse ml-0.5" />}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Static example predictions */}
+              <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground">Topik yang kemungkinan keluar UTS</h2>
-                <span className="text-[10px] text-primary font-bold bg-primary/10 px-2.5 py-1 rounded-full">Berdasarkan pola soal historis</span>
+                <h2 className="font-bold text-foreground">Contoh prediksi topik UTS</h2>
+                <span className="text-[10px] text-muted-foreground font-bold bg-muted px-2.5 py-1 rounded-full">Ilustrasi</span>
               </div>
 
               <div className="space-y-4">
@@ -178,8 +323,11 @@ export default function ExamsPage() {
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-muted/30 border border-border text-xs text-muted-foreground">
                 <Sparkles size={14} className="text-primary shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  Prediksi ini dihasilkan dari analisis pola soal UTS/UAS 3 tahun terakhir dikombinasikan dengan materi yang kamu upload di Workspace. Semakin banyak dokumen yang kamu upload, semakin akurat prediksinya.
+                  Contoh di atas hanyalah ilustrasi. Untuk perkiraan yang sesuai dengan mata kuliah Anda, gunakan fitur
+                  &quot;Susun prediksi dari materi&quot; di atas. Semakin spesifik mata kuliah dan topik yang Anda masukkan,
+                  semakin relevan perkiraannya.
                 </p>
+              </div>
               </div>
             </div>
           )}
@@ -188,7 +336,7 @@ export default function ExamsPage() {
           {activeTab === "flashcard" && (
             <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground">Flashcard Kamu</h2>
+                <h2 className="font-bold text-foreground">Flashcard Anda</h2>
                 <button
                   onClick={() => setShowAddForm(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all"
@@ -205,7 +353,7 @@ export default function ExamsPage() {
                 <div className="py-12 text-center space-y-3">
                   <BookOpen size={40} className="text-muted-foreground/30 mx-auto" />
                   <p className="text-sm font-semibold text-foreground">Belum ada flashcard</p>
-                  <p className="text-xs text-muted-foreground">Buat kartu pertama kamu dari istilah atau konsep kuliah yang susah diingat.</p>
+                  <p className="text-xs text-muted-foreground">Susun kartu pertama Anda dari istilah atau konsep kuliah yang sulit diingat.</p>
                 </div>
               ) : (
                 <>
@@ -230,7 +378,7 @@ export default function ExamsPage() {
                       }`}
                     >
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-4">
-                        {isFlipped ? "Definisi — klik untuk balik" : "Istilah — klik untuk lihat definisi"}
+                        {isFlipped ? "Definisi. Klik untuk membalik" : "Istilah. Klik untuk melihat definisi"}
                       </span>
                       <p className="text-lg font-extrabold text-foreground leading-snug max-w-sm">
                         {isFlipped ? currentCard.back : currentCard.front}
@@ -275,10 +423,10 @@ export default function ExamsPage() {
                     className="border-t border-border pt-5 space-y-3 overflow-hidden"
                   >
                     <h3 className="font-bold text-sm text-foreground">Tambah flashcard baru</h3>
-                    <input required placeholder="Istilah / konsep (depan kartu)" value={newCard.front}
+                    <input required placeholder="Istilah atau konsep (sisi depan kartu)" value={newCard.front}
                       onChange={(e) => setNewCard({ ...newCard, front: e.target.value })}
                       className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
-                    <textarea required rows={3} placeholder="Definisi / penjelasan (belakang kartu)" value={newCard.back}
+                    <textarea required rows={3} placeholder="Definisi atau penjelasan (sisi belakang kartu)" value={newCard.back}
                       onChange={(e) => setNewCard({ ...newCard, back: e.target.value })}
                       className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all resize-none" />
                     <div className="grid grid-cols-2 gap-3">
@@ -318,9 +466,9 @@ export default function ExamsPage() {
             </h3>
             <div className="space-y-3 text-xs">
               {[
-                { icon: CheckCircle2, color: "text-emerald-500", title: "Spaced repetition", desc: "Review kartu yang susah lebih sering, yang mudah lebih jarang." },
-                { icon: CheckCircle2, color: "text-primary", title: "Active recall", desc: "Coba ingat jawabannya sebelum balik kartu — ini yang bikin materi nempel." },
-                { icon: XCircle, color: "text-destructive", title: "Hindari passive reading", desc: "Baca ulang catatan itu kurang efektif. Lebih baik uji diri sendiri." },
+                { icon: CheckCircle2, color: "text-emerald-500", title: "Pengulangan berjarak", desc: "Tinjau kartu yang sulit lebih sering, dan yang mudah lebih jarang." },
+                { icon: CheckCircle2, color: "text-primary", title: "Mengingat aktif", desc: "Cobalah mengingat jawaban sebelum membalik kartu agar materi lebih melekat." },
+                { icon: XCircle, color: "text-destructive", title: "Hindari membaca pasif", desc: "Membaca ulang catatan kurang efektif. Lebih baik menguji diri sendiri." },
               ].map(({ icon: Icon, color, title, desc }, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
                   <Icon size={15} className={`${color} shrink-0 mt-0.5`} />

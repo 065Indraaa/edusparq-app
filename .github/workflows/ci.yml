@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  typecheck-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy values so the build (which does not hit these services) succeeds.
+          # Real secrets are configured in the hosting platform, not here.
+          MONGODB_URI: mongodb://localhost:27017/edusparq
+          NEXTAUTH_SECRET: ci-dummy-secret-not-used-at-runtime
+          NEXTAUTH_URL: http://localhost:3000

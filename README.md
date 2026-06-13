@@ -45,7 +45,8 @@ Halaman yang tersedia:
 | `/workspace` | Aplikasi | Manajemen & unggah materi kuliah |
 | `/deadlines` | Aplikasi | Kalender & manajemen tenggat tugas |
 | `/tutor` | Aplikasi | Tutor AI (mode Socratic / Penjelasan / Riset) |
-| `/writing` | Aplikasi | Outline, parafrase, manajer sitasi |
+| `/writing` | Aplikasi | Outline AI, parafrase, manajer + ekspor sitasi |
+| `/research` | Aplikasi | Pencarian riset + jawaban AI mode riset |
 | `/exams` | Aplikasi | Prediksi soal + flashcard |
 | `/collab` | Aplikasi | Workspace kolaborasi kelompok |
 | `/analytics` | Aplikasi | Analitik belajar |
@@ -65,9 +66,10 @@ Halaman yang tersedia:
 | Autentikasi | **NextAuth v5 (beta)** — Google OAuth + Credentials (bcrypt) |
 | Database | **MongoDB** via **Mongoose** |
 | AI / LLM | **Groq SDK** (model `llama3-70b-8192`, streaming) |
-| Penyimpanan file | **Cloudinary** (disiapkan, belum tersambung penuh) |
-| Realtime | **Pusher** (disiapkan, belum dipakai di UI) |
-| Validasi | **Zod** |
+| Penyimpanan file | **Cloudinary** (tersambung: upload + hapus aset) |
+| Realtime | **Pusher** (tersambung di Kolaborasi; fallback mode lokal) |
+| Validasi | **Zod** (di seluruh endpoint tulis) |
+| Proteksi route | **Next.js Middleware** (cookie-gate → redirect `/login`) |
 
 ---
 
@@ -77,19 +79,23 @@ Halaman yang tersedia:
 |-----------------|:---------:|:---------------:|--------|
 | Landing page (`/`) | — | — | ✅ Selesai |
 | Autentikasi (`/login`) | ✅ `/api/auth/*`, `/api/auth/register` | ✅ | ✅ Selesai (perlu kredensial) |
-| Dashboard (`/dashboard`) | ❌ (data contoh) | ❌ | 🟡 UI selesai, data masih mock |
-| Tutor AI (`/tutor`) | ✅ `/api/chat` (streaming Groq) | ✅ riwayat chat | ✅ Berfungsi (perlu Groq key) |
+| **Proteksi route** | ✅ `src/middleware.ts` | — | ✅ Aktif (redirect ke `/login`) |
+| Dashboard (`/dashboard`) | ✅ `/api/user/profile` + `/api/deadlines` | ✅ (fallback contoh) | ✅ Live + sapaan adaptif |
+| Tutor AI (`/tutor`) | ✅ `/api/chat` (streaming Groq **+ RAG**) | ✅ riwayat chat | ✅ + Confidence Meter & sumber |
 | Tenggat (`/deadlines`) | ✅ `/api/deadlines` (GET/POST/PATCH/DELETE) | ✅ | ✅ **Tersambung penuh** |
-| Menulis — Sitasi (`/writing`) | ✅ `/api/citations` | ✅ | ✅ Tersambung |
+| Materi (`/workspace`) | ✅ `/api/upload` + `/api/documents` | ✅ (Document + chunk RAG) | ✅ Upload nyata (perlu Cloudinary) |
+| Menulis — Sitasi (`/writing`) | ✅ `/api/citations` | ✅ | ✅ + ekspor 4 gaya (APA/MLA/IEEE/Harvard) |
 | Menulis — Parafrase | ✅ `/api/chat` | ❌ (output sementara) | 🟡 Live tapi tidak disimpan |
-| Menulis — Outline | ❌ (template hardcoded) | ❌ | 🟡 Mock / belum AI |
+| Menulis — Outline | ✅ `/api/chat` (AI streaming) | ❌ (unduh `.md`) | ✅ AI + adaptif template kampus |
+| Riset (`/research`) | ✅ `/api/chat` (mode riset) | ❌ | ✅ Halaman baru (sesuai spec) |
 | Ujian — Flashcard (`/exams`) | ✅ `/api/flashcards` | ✅ | ✅ Tersambung |
 | Ujian — Prediksi soal | ❌ (hardcoded) | ❌ | 🟡 Mock |
-| Materi (`/workspace`) | ❌ (mock + upload simulasi) | ❌ | 🟡 UI-only, backend belum ada |
-| Kolaborasi (`/collab`) | ❌ | ❌ | 🟡 Prototipe client-side |
+| Kolaborasi (`/collab`) | ✅ `/api/collab` (Pusher) | ❌ (in-memory) | ✅ Realtime + fallback lokal |
 | Analitik (`/analytics`) | ❌ (hardcoded) | ❌ | 🟡 Dashboard statis |
 
 Legenda: ✅ siap · 🟡 sebagian/perlu pengembangan · ❌ belum
+
+> **Update P1–P3 (selesai):** proteksi route (middleware), validasi Zod menyeluruh, rate-limit `/api/chat` (20 req/menit) + batas input 4000 char, dashboard live, upload Cloudinary + backend dokumen & RAG leksikal, Confidence Meter + atribusi sumber di Tutor, outline AI, ekspor sitasi, halaman Riset baru, dan kolaborasi realtime Pusher. Semua dengan **fallback aman** saat kredensial belum diisi. `tsc --noEmit` bersih; semua route & API baru ter-compile di dev server.
 
 ---
 
@@ -107,38 +113,47 @@ src/
 │   │
 │   ├── (app)/                  # ── Route group: semua halaman ber-"shell" ──
 │   │   ├── layout.tsx          # App shell: sidebar desktop + header + bottom-nav mobile
-│   │   ├── dashboard/page.tsx
-│   │   ├── workspace/page.tsx
+│   │   ├── dashboard/page.tsx  # Live: profil + tenggat, sapaan adaptif
+│   │   ├── workspace/page.tsx  # Upload Cloudinary + daftar dokumen + chunk
 │   │   ├── deadlines/page.tsx
-│   │   ├── tutor/page.tsx
-│   │   ├── writing/page.tsx
-│   │   ├── collab/page.tsx
+│   │   ├── tutor/page.tsx      # RAG + Confidence Meter + toggle Sokratik
+│   │   ├── writing/page.tsx    # Outline AI + ekspor sitasi 4 gaya
+│   │   ├── research/page.tsx   # 🔎 Halaman Riset (baru)
+│   │   ├── collab/page.tsx     # Realtime Pusher + fallback lokal
 │   │   ├── exams/page.tsx
 │   │   └── analytics/page.tsx
 │   │
 │   └── api/                    # ── Route handlers (server) ──
-│       ├── auth/[...nextauth]/route.ts
-│       ├── auth/register/route.ts
-│       ├── chat/route.ts       # GET riwayat · POST streaming AI · DELETE
+│       ├── auth/[...nextauth]/route.ts  &  auth/register/route.ts
+│       ├── chat/route.ts       # POST streaming AI + RAG + meta + rate-limit
+│       ├── upload/route.ts     # Unggah file → Cloudinary
+│       ├── documents/route.ts  &  documents/[id]/route.ts
+│       ├── collab/route.ts     # Trigger event Pusher
 │       ├── courses/route.ts
 │       ├── deadlines/route.ts  &  deadlines/[id]/route.ts
 │       ├── citations/route.ts  &  citations/[id]/route.ts
 │       ├── flashcards/route.ts &  flashcards/[id]/route.ts
 │       └── user/profile/route.ts
 │
+├── middleware.ts               # 🔒 Proteksi route (cookie-gate → /login)
+│
 ├── components/
-│   ├── session-provider.tsx    # Pembungkus NextAuth SessionProvider
-│   ├── theme-provider.tsx      # Pembungkus next-themes
-│   ├── theme-toggle.tsx        # Tombol dark/light
+│   ├── session-provider.tsx · theme-provider.tsx · theme-toggle.tsx
 │   └── ui/
-│       ├── ConfidenceBadge.tsx # Indikator tingkat kepercayaan + atribusi sumber
-│       └── Icons.tsx           # Re-export ikon lucide (alias)
+│       ├── ConfidenceBadge.tsx # Tingkat kepercayaan + sumber (theme-aware)
+│       └── Icons.tsx
 │
 ├── lib/
 │   ├── auth.ts                 # Konfigurasi NextAuth (Google + Credentials)
+│   ├── validations.ts          # Skema Zod bersama
+│   ├── rate-limit.ts           # Limiter in-memory (sliding window)
+│   ├── cloudinary.ts           # Helper upload/destroy aset
+│   ├── rag.ts                  # chunkText · retrieveChunks · computeConfidence
+│   ├── citation-format.ts      # formatCitation (APA/MLA/IEEE/Harvard)
+│   ├── pusher.ts               # Server Pusher + isPusherConfigured()
 │   └── db/
 │       ├── mongodb.ts          # Koneksi Mongoose (cached)
-│       └── models/             # User, Course, Document, Deadline, Citation, Flashcard, ChatMessage
+│       └── models/             # User, Course, Document, DocumentChunk, Deadline, Citation, Flashcard, ChatMessage
 │
 └── types/next-auth.d.ts        # Augmentasi tipe session (user.id)
 ```
@@ -166,7 +181,7 @@ Token didefinisikan sebagai CSS variable HSL di `src/app/globals.css` (`:root` d
 > Token netral (`secondary`, `muted`, `accent`) sengaja dibiarkan abu-abu agar komponen lama tidak rusak. Warna **teal** dan **amber** dipakai langsung via utilitas Tailwind `teal-400/500` dan `amber-400`. Mode gelap mencerahkan `--primary` agar kontras (WCAG AA).
 
 ### Tipografi
-- Font: **Plus Jakarta Sans** (via `next/font/google`, variabel `--font-sans`). *Catatan: spec menyebut Inter; bisa diganti dengan mudah di `layout.tsx`.*
+- Font: **Inter** (via `next/font/google`, variabel `--font-sans`) — sesuai spec.
 - Skala dipakai konsisten dengan utilitas Tailwind (`text-xs` … `text-4xl`).
 
 ### Animasi (di `globals.css`)
@@ -188,7 +203,8 @@ Semua dokumen di-scope per pengguna lewat `userId` (kecuali `User`).
 |-------|-------------|
 | **User** | `name`, `email` (unik), `password` (null untuk OAuth), `image`, `universitas`, `fakultas`, `prodi`, `semester` |
 | **Course** | `userId`, `name`, `semester`, … |
-| **Document** | `userId`, `courseName`, `filename`, `fileUrl` (Cloudinary), `fileType` (pdf/docx/audio/video/image), `status` (processing/indexed/failed) |
+| **Document** | `userId`, `courseName`, `filename`, `fileUrl` (Cloudinary), `publicId`, `fileType` (pdf/docx/audio/video/image), `status` (processing/indexed/failed) |
+| **DocumentChunk** | `userId`, `documentId`, `courseName`, `content` (text-index utk RAG), `chunkIndex` |
 | **Deadline** | `userId`, `courseName`, `title`, `dueDate` (YYYY-MM-DD), `dueTime`, `weight`, `status` (pending/done/overdue) |
 | **Citation** | `userId`, `author`, `title`, `year`, … |
 | **Flashcard** | `userId`, `front`, `back`, … |
@@ -205,15 +221,19 @@ Semua endpoint (kecuali `register`) **memerlukan sesi login**; tanpa sesi mengem
 | `POST` | `/api/auth/register` | Daftar akun baru (hash bcrypt) |
 | `*` | `/api/auth/[...nextauth]` | Handler NextAuth (login/logout/callback) |
 | `GET` | `/api/chat` | Ambil 100 pesan terakhir |
-| `POST` | `/api/chat` | Kirim pesan → **streaming** jawaban AI (Groq), simpan ke DB |
+| `POST` | `/api/chat` | Kirim pesan → **streaming** jawaban AI (Groq) **+ RAG** (retrieval chunk materi) + event meta `{sources, confidence}`. Rate-limit 20/menit, batas input 4000 char |
 | `DELETE` | `/api/chat` | Hapus seluruh riwayat chat |
+| `POST` | `/api/upload` | Unggah file ke Cloudinary (multipart, maks 25MB; 503 bila Cloudinary belum dikonfigurasi) |
+| `GET/POST` | `/api/documents` | List / simpan dokumen (chunking RAG bila ada `textContent`) |
+| `DELETE` | `/api/documents/[id]` | Hapus dokumen + chunk + aset Cloudinary |
+| `POST` | `/api/collab` | Trigger event realtime Pusher (503 bila Pusher belum dikonfigurasi) |
 | `GET/POST` | `/api/deadlines` | List / buat tenggat (validasi Zod) |
 | `PATCH/DELETE` | `/api/deadlines/[id]` | Ubah status / hapus tenggat |
-| `GET/POST` | `/api/citations` | List / tambah sitasi |
+| `GET/POST` | `/api/citations` | List / tambah sitasi (validasi Zod) |
 | `DELETE` | `/api/citations/[id]` | Hapus sitasi |
-| `GET/POST` | `/api/flashcards` | List / tambah flashcard |
+| `GET/POST` | `/api/flashcards` | List / tambah flashcard (validasi Zod) |
 | `DELETE` | `/api/flashcards/[id]` | Hapus flashcard |
-| `GET/POST` | `/api/courses` | List / buat mata kuliah |
+| `GET/POST` | `/api/courses` | List / buat mata kuliah (validasi Zod) |
 | `GET` | `/api/user/profile` | Profil + statistik ringkas (jumlah tenggat/matkul/dokumen) |
 | `PATCH` | `/api/user/profile` | Update profil (name, universitas, fakultas, prodi, semester) |
 
@@ -239,7 +259,7 @@ npm run build
 npm run start
 ```
 
-> Build sudah diverifikasi berhasil (`next build` → exit 0, 21 halaman). Jika build pernah "menggantung", hapus cache: `rm -rf .next` lalu ulangi.
+> **Verifikasi:** `npx tsc --noEmit` bersih (0 error) dan seluruh route/API ter-compile sukses di dev server. Pada sebagian mesin Windows, `next build` bisa terlihat "menggantung" di tahap webpack (kendala lingkungan, bukan kode) — jalankan `rm -rf .next` lalu ulangi, atau verifikasi via `npm run dev`. Middleware membuat route privat membalas `307 → /login?callbackUrl=...` saat belum login (perilaku yang diharapkan).
 
 ---
 
@@ -287,58 +307,70 @@ NEXT_PUBLIC_PUSHER_CLUSTER=ap1
 | `npm run start` | Jalankan hasil build |
 | `npm run lint` | ESLint |
 
-> Catatan: `next.config.mjs` mengaktifkan `ignoreDuringBuilds` (ESLint) dan `ignoreBuildErrors` (TypeScript) agar build tidak gagal karena lint/tipe. **Disarankan dimatikan** sebelum produksi sungguhan agar error tertangkap.
+> Catatan: pengecekan **TypeScript saat build kini aktif** (`ignoreBuildErrors: false`). **ESLint** masih dilewati saat build (`ignoreDuringBuilds: true`) karena ada lint nits lama — aktifkan kembali setelah dibersihkan.
 
 ---
 
 ## ⚠️ Keterbatasan yang Diketahui
 
-1. **Belum ada proteksi route.** Halaman di grup `(app)` bisa dibuka tanpa login (API tetap balas `401`). Belum ada `middleware.ts`.
-2. **Beberapa fitur masih mock:** Dashboard, Workspace (unggah disimulasikan), Outline, Prediksi soal, Kolaborasi, dan Analitik memakai data contoh / state lokal yang hilang saat reload.
-3. **Cloudinary & Pusher** sudah terpasang sebagai dependency tetapi belum tersambung ke alur unggah file / realtime.
-4. **`.env.local` berisi placeholder** — perlu kredensial asli.
-5. **ConfidenceBadge** belum dipakai di alur Tutor AI; warnanya masih diasumsikan untuk latar gelap.
-6. **Build flags longgar** (lihat catatan skrip) — error TS/ESLint disembunyikan saat build.
+1. **Middleware adalah cookie-gate ringan** (cek keberadaan cookie sesi, bukan verifikasi token di Edge). Validasi sesungguhnya tetap di route API (`401`). Disarankan upgrade ke `auth.config.ts` edge-safe terpisah.
+2. **RAG masih leksikal** (MongoDB `$text` + fallback regex), belum embedding/vektor. **Ekstraksi teks file biner** (PDF/audio/video) belum ada — chunk hanya terbentuk bila `textContent` dikirim, jadi retrieval kosong sampai pipeline ekstraksi ditambahkan.
+3. **Masih mock:** Prediksi soal ujian & Analitik memakai data statis. Parafrase & outline tidak disimpan (outline bisa diunduh `.md`). Kolaborasi realtime memakai satu channel demo tanpa presence-auth dan **tidak persisten** (in-memory).
+4. **`.env.local` berisi placeholder** — semua fitur berbasis data memakai *fallback aman*: Cloudinary/Pusher belum dikonfigurasi → 503 + mode demo/lokal; Groq/Mongo belum diisi → pesan ramah tanpa crash.
+5. **ESLint masih dilewati saat build** (`ignoreDuringBuilds: true`); pengecekan TypeScript kini **aktif** (`ignoreBuildErrors: false`).
+6. **`.docx` export** belum ada (butuh dependency); outline diekspor sebagai `.md`.
 
 ---
 
 ## 🧭 Rekomendasi Pengembangan (Roadmap)
 
-Diurutkan dari paling berdampak & cepat.
+### Prioritas 1 — Keamanan & integritas ✅ **SELESAI**
+- [x] **`src/middleware.ts`** melindungi grup `(app)` → redirect `/login?callbackUrl=...` bila belum login.
+- [x] **Validasi Zod** di semua endpoint tulis (`citations`, `courses`, `flashcards`, `deadlines`, `documents`) via `src/lib/validations.ts`.
+- [x] **Rate limiting** `/api/chat` (20 req/menit, `src/lib/rate-limit.ts`) + batas input 4000 char.
+- [x] **Pengecekan TypeScript saat build diaktifkan** (`ignoreBuildErrors: false`).
+- [ ] *Sisa:* upgrade middleware ke verifikasi token edge-safe; rate-limit berbasis Redis (multi-instance); aktifkan ESLint-in-build.
 
-### Prioritas 1 — Keamanan & integritas (wajib sebelum dipakai nyata)
-- [ ] **Tambah `middleware.ts`** untuk melindungi grup `(app)`: redirect ke `/login` bila belum ada sesi.
-- [ ] **Validasi Zod konsisten** di semua endpoint POST/PATCH (saat ini hanya `/api/deadlines` yang memakai Zod penuh).
-- [ ] **Rate limiting** pada `/api/chat` (mencegah abuse Groq) + batas panjang input.
-- [ ] **Matikan `ignoreBuildErrors`/`ignoreDuringBuilds`** dan bereskan error yang muncul.
+### Prioritas 2 — Sambungkan fitur mock ke data nyata ✅ **SEBAGIAN BESAR SELESAI**
+- [x] **Dashboard** live dari `/api/user/profile` + `/api/deadlines` (tenggat terdekat nyata, sapaan adaptif, skeleton) — fallback ke contoh saat offline.
+- [x] **Workspace / Unggah materi:** unggah nyata ke **Cloudinary** (`/api/upload`) → simpan `Document` (`/api/documents`) → **RAG leksikal** (model `DocumentChunk`, `src/lib/rag.ts`).
+- [x] **Outline Generator** kini streaming dari `/api/chat` & adaptif terhadap template kampus.
+- [ ] **Prediksi soal ujian:** hasilkan dari dokumen pengguna (masih hardcoded).
+- [ ] **Analitik:** agregasi nyata dari `ChatMessage`/`Deadline`/`Flashcard` (masih statis).
+- [ ] *Sisa RAG:* pipeline ekstraksi teks biner (PDF/docx/audio) + embedding/vektor.
 
-### Prioritas 2 — Sambungkan fitur mock ke data nyata
-- [ ] **Dashboard:** ganti angka statis dengan data dari `/api/user/profile` + `/api/deadlines` (tenggat terdekat, progress nyata).
-- [ ] **Workspace / Unggah materi:** implementasikan unggah ke **Cloudinary** (signed upload), simpan ke model `Document`, lalu pipeline ekstraksi teks (mis. `pdf-parse`) → embedding → pencarian semantik (RAG) untuk Tutor AI.
-- [ ] **Outline Generator:** sambungkan ke `/api/chat` agar benar-benar menyesuaikan topik dengan template kampus (bukan template statis).
-- [ ] **Prediksi soal ujian:** hasilkan dari dokumen pengguna (analisis materi + pola) alih-alih hardcoded.
-- [ ] **Analitik:** agregasi nyata dari koleksi `ChatMessage`, `Deadline`, `Flashcard` (jam belajar, ketepatan tenggat, penggunaan fitur).
-
-### Prioritas 3 — Fitur unggulan sesuai spec desain
-- [ ] **Confidence Meter + Panel Sumber** terintegrasi penuh di Tutor AI (RAG): tampilkan tingkat kepercayaan + kutipan persis dari dokumen pengguna/jurnal. Manfaatkan `ConfidenceBadge.tsx` yang sudah ada.
-- [ ] **Mode Socratic** sebagai toggle visual dengan indikator tetap (saat ini hanya pilihan mode).
-- [ ] **Penampil PDF** in-app dengan zoom & lompat halaman pada detail materi.
-- [ ] **Kolaborasi realtime** via **Pusher** (sinkronisasi dokumen, indikator ketik nyata, voting persisten).
-- [ ] **Halaman Penelitian** terpisah (pencarian jurnal, akses terbuka, ekspor kutipan APA/MLA/IEEE/Harvard) sesuai spec.
+### Prioritas 3 — Fitur unggulan sesuai spec desain ✅ **SELESAI**
+- [x] **Confidence Meter + Panel Sumber** di Tutor AI (RAG): event meta `{sources, confidence}`, `ConfidenceBadge` kini theme-aware.
+- [x] **Mode Socratic** dengan indikator persisten "Mode Sokratik aktif".
+- [x] **Kolaborasi realtime** via **Pusher** (`/api/collab`, channel `collab-demo`, event doc/vote/task/typing) + fallback mode lokal.
+- [x] **Halaman Riset** (`/research`) baru: pencarian, topik populer, jawaban AI mode riset + disclaimer. Ekspor sitasi 4 gaya di `/writing`.
+- [ ] *Sisa:* **Penampil PDF** in-app (zoom & lompat halaman); pencarian jurnal eksternal nyata + akses terbuka; presence-auth & persistensi untuk kolaborasi.
 
 ### Prioritas 4 — Kualitas & pengalaman
-- [ ] **PWA & offline:** caching agresif, "mode hemat data", unduh materi untuk akses offline (sesuai konteks Indonesia di spec).
-- [ ] **Optimasi gambar** WebP + lazy loading.
-- [ ] **Aksesibilitas:** audit kontras WCAG AA, label ARIA, fokus keyboard yang jelas.
-- [ ] **Konsistensi font** ke Inter bila ingin presisi dengan spec.
-- [ ] **Notifikasi & pengingat** (in-app, email, push) untuk tenggat — model & UI dialog pengingat.
-- [ ] **Pengujian:** unit test untuk util & integration test untuk route API.
-- [ ] **Skeleton loader** dipakai konsisten di semua halaman yang fetch (kelas `.skeleton` sudah tersedia).
+### Prioritas 4 — Kualitas & pengalaman ✅ **SEBAGIAN BESAR SELESAI**
+- [x] **PWA dasar:** `src/app/manifest.ts` (installable, theme-color, start_url `/dashboard`). *Sisa: service worker + caching offline + "mode hemat data".*
+- [x] **Aksesibilitas:** fokus keyboard terlihat (`:focus-visible`), `prefers-reduced-motion`, label ARIA pada kontrol, target sentuh ≥44px, `aria-current` pada nav aktif. *Sisa: audit kontras WCAG AA menyeluruh.*
+- [x] **Font Inter** (sesuai spec) menggantikan Plus Jakarta Sans.
+- [x] **Skeleton loader** konsisten di halaman yang fetch (Dashboard, Analitik, Tenggat, dll).
+- [x] **Poles UI/UX menyeluruh:** seluruh halaman dimodernkan, layout terstruktur, animasi (`framer-motion` + utilitas `globals.css`), dan **copy ditulis ulang ke bahasa Indonesia baku** (bukan gaya template AI).
+- [ ] *Sisa:* notifikasi/pengingat tenggat (in-app/email/push) yang persisten; optimasi gambar WebP + lazy-load; pengujian (unit/integration) — belum ada test runner terpasang.
 
-### Prioritas 5 — Operasional
-- [ ] Tambah `.env.local.example` (tanpa rahasia) ke repo, jaga `.env.local` tetap di-`.gitignore`.
-- [ ] CI/CD (lint + build) dan deploy ke Vercel.
-- [ ] Logging & monitoring error (mis. Sentry).
+### Prioritas 5 — Operasional ✅ **SEBAGIAN SELESAI**
+- [x] **`.env.local.example`** ditambahkan (tanpa rahasia).
+- [x] **CI** GitHub Actions (`.github/workflows/ci.yml`): `tsc` + `next build` pada setiap push/PR.
+- [x] **Panduan deploy** `DEPLOYMENT.md` (fokus mengatasi 500 saat daftar/login di Wasmer).
+- [ ] *Sisa:* logging & monitoring error (mis. Sentry); pipeline CD otomatis ke host.
+
+---
+
+## 🚑 Catatan Deploy (Wasmer) & Perbaikan 500 saat Daftar/Login
+
+Penyebab umum *Internal Server Error* saat daftar/login di host non-Vercel sudah ditangani:
+- **`trustHost: true`** di `src/lib/auth.ts` (mengatasi `UntrustedHost` Auth.js v5).
+- **Sesi JWT** — id pengguna disimpan di token, sehingga verifikasi sesi tidak menghubungi DB di setiap request (lebih tahan saat DB lambat/terputus).
+- **Endpoint daftar** kini membalas **503 + pesan jelas** bila DB tak terjangkau (bukan 500 buntu), dan koneksi DB gagal-cepat (`serverSelectionTimeoutMS`).
+
+**Wajib dicek di environment Wasmer:** `NEXTAUTH_SECRET` (atau `AUTH_SECRET`), `NEXTAUTH_URL` = URL publik, dan **MongoDB Atlas → Network Access = `0.0.0.0/0`** (host serverless tanpa IP statis). Detail lengkap & langkah diagnosis ada di **[`DEPLOYMENT.md`](./DEPLOYMENT.md)**.
 
 ---
 

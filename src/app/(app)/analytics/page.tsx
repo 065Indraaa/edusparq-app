@@ -1,8 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, TrendingUp, Search, Info, CheckCircle2, ChevronRight } from "lucide-react";
+import {
+  BarChart3,
+  TrendingUp,
+  MessageSquare,
+  FileText,
+  CalendarCheck,
+  Layers,
+  BookMarked,
+  GraduationCap,
+} from "lucide-react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -13,24 +22,140 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 26 } },
 };
 
+interface Analytics {
+  totals: {
+    chats: number;
+    documents: number;
+    deadlines: number;
+    flashcards: number;
+    citations: number;
+    courses: number;
+  };
+  deadlinesByStatus: { pending: number; done: number; overdue: number };
+  chatsByMode: { socratic: number; helper: number; research: number };
+  recentActivityDays: { date: string; count: number }[];
+}
+
+// Sample data used when not signed in, on fetch failure, or when the account is
+// brand new — keeps the dashboard visually complete instead of showing zeros.
+const SAMPLE: Analytics = {
+  totals: { chats: 48, documents: 12, deadlines: 9, flashcards: 36, citations: 21, courses: 6 },
+  deadlinesByStatus: { pending: 4, done: 4, overdue: 1 },
+  chatsByMode: { socratic: 18, helper: 22, research: 8 },
+  recentActivityDays: [
+    { date: "", count: 3 },
+    { date: "", count: 6 },
+    { date: "", count: 4 },
+    { date: "", count: 9 },
+    { date: "", count: 7 },
+    { date: "", count: 11 },
+    { date: "", count: 8 },
+  ],
+};
+
+const DONUT_COLORS = ["hsl(var(--primary))", "#8b5cf6", "#06b6d4"];
+
+function buildLinePath(points: { x: number; y: number }[]) {
+  if (points.length === 0) return "";
+  return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+}
+
 export default function AnalyticsPage() {
+  const [data, setData] = useState<Analytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [usingSample, setUsingSample] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/analytics")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: Analytics) => {
+        if (!active) return;
+        // Treat a completely empty account as "no data yet" → show the sample.
+        const total = Object.values(d.totals || {}).reduce((a, b) => a + b, 0);
+        if (!d.totals || total === 0) {
+          setData(SAMPLE);
+          setUsingSample(true);
+        } else {
+          setData(d);
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setData(SAMPLE);
+        setUsingSample(true);
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const d = data ?? SAMPLE;
+
   const metrics = [
-    { label: "IPK Rata-rata Pengguna", value: "3.64", change: "+0.12 dari semester lalu", positive: true },
-    { label: "Tugas Selesai Tepat Waktu", value: "92%", change: "+4.5% dari bln lalu", positive: true },
-    { label: "Waktu Belajar Aktif", value: "14 Jam", change: "-2 Jam minggu ini", positive: false },
-    { label: "Topik Tersulit", value: "Statistika", change: "Berdasarkan salah kuis", positive: false },
+    { label: "Sesi Tutor AI", value: d.totals.chats, icon: MessageSquare, accent: "text-primary" },
+    { label: "Dokumen Tersimpan", value: d.totals.documents, icon: FileText, accent: "text-teal-500" },
+    { label: "Tenggat Terlacak", value: d.totals.deadlines, icon: CalendarCheck, accent: "text-amber-500" },
+    { label: "Flashcard Dibuat", value: d.totals.flashcards, icon: Layers, accent: "text-emerald-500" },
+    { label: "Sitasi Tersusun", value: d.totals.citations, icon: BookMarked, accent: "text-violet-500" },
+    { label: "Mata Kuliah Aktif", value: d.totals.courses, icon: GraduationCap, accent: "text-pink-500" },
   ];
 
-  const searchLogs = [
-    { query: "Perbedaan jurnal Sinta 1 dan Sinta 2", count: "1,240 mahasiswa", status: "Tren Naik" },
-    { query: "Cara buat daftar pustaka otomatis dari PDF", count: "890 mahasiswa", status: "Stabil" },
-    { query: "Contoh rumusan masalah kualitatif", count: "750 mahasiswa", status: "Tren Naik" },
-    { query: "Batas wajar similarity Turnitin", count: "620 mahasiswa", status: "Stabil" },
+  // Weekly activity chart geometry.
+  const activity = d.recentActivityDays;
+  const maxCount = Math.max(1, ...activity.map((a) => a.count));
+  const W = 500;
+  const H = 200;
+  const padX = 40;
+  const padTop = 20;
+  const padBottom = 30;
+  const innerW = W - padX - 20;
+  const innerH = H - padTop - padBottom;
+  const points = activity.map((a, i) => ({
+    x: padX + (activity.length === 1 ? innerW / 2 : (i / (activity.length - 1)) * innerW),
+    y: padTop + innerH - (a.count / maxCount) * innerH,
+    count: a.count,
+    label: a.date
+      ? new Date(a.date + "T00:00:00").toLocaleDateString("id-ID", { weekday: "short" })
+      : ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"][i] || "",
+  }));
+  const linePath = buildLinePath(points);
+  const areaPath = points.length
+    ? `${linePath} L ${points[points.length - 1].x} ${padTop + innerH} L ${points[0].x} ${padTop + innerH} Z`
+    : "";
+
+  // Feature-usage donut from chat modes.
+  const modeData = [
+    { label: "Tutor Socratic", value: d.chatsByMode.socratic },
+    { label: "Asisten Belajar", value: d.chatsByMode.helper },
+    { label: "Riset Akademik", value: d.chatsByMode.research },
   ];
+  const modeTotal = modeData.reduce((a, b) => a + b.value, 0);
+  let cumulative = 0;
+  const donutSegments = modeData.map((m, i) => {
+    const pct = modeTotal > 0 ? (m.value / modeTotal) * 100 : 0;
+    const seg = {
+      ...m,
+      pct,
+      color: DONUT_COLORS[i],
+      dash: `${pct} ${100 - pct}`,
+      offset: -cumulative,
+    };
+    cumulative += pct;
+    return seg;
+  });
+
+  const deadlineStats = [
+    { label: "Berlangsung", value: d.deadlinesByStatus.pending, color: "bg-primary" },
+    { label: "Selesai", value: d.deadlinesByStatus.done, color: "bg-emerald-500" },
+    { label: "Terlewat", value: d.deadlinesByStatus.overdue, color: "bg-destructive" },
+  ];
+  const deadlineTotal = deadlineStats.reduce((a, b) => a + b.value, 0);
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
-      
+
       {/* Header */}
       <motion.div variants={itemVariants}>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
@@ -38,175 +163,190 @@ export default function AnalyticsPage() {
           Analitik Akademik
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Pantau tren belajar, topik pencarian mahasiswa lain, dan evaluasi performa akademik kamu secara real-time.
+          Ringkasan aktivitas belajar Anda di EduSparq, dihimpun dari data Anda sendiri.
         </p>
+        {usingSample && !loading && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
+            Menampilkan data contoh. Mulai gunakan fitur EduSparq untuk melihat statistik Anda.
+          </p>
+        )}
       </motion.div>
 
       {/* Metrics Row */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((m, idx) => (
-          <div key={idx} className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-1.5 hover:border-primary/20 transition-all">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">{m.label}</span>
-            <span className="text-xl font-black text-foreground block">{m.value}</span>
-            <span className={`text-[10px] font-semibold flex items-center gap-1 ${m.positive ? "text-emerald-500" : "text-amber-500"}`}>
-              {m.positive ? <TrendingUp size={12} /> : <TrendingUp size={12} className="rotate-180" />}
-              {m.change}
-            </span>
-          </div>
-        ))}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-3xl p-5 space-y-3">
+                <div className="skeleton h-5 w-5 rounded-lg" />
+                <div className="skeleton h-7 w-12 rounded-lg" />
+                <div className="skeleton h-3 w-20 rounded" />
+              </div>
+            ))
+          : metrics.map((m, idx) => (
+              <div
+                key={idx}
+                className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-2 hover-lift hover:border-primary/20 transition-all"
+              >
+                <m.icon size={18} className={m.accent} />
+                <span className="text-2xl font-black text-foreground block leading-none">{m.value}</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  {m.label}
+                </span>
+              </div>
+            ))}
       </motion.div>
 
       {/* Charts section */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Weekly Study Hours Line Chart (SVG) */}
+
+        {/* Weekly Activity Line Chart */}
         <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
           <div className="flex justify-between items-center">
-            <h2 className="text-sm font-bold text-foreground">Waktu Belajar Mingguan</h2>
-            <span className="text-[10px] text-muted-foreground font-bold bg-muted px-2 py-1 rounded-md">Jam/Minggu</span>
+            <h2 className="text-sm font-bold text-foreground">Aktivitas Tujuh Hari Terakhir</h2>
+            <span className="text-[10px] text-muted-foreground font-bold bg-muted px-2 py-1 rounded-md">
+              Interaksi/Hari
+            </span>
           </div>
 
-          {/* SVG Line Chart */}
-          <div className="relative h-48 w-full">
-            <svg className="w-full h-full" viewBox="0 0 500 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Grid Lines */}
-              {[20, 70, 120, 170].map((y, i) => (
-                <line key={i} x1="40" y1={y} x2="480" y2={y} stroke="currentColor" className="text-border" strokeWidth="1" />
-              ))}
+          {loading ? (
+            <div className="skeleton h-48 w-full rounded-2xl" />
+          ) : (
+            <div className="relative h-48 w-full">
+              <svg className="w-full h-full" viewBox="0 0 500 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {[padTop, padTop + innerH / 3, padTop + (innerH * 2) / 3, padTop + innerH].map((y, i) => (
+                  <line key={i} x1={padX} y1={y} x2={W - 20} y2={y} stroke="currentColor" className="text-border" strokeWidth="1" />
+                ))}
 
-              {/* Chart Line Gradient */}
-              <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
 
-              {/* Line Area & Path */}
-              <path d="M 40 170 Q 110 130 180 145 T 320 60 T 480 40 L 480 170 Z" fill="url(#chartGradient)" />
-              <path d="M 40 170 Q 110 130 180 145 T 320 60 T 480 40" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" />
+                {areaPath && <path d={areaPath} fill="url(#chartGradient)" />}
+                {linePath && (
+                  <path d={linePath} stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                )}
 
-              {/* Data Dots */}
-              {[
-                { cx: 110, cy: 130 },
-                { cx: 180, cy: 145 },
-                { cx: 320, cy: 60 },
-                { cx: 480, cy: 40 },
-              ].map((dot, i) => (
-                <circle key={i} cx={dot.cx} cy={dot.cy} r="4" fill="hsl(var(--primary))" stroke="hsl(var(--card))" strokeWidth="2" />
-              ))}
-
-              {/* Axis Labels */}
-              {[
-                { x: 40, label: "Mgg 1", align: "middle" },
-                { x: 110, label: "Mgg 3", align: "middle" },
-                { x: 180, label: "Mgg 5", align: "middle" },
-                { x: 320, label: "Mgg 7 (UTS)", align: "middle" },
-                { x: 480, label: "Mgg 8", align: "end" },
-              ].map((lbl, i) => (
-                <text key={i} x={lbl.x} y="190" fill="currentColor" className="text-muted-foreground text-[10px]" textAnchor={lbl.align as any}>{lbl.label}</text>
-              ))}
-            </svg>
-          </div>
+                {points.map((p, i) => (
+                  <g key={i}>
+                    <circle cx={p.x} cy={p.y} r="4" fill="hsl(var(--primary))" stroke="hsl(var(--card))" strokeWidth="2" />
+                    <text x={p.x} y={H - 8} fill="currentColor" className="text-muted-foreground text-[10px]" textAnchor="middle">
+                      {p.label}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+            </div>
+          )}
         </div>
 
-        {/* Feature Usage Share Donut Chart (SVG) */}
+        {/* Feature Usage Donut Chart */}
         <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
           <div className="flex justify-between items-center">
-            <h2 className="text-sm font-bold text-foreground">Distribusi Fitur yang Dipakai</h2>
-            <span className="text-[10px] text-muted-foreground font-bold bg-muted px-2 py-1 rounded-md">Berdasarkan Aktivitas</span>
+            <h2 className="text-sm font-bold text-foreground">Distribusi Mode Tutor AI</h2>
+            <span className="text-[10px] text-muted-foreground font-bold bg-muted px-2 py-1 rounded-md">
+              Per Sesi
+            </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-around gap-6 h-48">
-            {/* SVG Donut Chart */}
-            <div className="relative w-36 h-36 shrink-0">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="currentColor" className="text-muted" strokeWidth="3.5" />
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="hsl(var(--primary))" strokeWidth="3.5" strokeDasharray="35 65" strokeDashoffset="0" />
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8b5cf6" strokeWidth="3.5" strokeDasharray="25 75" strokeDashoffset="-35" />
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ec4899" strokeWidth="3.5" strokeDasharray="20 80" strokeDashoffset="-60" />
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06b6d4" strokeWidth="3.5" strokeDasharray="20 80" strokeDashoffset="-80" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-lg font-black text-foreground">100%</span>
-                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">Total</span>
+          {loading ? (
+            <div className="skeleton h-48 w-full rounded-2xl" />
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 h-48">
+              <div className="relative w-36 h-36 shrink-0">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="currentColor" className="text-muted" strokeWidth="3.5" />
+                  {modeTotal > 0 &&
+                    donutSegments.map((s, i) => (
+                      <circle
+                        key={i}
+                        cx="18"
+                        cy="18"
+                        r="15.915"
+                        fill="none"
+                        stroke={s.color}
+                        strokeWidth="3.5"
+                        strokeDasharray={s.dash}
+                        strokeDashoffset={s.offset}
+                      />
+                    ))}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-black text-foreground">{modeTotal}</span>
+                  <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">Sesi</span>
+                </div>
+              </div>
+
+              <div className="grid gap-2 text-xs w-full">
+                {donutSegments.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-muted transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-muted-foreground font-medium truncate">{item.label}</span>
+                    </div>
+                    <span className="font-bold text-foreground shrink-0">{Math.round(item.pct)}%</span>
+                  </div>
+                ))}
+                {modeTotal === 0 && (
+                  <p className="text-muted-foreground text-center py-4">Belum ada sesi tutor.</p>
+                )}
               </div>
             </div>
-
-            {/* Labels Legend */}
-            <div className="grid gap-3 text-xs w-full">
-              {[
-                { color: "bg-primary", label: "Tutor AI (35%)" },
-                { color: "bg-violet-500", label: "Asisten Nulis (25%)" },
-                { color: "bg-pink-500", label: "Grup Kelompok (20%)" },
-                { color: "bg-cyan-500", label: "Latihan Ujian (20%)" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-muted transition-colors">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-                    <span className="text-muted-foreground font-medium">{item.label}</span>
-                  </div>
-                  <ChevronRight size={14} className="text-muted-foreground/50" />
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
 
       </motion.div>
 
-      {/* Grid: Search Logs & Common Pain Points */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Search Logs */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
-          <div className="flex items-center gap-2">
-            <Search size={16} className="text-primary" />
-            <h2 className="text-sm font-bold text-foreground">Trending di EduSparq Minggu Ini</h2>
-          </div>
+      {/* Deadline status breakdown */}
+      <motion.div variants={itemVariants} className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
+        <div className="flex items-center gap-2">
+          <CalendarCheck size={16} className="text-primary" />
+          <h2 className="text-sm font-bold text-foreground">Status Tenggat Waktu</h2>
+        </div>
 
-          <div className="space-y-3">
-            {searchLogs.map((log, idx) => (
-              <div key={idx} className="p-4 bg-muted/40 border border-border rounded-2xl flex items-center justify-between gap-3 hover:border-primary/30 transition-colors">
-                <div className="space-y-1 min-w-0">
-                  <span className="font-semibold text-sm text-foreground block truncate">{log.query}</span>
-                  <span className="text-xs text-muted-foreground block">Dicari {log.count}</span>
+        {loading ? (
+          <div className="skeleton h-3 w-full rounded-full" />
+        ) : (
+          <>
+            <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
+              {deadlineTotal > 0 &&
+                deadlineStats.map((s, i) => (
+                  <div
+                    key={i}
+                    className={`${s.color} h-full transition-all`}
+                    style={{ width: `${(s.value / deadlineTotal) * 100}%` }}
+                  />
+                ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {deadlineStats.map((s, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${s.color}`} />
+                  <div className="min-w-0">
+                    <span className="text-sm font-black text-foreground block leading-none">{s.value}</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold">{s.label}</span>
+                  </div>
                 </div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-                  log.status === "Tren Naik" 
-                    ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                    : "text-amber-600 bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400"
-                }`}>
-                  {log.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </>
+        )}
+      </motion.div>
 
-        {/* Info */}
-        <div className="lg:col-span-1 bg-gradient-to-br from-primary to-violet-600 rounded-3xl p-6 text-white shadow-sm space-y-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-          
-          <h2 className="text-sm font-bold flex items-center gap-2">
-            <Info size={16} />
-            Wawasan AI
-          </h2>
-
-          <div className="space-y-4 text-sm leading-relaxed">
-            <p className="text-white/90">
-              Berdasarkan analisis aktivitas belajar kamu, kamu memiliki kelemahan di topik <strong>Statistika Inferensial</strong>.
-            </p>
-            <p className="text-white/90">
-              Kami merekomendasikan untuk menambah 2 jam belajar minggu ini menggunakan fitur <strong>Latihan Ujian (Flashcards)</strong> untuk memperbaiki pemahaman konsep.
-            </p>
-          </div>
-
-          <button className="w-full mt-4 py-2.5 bg-white text-primary hover:bg-white/90 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
-            Mulai Latihan Sekarang <ChevronRight size={16} />
-          </button>
-        </div>
-
+      {/* Insight */}
+      <motion.div variants={itemVariants} className="bg-gradient-to-br from-primary to-violet-600 rounded-3xl p-6 text-white shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+        <h2 className="text-sm font-bold flex items-center gap-2">
+          <TrendingUp size={16} />
+          Wawasan Singkat
+        </h2>
+        <p className="text-sm leading-relaxed text-white/90 mt-3 max-w-2xl">
+          {d.totals.chats > 0
+            ? `Anda telah melakukan ${d.totals.chats} sesi belajar bersama Tutor AI dan menyusun ${d.totals.flashcards} flashcard. Pertahankan ritme ini menjelang ujian.`
+            : "Mulailah dengan bertanya kepada Tutor AI atau menyusun flashcard pertama Anda untuk membangun rekam jejak belajar."}
+        </p>
       </motion.div>
 
     </motion.div>

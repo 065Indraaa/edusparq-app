@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   FolderOpen as WorkspaceIcon,
@@ -13,8 +13,13 @@ import {
   Sparkles as SparklesIcon,
   ChevronDown as ChevronIcon,
   CheckCircle2 as CheckIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Eye as EyeIcon,
+  X as CloseIcon,
+  ExternalLink as ExternalLinkIcon,
+  Database as DatabaseIcon
 } from "lucide-react";
+import { extractText, isExtractable } from "@/lib/extract-text";
 
 interface DocumentFile {
   id: string;
@@ -24,6 +29,10 @@ interface DocumentFile {
   uploadedAt: string;
   status: "Indexed" | "Processing" | "Failed";
   subject: string;
+  // True when plain text was extracted client-side and indexed for the tutor.
+  indexed?: boolean;
+  // Cloudinary URL of the stored file (used by the PDF viewer / open action).
+  fileUrl?: string;
 }
 
 const initialFiles: DocumentFile[] = [
@@ -80,7 +89,17 @@ function mapApiDoc(doc: any): DocumentFile {
     uploadedAt: formatDate(doc.uploadedAt),
     status: statusMap[doc.status] || "Indexed",
     subject: doc.courseName || "",
+    fileUrl: doc.fileUrl || undefined,
+    // The GET payload does not expose chunk counts, so we cannot reliably know
+    // whether an existing document was indexed for the tutor. Leave it unknown
+    // (the badge then shows the neutral "Tersimpan" state).
+    indexed: undefined,
   };
+}
+
+// Returns true when a document can be opened in the in-app PDF viewer.
+function isPdf(file: DocumentFile): boolean {
+  return file.type === "pdf" || (file.fileUrl || "").toLowerCase().endsWith(".pdf");
 }
 
 export default function WorkspacePage() {
@@ -98,6 +117,35 @@ export default function WorkspacePage() {
   const [uploadStep, setUploadStep] = useState<string>("");
   const [uploadFileName, setUploadFileName] = useState<string>("");
   const [inspectingFile, setInspectingFile] = useState<DocumentFile | null>(initialFiles[0]);
+  const [viewerFile, setViewerFile] = useState<DocumentFile | null>(null);
+  const viewerCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  // Accessibility: close the viewer on Esc and move focus to the close button.
+  useEffect(() => {
+    if (!viewerFile) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setViewerFile(null);
+    };
+    document.addEventListener("keydown", onKey);
+    const t = setTimeout(() => viewerCloseRef.current?.focus(), 0);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      clearTimeout(t);
+    };
+  }, [viewerFile]);
+
+  // Opens the in-app viewer for PDFs; for other types opens the stored file in
+  // a new tab when a URL is available.
+  const handleOpen = (file: DocumentFile) => {
+    if (isPdf(file) && file.fileUrl) {
+      setViewerFile(file);
+    } else if (file.fileUrl) {
+      window.open(file.fileUrl, "_blank", "noopener,noreferrer");
+    } else {
+      // No stored URL (sample/demo data) — fall back to the inspector.
+      setInspectingFile(file);
+    }
+  };
 
   // Fetch the user's real documents once authenticated.
   const refreshDocuments = useCallback(async () => {
@@ -186,8 +234,25 @@ export default function WorkspacePage() {
       }
 
       const meta = await upRes.json();
-      setUploadProgress(60);
-      setUploadStep("Mengindeks metadata & menyiapkan basis pengetahuan...");
+
+      // Client-side text extraction (dependency-free). For plain-text formats
+      // this yields content that the server splits into chunks and indexes for
+      // the AI tutor (RAG). PDF/DOCX/media return "" and are stored only.
+      setUploadProgress(45);
+      setUploadStep(
+        isExtractable(fileObj)
+          ? "Mengekstraksi teks untuk pengindeksan Tutor AI..."
+          : "Menyimpan berkas (ekstraksi teks belum tersedia untuk format ini)..."
+      );
+      const textContent = await extractText(fileObj);
+      const wasIndexed = textContent.trim().length > 0;
+
+      setUploadProgress(65);
+      setUploadStep(
+        wasIndexed
+          ? "Mengindeks konten ke basis pengetahuan privat Anda..."
+          : "Menyimpan metadata berkas dengan aman..."
+      );
 
       const docRes = await fetch("/api/documents", {
         method: "POST",
@@ -199,18 +264,30 @@ export default function WorkspacePage() {
           publicId: meta.publicId,
           fileType: meta.fileType,
           fileSize: meta.fileSize,
-          // NOTE: client-side text extraction is out of scope; no textContent.
+          // Only send extracted plain text; empty string is omitted so the
+          // server does not create empty chunks.
+          ...(wasIndexed ? { textContent } : {}),
         }),
       });
 
       setUploadProgress(95);
-      setUploadStep("Selesai! Berkas terindeks secara aman.");
+      setUploadStep(
+        wasIndexed
+          ? "Selesai. Berkas tersimpan dan terindeks untuk Tutor AI."
+          : "Selesai. Berkas tersimpan dengan aman."
+      );
 
       if (docRes.ok) {
         await refreshDocuments();
+        // Reflect the honest indexing state on the just-uploaded document.
+        if (wasIndexed) {
+          setFiles((prev) =>
+            prev.map((f) => (f.name === fileName ? { ...f, indexed: true } : f))
+          );
+        }
         setNotice("");
       } else {
-        setNotice("Berkas terunggah, namun gagal menyimpan metadata.");
+        setNotice("Berkas terunggah, namun metadata gagal disimpan.");
       }
 
       setUploadProgress(100);
@@ -231,6 +308,7 @@ export default function WorkspacePage() {
     setUploadProgress(0);
     setUploadStep("Mengunggah berkas (mode demo)...");
 
+    const canIndex = isExtractable(fileObj);
     const newFileId = "demo-" + Date.now();
     const newFile: DocumentFile = {
       id: newFileId,
@@ -240,6 +318,7 @@ export default function WorkspacePage() {
       uploadedAt: "Hari ini",
       status: "Processing",
       subject: selectedSubject,
+      indexed: canIndex,
     };
     setFiles((prev) => [newFile, ...prev]);
 
@@ -248,28 +327,32 @@ export default function WorkspacePage() {
       currentProgress += 10;
       setUploadProgress(currentProgress);
 
-      if (currentProgress < 25) {
-        setUploadStep("Mengunggah berkas ke cloud storage...");
-      } else if (currentProgress < 50) {
-        if (fileType === "audio" || fileType === "video") {
-          setUploadStep("Mengekstraksi transkripsi suara...");
-        } else if (fileType === "image") {
-          setUploadStep("Menjalankan OCR...");
-        } else {
-          setUploadStep("Mengekstraksi konten teks...");
-        }
-      } else if (currentProgress < 75) {
-        setUploadStep("Menjalankan Semantic Chunking...");
+      if (currentProgress < 35) {
+        setUploadStep("Mengunggah berkas (mode demo)...");
+      } else if (currentProgress < 70) {
+        setUploadStep(
+          canIndex
+            ? "Mengekstraksi teks untuk pengindeksan Tutor AI..."
+            : "Menyimpan berkas (ekstraksi teks belum tersedia untuk format ini)..."
+        );
       } else if (currentProgress < 95) {
-        setUploadStep("Membuat indeks & sinkronisasi basis pengetahuan...");
+        setUploadStep(
+          canIndex
+            ? "Membuat indeks basis pengetahuan privat..."
+            : "Menyimpan metadata berkas..."
+        );
       } else {
-        setUploadStep("Selesai! Berkas terindeks (mode demo).");
+        setUploadStep(
+          canIndex
+            ? "Selesai. Berkas tersimpan dan terindeks (mode demo)."
+            : "Selesai. Berkas tersimpan (mode demo)."
+        );
       }
 
       if (currentProgress >= 100) {
         clearInterval(interval);
         setFiles((prev) => prev.map((f) => (f.id === newFileId ? { ...f, status: "Indexed" } : f)));
-        setInspectingFile(newFile);
+        setInspectingFile({ ...newFile, status: "Indexed" });
         setTimeout(() => setUploadProgress(null), 1500);
       }
     }, 400);
@@ -291,7 +374,7 @@ export default function WorkspacePage() {
     if (isLoggedIn) {
       realUpload(fileObj);
     } else {
-      setNotice("Masuk untuk menyimpan materi secara permanen. Menambahkan dalam mode demo.");
+      setNotice("Masuk terlebih dahulu untuk menyimpan materi secara permanen. Berkas ditambahkan dalam mode demo.");
       simulateUpload(fileObj);
     }
   };
@@ -327,6 +410,37 @@ export default function WorkspacePage() {
     }
   };
 
+  // Honest RAG status badge: "Terindeks untuk Tutor AI" only when plain text
+  // was actually extracted and chunked; otherwise the file is merely stored.
+  const renderIndexBadge = (file: DocumentFile) => {
+    if (file.status === "Processing") {
+      return (
+        <span className="inline-flex items-center text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20 animate-pulse">
+          Memproses...
+        </span>
+      );
+    }
+    if (file.status === "Failed") {
+      return (
+        <span className="inline-flex items-center text-[10px] font-bold text-destructive bg-destructive/10 px-2.5 py-1 rounded-md border border-destructive/20">
+          Gagal
+        </span>
+      );
+    }
+    if (file.indexed) {
+      return (
+        <span className="inline-flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+          <SparklesIcon size={11} className="mr-1.5" /> Terindeks untuk Tutor AI
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center text-[10px] font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-md border border-border">
+        <CheckIcon size={11} className="mr-1.5" /> Tersimpan
+      </span>
+    );
+  };
+
   const filteredFiles = files.filter(f => f.subject === selectedSubject);
 
   const containerVariants = {
@@ -348,7 +462,7 @@ export default function WorkspacePage() {
           Ruang Kerja Akademik
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Kelola materi kuliah, unggah dokumen, dan kelola basis pengetahuan AI personal.
+          Kelola materi kuliah, unggah dokumen, dan bangun basis pengetahuan pribadi untuk Tutor AI Anda.
         </p>
       </motion.div>
 
@@ -356,7 +470,7 @@ export default function WorkspacePage() {
       {(usingSampleData || notice) && (
         <motion.div variants={itemVariants} className="flex items-start gap-2 p-3 rounded-xl border border-amber-400/30 bg-amber-400/10 text-[12px] text-foreground/80">
           <InfoIcon size={15} className="mt-0.5 text-amber-500 shrink-0" />
-          <span>{notice || "Menampilkan contoh — masuk untuk mengelola materi aslimu."}</span>
+          <span>{notice || "Menampilkan contoh — masuk untuk mengelola materi asli Anda."}</span>
         </motion.div>
       )}
 
@@ -453,15 +567,15 @@ export default function WorkspacePage() {
               id="file-input"
               onChange={handleFileUpload}
               className="hidden"
-              accept=".pdf,.docx,.doc,.txt,.mp3,.wav,.m4a,.mp4,.png,.jpg,.jpeg"
+              accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.mp3,.wav,.m4a,.mp4,.png,.jpg,.jpeg"
             />
             <label htmlFor="file-input" className="cursor-pointer space-y-3 flex flex-col items-center">
               <div className="p-4 bg-muted rounded-2xl text-primary shadow-sm group-hover:scale-110 transition-transform">
                 <UploadIcon size={28} />
               </div>
               <div className="space-y-1.5">
-                <span className="font-bold text-sm text-foreground block">Tarik & Lepas materi kuliah ke sini, atau klik untuk memilih file</span>
-                <span className="text-[11px] text-muted-foreground block max-w-md mx-auto leading-relaxed">Mendukung PDF (scanned/native), Word (DOCX), PPT, WA Screenshot (JPG/PNG), Audio Kuliah (MP3), & Zoom Recording (MP4)</span>
+                <span className="font-bold text-sm text-foreground block">Tarik dan lepaskan materi kuliah di sini, atau klik untuk memilih berkas</span>
+                <span className="text-[11px] text-muted-foreground block max-w-md mx-auto leading-relaxed">Mendukung PDF, Word (DOCX), teks (TXT/MD/CSV), gambar (JPG/PNG), audio (MP3), dan video (MP4). Berkas teks otomatis terindeks untuk Tutor AI.</span>
               </div>
             </label>
           </div>
@@ -470,12 +584,31 @@ export default function WorkspacePage() {
           <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
             <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-muted/30">
               <span className="font-bold text-sm text-foreground">Daftar Dokumen ({filteredFiles.length})</span>
-              <span className="text-[11px] text-muted-foreground italic hidden sm:block">Namespace terisolasi (Privat)</span>
+              <span className="text-[11px] text-muted-foreground italic hidden sm:block">Ruang penyimpanan privat dan terisolasi</span>
             </div>
 
-            {filteredFiles.length === 0 ? (
-              <div className="p-10 text-center text-muted-foreground text-sm font-medium">
-                Belum ada dokumen yang diunggah untuk mata kuliah ini.
+            {uploadProgress !== null ? (
+              <div className="p-6 space-y-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="skeleton h-9 w-9 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton h-3 w-1/2 rounded" />
+                      <div className="skeleton h-2.5 w-1/4 rounded" />
+                    </div>
+                    <div className="skeleton h-6 w-24 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredFiles.length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
+                  <UploadIcon size={24} />
+                </div>
+                <p className="text-foreground text-sm font-semibold">Belum ada dokumen pada mata kuliah ini</p>
+                <p className="text-muted-foreground text-xs max-w-sm mx-auto leading-relaxed">
+                  Unggah materi kuliah Anda untuk mulai membangun basis pengetahuan Tutor AI. Berkas teks akan langsung terindeks.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -485,7 +618,7 @@ export default function WorkspacePage() {
                       <th className="px-6 py-4 font-semibold">Nama File</th>
                       <th className="px-6 py-4 font-semibold">Ukuran</th>
                       <th className="px-6 py-4 font-semibold">Tanggal Unggah</th>
-                      <th className="px-6 py-4 font-semibold">Status AI</th>
+                      <th className="px-6 py-4 font-semibold">Status Indeks</th>
                       <th className="px-6 py-4 font-semibold text-right">Aksi</th>
                     </tr>
                   </thead>
@@ -505,30 +638,32 @@ export default function WorkspacePage() {
                         <td className="px-6 py-4 text-muted-foreground">{file.size}</td>
                         <td className="px-6 py-4 text-muted-foreground">{file.uploadedAt}</td>
                         <td className="px-6 py-4">
-                          {file.status === "Indexed" ? (
-                            <span className="inline-flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
-                              <CheckIcon size={12} className="mr-1.5" /> Terindeks
-                            </span>
-                          ) : file.status === "Processing" ? (
-                            <span className="inline-flex items-center text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20 animate-pulse">
-                              Memproses...
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-[10px] font-bold text-destructive bg-destructive/10 px-2.5 py-1 rounded-md border border-destructive/20">
-                              Gagal
-                            </span>
-                          )}
+                          {renderIndexBadge(file)}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(file);
-                            }}
-                            className="text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-lg hover:bg-destructive/10 transition-colors font-semibold"
-                          >
-                            Hapus
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpen(file);
+                              }}
+                              aria-label={`Buka ${file.name}`}
+                              title={isPdf(file) ? "Pratinjau PDF" : "Buka berkas"}
+                              className="inline-flex items-center text-muted-foreground hover:text-primary px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors font-semibold min-h-[36px]"
+                            >
+                              <EyeIcon size={14} className="mr-1.5" /> Buka
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(file);
+                              }}
+                              aria-label={`Hapus ${file.name}`}
+                              className="inline-flex items-center text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-lg hover:bg-destructive/10 transition-colors font-semibold min-h-[36px]"
+                            >
+                              Hapus
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -544,15 +679,15 @@ export default function WorkspacePage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
                 <div>
                   <h3 className="font-bold text-sm text-foreground flex items-center">
-                    <SparklesIcon size={16} className="mr-2 text-primary" />
-                    Inspektor Semantic Chunking
+                    <DatabaseIcon size={16} className="mr-2 text-primary" />
+                    Inspektor Pengindeksan
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Analisis hasil chunking file: <span className="font-mono text-foreground font-semibold">{inspectingFile.name}</span>
+                    Pratinjau potongan teks (chunk) untuk: <span className="font-mono text-foreground font-semibold">{inspectingFile.name}</span>
                   </p>
                 </div>
                 <span className="text-[10px] font-bold px-3 py-1.5 rounded-md bg-muted text-muted-foreground border border-border font-mono shrink-0">
-                  ns: user_smt3
+                  basis pengetahuan privat
                 </span>
               </div>
 
@@ -564,9 +699,13 @@ export default function WorkspacePage() {
                 if (matched.length === 0) {
                   return (
                     <div className="p-8 text-center text-muted-foreground text-sm font-medium bg-muted/20 rounded-2xl border border-dashed border-border space-y-2">
-                      <p className="font-semibold text-foreground">Pratinjau chunk belum tersedia untuk berkas ini.</p>
+                      <p className="font-semibold text-foreground">
+                        {inspectingFile.indexed
+                          ? "Konten berkas ini telah terindeks untuk Tutor AI."
+                          : "Pratinjau potongan teks belum tersedia untuk berkas ini."}
+                      </p>
                       <p className="text-xs leading-relaxed max-w-md mx-auto">
-                        Konten teks diindeks secara aman di basis pengetahuan privatmu saat ekstraksi teks tersedia. Berkas non-teks (audio/video/gambar) memerlukan transkripsi/OCR yang akan datang.
+                        Konten teks (TXT, MD, CSV, JSON) diekstraksi di peramban dan diindeks secara aman ke basis pengetahuan privat Anda. Berkas PDF, DOCX, gambar, audio, dan video saat ini hanya disimpan; ekstraksi teksnya memerlukan pustaka tambahan atau pipeline di sisi server.
                       </p>
                     </div>
                   );
@@ -604,6 +743,79 @@ export default function WorkspacePage() {
         </motion.div>
 
       </div>
+
+      {/* In-app PDF viewer (browsers render PDFs natively via <iframe>). */}
+      <AnimatePresence>
+        {viewerFile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Pratinjau dokumen ${viewerFile.name}`}
+            onClick={() => setViewerFile(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: "spring", stiffness: 320, damping: 28 }}
+              className="bg-card border border-border rounded-3xl shadow-xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Title bar */}
+              <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-muted/30 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <FileTextIcon size={18} className="text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-foreground truncate">{viewerFile.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{viewerFile.subject}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {viewerFile.fileUrl && (
+                    <a
+                      href={viewerFile.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors min-h-[40px]"
+                    >
+                      <ExternalLinkIcon size={14} /> Buka di tab baru
+                    </a>
+                  )}
+                  <button
+                    ref={viewerCloseRef}
+                    onClick={() => setViewerFile(null)}
+                    aria-label="Tutup pratinjau"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <CloseIcon size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Document frame */}
+              <div className="flex-1 bg-muted/20 min-h-0">
+                {viewerFile.fileUrl ? (
+                  <iframe
+                    src={viewerFile.fileUrl}
+                    title={`Pratinjau ${viewerFile.name}`}
+                    className="w-full h-full border-0"
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center p-8 text-center">
+                    <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+                      Pratinjau tidak tersedia karena berkas ini belum memiliki tautan penyimpanan (mode contoh atau demo).
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </motion.div>
   );

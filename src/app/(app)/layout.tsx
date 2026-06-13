@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SidebarNav, BottomNav, type NavItem } from "@/components/app-nav";
 import { auth, signOut } from "@/lib/auth";
 import {
   LayoutDashboard,
@@ -16,12 +17,12 @@ import {
   Search,
 } from "lucide-react";
 
-const navigation = [
+const navigation: NavItem[] = [
   { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
   { name: "Materi", href: "/workspace", icon: FolderOpen },
   { name: "Tenggat", href: "/deadlines", icon: CalendarDays },
   { name: "Tutor AI", href: "/tutor", icon: Bot },
-  { name: "Nulis", href: "/writing", icon: PenTool },
+  { name: "Menulis", href: "/writing", icon: PenTool },
   { name: "Riset", href: "/research", icon: Search },
   { name: "Kelompok", href: "/collab", icon: Users },
   { name: "Ujian", href: "/exams", icon: GraduationCap },
@@ -40,24 +41,27 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground transition-colors duration-300">
       {/* Top Header for Mobile */}
-      <header className="sticky top-0 z-40 w-full glass-panel-solid px-4 py-3 flex items-center justify-between md:hidden shrink-0">
-        <Link href="/dashboard" className="flex items-center space-x-2">
+      <header className="sticky top-0 z-40 w-full glass-panel-solid px-4 py-3 flex items-center justify-between md:hidden shrink-0 border-b border-border">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="bg-primary/10 text-primary p-1.5 rounded-lg flex items-center justify-center">
             <Sparkles size={18} />
           </div>
           <span className="font-extrabold text-base tracking-tight text-foreground">EduSparq</span>
         </Link>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
-          <button className="relative p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center" aria-label="Notifikasi">
+          <button
+            className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Notifikasi"
+          >
             <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-warning rounded-full ring-2 ring-background" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-warning rounded-full ring-2 ring-background" />
           </button>
           {user?.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.image} alt={user.name || "User"} className="w-8 h-8 rounded-full border border-border object-cover" />
+            <img src={user.image} alt={user.name || "Pengguna"} className="w-9 h-9 rounded-full border border-border object-cover" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-teal-400 flex items-center justify-center font-bold text-xs shadow-sm text-white border border-border select-none cursor-pointer">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-teal-400 flex items-center justify-center font-bold text-xs shadow-sm text-white border border-border select-none">
               {initials}
             </div>
           )}
@@ -66,39 +70,25 @@ export default async function AppLayout({
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 glass-panel-solid h-screen sticky top-0 shrink-0 border-r border-border">
-        <div className="p-6 border-b border-border flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center space-x-3">
-            <div className="bg-primary/10 text-primary p-2 rounded-xl flex items-center justify-center">
+        <div className="px-5 py-5 border-b border-border flex items-center justify-between gap-2">
+          <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
+            <div className="bg-primary/10 text-primary p-2 rounded-xl flex items-center justify-center shrink-0">
               <Sparkles size={20} />
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-foreground">EduSparq</span>
+            <span className="font-extrabold text-xl tracking-tight text-foreground truncate">EduSparq</span>
           </Link>
           <ThemeToggle />
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto no-scrollbar">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 transition-all group"
-              >
-                <Icon size={18} className="mr-3 text-slate-400 group-hover:text-primary transition-colors" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
+        <SidebarNav items={navigation} />
 
-        <div className="p-4 border-t border-border bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-center space-x-3">
+        <div className="p-3 border-t border-border bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center gap-3 px-1">
             {user?.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.image} alt={user.name || ""} className="w-10 h-10 rounded-xl border border-border object-cover" />
+              <img src={user.image} alt={user.name || ""} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-teal-400 flex items-center justify-center font-bold text-sm shadow-sm text-white select-none">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-teal-400 flex items-center justify-center font-bold text-sm shadow-sm text-white select-none shrink-0">
                 {initials}
               </div>
             )}
@@ -106,8 +96,8 @@ export default async function AppLayout({
               <span className="font-semibold text-sm text-slate-900 dark:text-slate-200 block truncate">
                 {user?.name || "Tamu"}
               </span>
-              <span className="text-[10px] text-primary block font-medium truncate">
-                {user ? "Mahasiswa" : "Belum login"}
+              <span className="text-[11px] text-primary block font-medium truncate">
+                {user ? "Mahasiswa" : "Belum masuk"}
               </span>
             </div>
             {user ? (
@@ -119,7 +109,7 @@ export default async function AppLayout({
               >
                 <button
                   type="submit"
-                  className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-destructive transition-colors"
+                  className="rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-destructive transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Keluar"
                   title="Keluar"
                 >
@@ -127,7 +117,10 @@ export default async function AppLayout({
                 </button>
               </form>
             ) : (
-              <Link href="/login" className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-primary transition-colors text-xs font-bold">
+              <Link
+                href="/login"
+                className="rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-primary transition-colors text-xs font-bold min-w-[44px] min-h-[44px] flex items-center justify-center px-3"
+              >
                 Masuk
               </Link>
             )}
@@ -143,21 +136,7 @@ export default async function AppLayout({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-border px-2 py-2 flex justify-around items-center select-none shadow-glass">
-        {navigation.slice(0, 5).map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] text-slate-500 hover:text-primary active:text-primary transition-all"
-            >
-              <Icon size={20} className="mb-1" />
-              <span className="text-[10px] font-medium tracking-tight text-center">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      <BottomNav items={navigation.slice(0, 5)} />
     </div>
   );
 }

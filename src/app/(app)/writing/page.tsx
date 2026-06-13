@@ -289,32 +289,35 @@ export default function WritingPage() {
 
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <PenTool size={24} className="text-primary" />
-          Asisten Nulis
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
+          <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
+            <PenTool size={20} />
+          </span>
+          Asisten Menulis
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Outline makalah, parafrasa teks, kelola daftar pustaka — semua di satu tempat.
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Susun kerangka makalah, parafrasekan teks, dan kelola daftar pustaka dalam satu tempat.
         </p>
       </motion.div>
 
       {/* Tabs */}
       <motion.div variants={itemVariants} className="flex bg-muted p-1 rounded-2xl gap-1 max-w-md">
         {[
-          { id: "outline", label: "Outline", icon: BookOpen },
+          { id: "outline", label: "Kerangka", icon: BookOpen },
           { id: "paraphrase", label: "Parafrase", icon: Sparkles },
           { id: "citation", label: "Pustaka", icon: Quote },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id as typeof activeTab)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all ${
+            aria-pressed={activeTab === id}
+            className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 rounded-xl text-sm font-semibold transition-all ${
               activeTab === id
                 ? "bg-card text-foreground shadow-sm border border-border"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Icon size={15} />
+            <Icon size={16} />
             {label}
           </button>
         ))}
@@ -326,14 +329,17 @@ export default function WritingPage() {
           {/* Outline Generator */}
           {activeTab === "outline" && (
             <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
-              <h2 className="font-bold text-foreground">Buat Struktur Makalah</h2>
+              <div className="space-y-1">
+                <h2 className="font-bold text-foreground">Susun Kerangka Makalah</h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">Pilih panduan kampus dan tuliskan topik Anda untuk memperoleh kerangka bab yang terstruktur.</p>
+              </div>
               <form onSubmit={handleGenerateOutline} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground">Format panduan kampus</label>
                   <select
                     value={selectedUni}
                     onChange={(e) => setSelectedUni(e.target.value as keyof typeof uniTemplates)}
-                    className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                    className="w-full px-4 min-h-[48px] rounded-2xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   >
                     {Object.entries(uniTemplates).map(([key, val]) => (
                       <option key={key} value={key}>{val.name}</option>
@@ -341,52 +347,52 @@ export default function WritingPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground">Topik atau judul sementara kamu</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Topik atau judul sementara</label>
                   <input
                     type="text"
                     required
-                    placeholder="Misal: Pengaruh inklusi keuangan terhadap kesejahteraan petani..."
+                    placeholder="Contoh: Pengaruh inklusi keuangan terhadap kesejahteraan petani..."
                     value={paperTopic}
                     onChange={(e) => setPaperTopic(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    className="w-full px-4 min-h-[48px] rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isGenerating}
-                  className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full min-h-[48px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all shadow-sm shadow-primary/20 disabled:opacity-60 disabled:shadow-none flex items-center justify-center gap-2"
                 >
-                  {isGenerating ? <RefreshCw size={16} className="animate-spin" /> : <><Sparkles size={15} /> Buat Outline</>}
+                  {isGenerating ? <RefreshCw size={16} className="animate-spin" /> : <><Sparkles size={15} /> Susun Kerangka</>}
                 </button>
               </form>
 
               {generatedOutline && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="border-t border-border pt-5 space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="font-bold text-sm text-foreground">Struktur {uniTemplates[selectedUni].name}</span>
-                    <div className="flex items-center gap-3">
+                    <span className="font-bold text-sm text-foreground">Kerangka {uniTemplates[selectedUni].name}</span>
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={handleCopyOutline}
-                        className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+                        className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs text-primary font-semibold hover:underline"
                       >
-                        {outlineCopied ? <Check size={12} /> : <Copy size={12} />}
-                        {outlineCopied ? "Tersalin!" : "Salin"}
+                        {outlineCopied ? <Check size={13} /> : <Copy size={13} />}
+                        {outlineCopied ? "Tersalin" : "Salin"}
                       </button>
                       <button
                         onClick={handleDownloadOutline}
-                        className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+                        className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs text-primary font-semibold hover:underline"
                       >
-                        <Download size={12} /> Unduh .md
+                        <Download size={13} /> Unduh .md
                       </button>
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-muted/40 border border-border text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words font-mono">
                     {generatedOutline}
                     {isGenerating && (
-                      <span className="inline-flex gap-0.5 ml-1 align-middle">
-                        <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:0ms]" />
-                        <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:150ms]" />
-                        <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:300ms]" />
+                      <span className="inline-flex gap-1 ml-1 align-middle">
+                        <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0ms] opacity-70" />
+                        <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:150ms] opacity-70" />
+                        <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:300ms] opacity-70" />
                       </span>
                     )}
                   </div>
@@ -398,15 +404,16 @@ export default function WritingPage() {
           {/* Paraphrase */}
           {activeTab === "paraphrase" && (
             <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground">Parafrase & Perbaikan Teks</h2>
-                <div className="flex bg-muted p-0.5 rounded-xl gap-0.5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h2 className="font-bold text-foreground">Parafrase Teks</h2>
+                <div className="flex bg-muted p-1 rounded-xl gap-1">
                   {["indonesian", "english"].map((m) => (
                     <button
                       key={m}
                       onClick={() => setParaMode(m as typeof paraMode)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        paraMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                      aria-pressed={paraMode === m}
+                      className={`px-3 min-h-[36px] rounded-lg text-xs font-bold transition-all ${
+                        paraMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {m === "indonesian" ? "Indonesia" : "English"}
@@ -417,24 +424,24 @@ export default function WritingPage() {
 
               <form onSubmit={handleParaphrase} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground">Teks yang mau diparafrase</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Teks yang akan diparafrasekan</label>
                   <textarea
                     required
-                    rows={4}
+                    rows={5}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={paraMode === "indonesian"
-                      ? "Ketik atau paste teks kamu di sini — boleh bahasa kasual, nanti dijadiin akademik..."
-                      : "Type or paste your text here — casual language is fine, it'll be made academic..."}
+                      ? "Ketik atau tempelkan teks Anda di sini. Bahasa nonformal akan disusun ulang menjadi bahasa akademik..."
+                      : "Type or paste your text here. Casual language will be rewritten into an academic style..."}
                     className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isParaphrasing || !inputText.trim()}
-                  className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full min-h-[48px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all shadow-sm shadow-primary/20 disabled:opacity-60 disabled:shadow-none flex items-center justify-center gap-2"
                 >
-                  {isParaphrasing ? <RefreshCw size={16} className="animate-spin" /> : <><Sparkles size={15} /> Parafrase Sekarang</>}
+                  {isParaphrasing ? <RefreshCw size={16} className="animate-spin" /> : <><Sparkles size={15} /> Parafrasekan</>}
                 </button>
               </form>
 
@@ -444,12 +451,12 @@ export default function WritingPage() {
                     <label className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Hasil parafrase</label>
                     <button
                       onClick={() => navigator.clipboard.writeText(outputText)}
-                      className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+                      className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs text-primary font-semibold hover:underline"
                     >
-                      <Copy size={12} /> Salin
+                      <Copy size={13} /> Salin
                     </button>
                   </div>
-                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 text-sm text-foreground leading-relaxed italic">
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 text-sm text-foreground leading-relaxed">
                     {outputText}
                   </div>
                 </motion.div>
@@ -462,13 +469,14 @@ export default function WritingPage() {
             <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h2 className="font-bold text-foreground">Daftar Pustaka</h2>
-                <div className="flex bg-muted p-0.5 rounded-xl gap-0.5">
+                <div className="flex bg-muted p-1 rounded-xl gap-1">
                   {CITATION_STYLES.map((s) => (
                     <button
                       key={s}
                       onClick={() => setCitationStyle(s)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        citationStyle === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                      aria-pressed={citationStyle === s}
+                      className={`px-3 min-h-[36px] rounded-lg text-xs font-bold transition-all ${
+                        citationStyle === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {s}
@@ -480,10 +488,10 @@ export default function WritingPage() {
               {citations.length > 0 && (
                 <button
                   onClick={handleCopyAllCitations}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  className="flex items-center gap-1.5 min-h-[36px] text-xs font-semibold text-primary hover:underline"
                 >
-                  {copiedId === "__all__" ? <Check size={12} /> : <Copy size={12} />}
-                  {copiedId === "__all__" ? "Semua tersalin!" : `Salin semua (${citations.length})`}
+                  {copiedId === "__all__" ? <Check size={13} /> : <Copy size={13} />}
+                  {copiedId === "__all__" ? "Seluruhnya tersalin" : `Salin seluruhnya (${citations.length})`}
                 </button>
               )}
 
@@ -492,32 +500,31 @@ export default function WritingPage() {
                   <RefreshCw size={18} className="animate-spin text-muted-foreground" />
                 </div>
               ) : citations.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  Belum ada referensi tersimpan. Tambah yang pertama di bawah.
+                <div className="py-10 text-center space-y-1.5">
+                  <p className="text-sm font-semibold text-foreground">Belum ada referensi tersimpan</p>
+                  <p className="text-xs text-muted-foreground">Tambahkan referensi pertama Anda melalui formulir di bawah.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {citations.map((cit) => (
-                    <div key={cit._id} className="p-4 rounded-2xl bg-muted/30 border border-border space-y-2">
-                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide">
-                        <span className="text-primary">{cit.type}</span>
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed italic select-text font-serif">
+                    <div key={cit._id} className="p-4 rounded-2xl bg-muted/30 border border-border space-y-2.5 hover-lift transition-all">
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-primary">{cit.type}</span>
+                      <p className="text-sm text-foreground leading-relaxed select-text font-serif">
                         {formatCitation(cit, citationStyle)}
                       </p>
-                      <div className="flex gap-3 pt-1 border-t border-border">
+                      <div className="flex gap-1 pt-2 border-t border-border">
                         <button
                           onClick={() => handleCopy(cit)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                          className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs font-semibold text-primary hover:underline"
                         >
-                          {copiedId === cit._id ? <Check size={12} /> : <Copy size={12} />}
-                          {copiedId === cit._id ? "Tersalin!" : "Salin"}
+                          {copiedId === cit._id ? <Check size={13} /> : <Copy size={13} />}
+                          {copiedId === cit._id ? "Tersalin" : "Salin"}
                         </button>
                         <button
                           onClick={() => handleDeleteCitation(cit._id)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors"
+                          className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors"
                         >
-                          <Trash2 size={12} /> Hapus
+                          <Trash2 size={13} /> Hapus
                         </button>
                       </div>
                     </div>
@@ -527,23 +534,23 @@ export default function WritingPage() {
 
               {/* Add citation form */}
               <form onSubmit={handleAddCitation} className="p-4 rounded-2xl bg-muted/40 border border-dashed border-border space-y-3">
-                <span className="text-sm font-bold text-foreground block">+ Tambah referensi</span>
+                <span className="text-sm font-bold text-foreground flex items-center gap-1.5"><Plus size={15} className="text-primary" /> Tambah referensi</span>
                 <div className="grid grid-cols-2 gap-3">
-                  <input required placeholder="Penulis (Misal: Sugiyono, B.)" value={newCit.author}
+                  <input required placeholder="Penulis (contoh: Sugiyono, B.)" value={newCit.author}
                     onChange={(e) => setNewCit({ ...newCit, author: e.target.value })}
-                    className="col-span-2 px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
+                    className="col-span-2 px-3 min-h-[44px] rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                   <input required placeholder="Judul" value={newCit.title}
                     onChange={(e) => setNewCit({ ...newCit, title: e.target.value })}
-                    className="col-span-2 px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
+                    className="col-span-2 px-3 min-h-[44px] rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                   <input required placeholder="Tahun" value={newCit.year} type="number"
                     onChange={(e) => setNewCit({ ...newCit, year: e.target.value })}
-                    className="px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
+                    className="px-3 min-h-[44px] rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                   <input placeholder="Nama jurnal (opsional)" value={newCit.journal}
                     onChange={(e) => setNewCit({ ...newCit, journal: e.target.value })}
-                    className="px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
+                    className="px-3 min-h-[44px] rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <button type="submit"
-                  className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+                  className="w-full min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all shadow-sm shadow-primary/20 flex items-center justify-center gap-2">
                   <Plus size={15} /> Simpan
                 </button>
               </form>
@@ -559,13 +566,13 @@ export default function WritingPage() {
               Panduan Sitasi
             </h3>
             <div className="space-y-3 text-xs text-muted-foreground">
-              <div className="p-3 rounded-xl bg-muted/50 space-y-1">
-                <span className="font-bold text-foreground block">Format APA 7</span>
-                <p className="leading-relaxed">Paling umum dipakai di Indonesia. Nama Belakang, Inisial. (Tahun). Judul. Nama Jurnal, Vol(No), Halaman.</p>
+              <div className="p-3.5 rounded-xl bg-muted/50 space-y-1">
+                <span className="font-bold text-foreground block">Format APA Edisi 7</span>
+                <p className="leading-relaxed">Format yang paling umum digunakan di Indonesia. Nama Belakang, Inisial. (Tahun). Judul. Nama Jurnal, Vol(No), Halaman.</p>
               </div>
-              <div className="p-3 rounded-xl bg-muted/50 space-y-1">
-                <span className="font-bold text-foreground block">Cara pakai parafrase</span>
-                <p className="leading-relaxed">Hasil parafrase AI hanya sebagai panduan awal. Selalu periksa ulang konteks dan makna sebelum disubmit.</p>
+              <div className="p-3.5 rounded-xl bg-muted/50 space-y-1">
+                <span className="font-bold text-foreground block">Penggunaan parafrase</span>
+                <p className="leading-relaxed">Hasil parafrase AI berfungsi sebagai panduan awal. Periksa kembali konteks dan maknanya sebelum Anda kirimkan.</p>
               </div>
             </div>
           </div>

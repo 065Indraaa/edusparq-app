@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw } from "lucide-react";
+import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw, Pencil, Bell, BellRing } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 interface Deadline {
@@ -33,6 +33,9 @@ export default function DeadlinesPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  // Purely local, non-persistent reminder markers (cleared on reload).
+  const [reminders, setReminders] = useState<Record<string, boolean>>({});
 
   const today = new Date();
   const year = today.getFullYear();
@@ -69,26 +72,68 @@ export default function DeadlinesPage() {
     if (session?.user) fetchDeadlines();
   }, [session]);
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setForm({ courseName: "", title: "", dueDate: "", dueTime: "23:59", weight: "", requirements: "" });
+    setEditingId(null);
+  };
+
+  const openEdit = (dl: Deadline) => {
+    setForm({
+      courseName: dl.courseName,
+      title: dl.title,
+      dueDate: dl.dueDate,
+      dueTime: dl.dueTime || "23:59",
+      weight: dl.weight || "",
+      requirements: dl.requirements || "",
+    });
+    setEditingId(dl._id);
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.courseName || !form.title || !form.dueDate) return;
     setSubmitting(true);
 
-    const res = await fetch("/api/deadlines", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
-      const newDeadline = await res.json();
-      setDeadlines((prev) => [...prev, newDeadline].sort((a, b) =>
-        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-      ));
-      setShowForm(false);
-      setForm({ courseName: "", title: "", dueDate: "", dueTime: "23:59", weight: "", requirements: "" });
+    if (editingId) {
+      // Edit an existing deadline via PATCH.
+      const res = await fetch(`/api/deadlines/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setDeadlines((prev) =>
+          prev
+            .map((d) => (d._id === editingId ? { ...d, ...updated } : d))
+            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+        );
+        setShowForm(false);
+        resetForm();
+      }
+    } else {
+      const res = await fetch("/api/deadlines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const newDeadline = await res.json();
+        setDeadlines((prev) =>
+          [...prev, newDeadline].sort(
+            (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          )
+        );
+        setShowForm(false);
+        resetForm();
+      }
     }
     setSubmitting(false);
+  };
+
+  const toggleReminder = (id: string) => {
+    setReminders((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleDelete = async (id: string) => {
@@ -135,11 +180,14 @@ export default function DeadlinesPage() {
             Tenggat Waktu
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Semua deadline kuliah kamu, terorganisir rapi — nggak ada yang kelewat.
+            Seluruh tenggat tugas kuliah Anda tersusun rapi agar tidak ada yang terlewat.
           </p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-sm font-bold transition-all shadow-sm shrink-0"
         >
           <Plus size={16} />
@@ -155,7 +203,12 @@ export default function DeadlinesPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            onClick={(e) => e.target === e.currentTarget && setShowForm(false)}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowForm(false);
+                resetForm();
+              }
+            }}
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
@@ -164,13 +217,19 @@ export default function DeadlinesPage() {
               className="bg-card border border-border rounded-3xl p-7 w-full max-w-md shadow-xl space-y-5"
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground text-lg">Tugas baru</h2>
-                <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors">
+                <h2 className="font-bold text-foreground text-lg">{editingId ? "Ubah tugas" : "Tugas baru"}</h2>
+                <button
+                  onClick={() => {
+                    setShowForm(false);
+                    resetForm();
+                  }}
+                  className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>
 
-              <form onSubmit={handleAdd} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Nama tugas</label>
                   <input
@@ -247,7 +306,7 @@ export default function DeadlinesPage() {
                   disabled={submitting}
                   className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl text-sm transition-all shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  {submitting ? <RefreshCw size={16} className="animate-spin" /> : "Simpan"}
+                  {submitting ? <RefreshCw size={16} className="animate-spin" /> : editingId ? "Simpan perubahan" : "Simpan"}
                 </button>
               </form>
             </motion.div>
@@ -331,17 +390,23 @@ export default function DeadlinesPage() {
         {/* Deadline List */}
         <motion.div variants={itemVariants} className="space-y-4">
           <div className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-4">
-            <h2 className="font-bold text-foreground text-sm">Yang harus diselesaikan</h2>
+            <h2 className="font-bold text-foreground text-sm">Yang perlu diselesaikan</h2>
 
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw size={18} className="animate-spin text-muted-foreground" />
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="p-4 rounded-2xl border border-border space-y-2">
+                    <div className="skeleton h-3 w-24 rounded" />
+                    <div className="skeleton h-4 w-3/4 rounded" />
+                    <div className="skeleton h-3 w-28 rounded" />
+                  </div>
+                ))}
               </div>
             ) : upcomingDeadlines.length === 0 ? (
               <div className="py-8 text-center">
                 <CheckCircle2 size={32} className="text-emerald-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-foreground">Semua beres!</p>
-                <p className="text-xs text-muted-foreground mt-1">Tambah tugas baru kalau ada yang masuk.</p>
+                <p className="text-sm font-semibold text-foreground">Semua tugas telah selesai.</p>
+                <p className="text-xs text-muted-foreground mt-1">Tambahkan tugas baru apabila ada yang masuk.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -350,9 +415,15 @@ export default function DeadlinesPage() {
                   const isUrgent = daysLeft <= 1;
                   const isWarning = daysLeft > 1 && daysLeft <= 3;
 
+                  const reminded = reminders[dl._id];
+
                   return (
-                    <div
+                    <motion.div
                       key={dl._id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
                       className={`p-4 rounded-2xl border transition-colors ${
                         isUrgent
                           ? "border-destructive/20 bg-destructive/5"
@@ -394,13 +465,38 @@ export default function DeadlinesPage() {
                           Selesai
                         </button>
                         <button
+                          onClick={() => toggleReminder(dl._id)}
+                          title={reminded ? "Pengingat aktif (hanya di perangkat ini)" : "Ingatkan saya"}
+                          aria-pressed={reminded}
+                          className={`p-1.5 rounded-xl transition-colors border ${
+                            reminded
+                              ? "bg-amber-400/15 text-amber-600 dark:text-amber-400 border-amber-400/30"
+                              : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {reminded ? <BellRing size={14} /> : <Bell size={14} />}
+                        </button>
+                        <button
+                          onClick={() => openEdit(dl)}
+                          title="Ubah tugas"
+                          className="p-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
                           onClick={() => handleDelete(dl._id)}
-                          className="p-1.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Hapus tugas"
+                          className="p-1.5 rounded-xl border border-border hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
-                    </div>
+                      {reminded && (
+                        <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                          Pengingat ditandai pada perangkat ini. Catatan ini tidak tersimpan permanen.
+                        </p>
+                      )}
+                    </motion.div>
                   );
                 })}
               </div>
@@ -411,10 +507,10 @@ export default function DeadlinesPage() {
           <div className="bg-card border border-border rounded-3xl p-5 space-y-3 shadow-sm">
             <div className="flex items-center gap-2">
               <UploadCloud size={18} className="text-primary" />
-              <h3 className="font-bold text-sm text-foreground">Scan dari screenshot</h3>
+              <h3 className="font-bold text-sm text-foreground">Pindai dari tangkapan layar</h3>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Punya foto papan tulis atau screenshot info tugas dari WA? Upload di Workspace — AI akan coba baca deadline-nya otomatis.
+              Memiliki foto papan tulis atau tangkapan layar informasi tugas? Unggah di Workspace, dan AI akan berupaya membaca tenggatnya secara otomatis.
             </p>
           </div>
         </motion.div>

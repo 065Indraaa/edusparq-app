@@ -21,10 +21,20 @@ export async function connectDB() {
   if (!cached.promise) {
     cached.promise = mongoose.connect(process.env.MONGODB_URI, {
       bufferCommands: false,
+      // Fail fast when the DB is unreachable from the host instead of hanging the
+      // request until the platform gateway times out (which reads as a 502/504).
+      serverSelectionTimeoutMS: 8000,
     });
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    // Reset so the next request retries a fresh connection rather than reusing a
+    // permanently-rejected promise.
+    cached.promise = null;
+    throw err;
+  }
   return cached.conn;
 }
 

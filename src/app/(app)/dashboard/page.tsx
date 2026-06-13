@@ -155,10 +155,10 @@ export default function DashboardPage() {
   ];
 
   const quickFeatures = [
-    { name: "Socratic Tutor", desc: "Kuasai konsep rumit dengan bimbingan kritis.", icon: Bot, href: "/tutor" },
-    { name: "Asisten Menulis", desc: "Buat outline, parafrase, & sitasi akademik.", icon: PenTool, href: "/writing" },
-    { name: "Persiapan Ujian", desc: "Prediksi soal UTS/UAS & flashcard.", icon: GraduationCap, href: "/exams" },
-    { name: "Kolaborasi", desc: "Workspace kelompok & penugasan visual.", icon: Users, href: "/collab" },
+    { name: "Tutor Socratic", desc: "Pahami konsep yang rumit melalui bimbingan kritis.", icon: Bot, href: "/tutor" },
+    { name: "Asisten Menulis", desc: "Susun kerangka, parafrasekan, dan kelola sitasi akademik.", icon: PenTool, href: "/writing" },
+    { name: "Persiapan Ujian", desc: "Prediksi soal UTS/UAS serta latihan kartu ingatan.", icon: GraduationCap, href: "/exams" },
+    { name: "Kolaborasi", desc: "Ruang kerja kelompok dan penugasan secara visual.", icon: Users, href: "/collab" },
   ];
 
   // Framer motion variants
@@ -188,18 +188,18 @@ export default function DashboardPage() {
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl -z-10" />
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
           <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
               <Sparkles size={14} />
-              <span>EduSparq Semester Mode</span>
+              <span>Mode Semester Aktif</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-              {timeGreeting}, {firstName}! 👋
+              {timeGreeting}, {firstName}.
             </h1>
             <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-              Selamat datang di sistem operasi akademikmu. Kamu berada di <span className="font-semibold text-foreground">Minggu Ke-8 (Fase UTS)</span>. Mari selesaikan deadline minggu ini dengan efisien.
+              Selamat datang kembali di ruang kerja akademik Anda. Saat ini Anda berada pada <span className="font-semibold text-foreground">Minggu ke-8 (fase UTS)</span>. Mari selesaikan tenggat minggu ini secara efisien.
             </p>
           </div>
-          
+
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 gap-4 p-5 rounded-2xl bg-muted/50 border border-border backdrop-blur-sm shrink-0 min-w-[280px]">
             {stats.map((stat, idx) => (
@@ -245,7 +245,7 @@ export default function DashboardPage() {
               </div>
               <div className="text-xs text-muted-foreground leading-relaxed pt-2 flex items-start bg-muted/30 p-3 rounded-xl">
                 <Info size={16} className="mr-2 mt-0.5 text-primary shrink-0" />
-                <span>Kamu telah menyelesaikan 50% semester ini. Ada 3 tugas aktif yang membutuhkan evaluasi materi dari berkas kuliah terunggah.</span>
+                <span>Anda telah menyelesaikan 50% perjalanan semester ini. Terdapat 3 tugas aktif yang memerlukan peninjauan materi dari berkas kuliah yang telah diunggah.</span>
               </div>
             </div>
           </motion.div>
@@ -258,14 +258,14 @@ export default function DashboardPage() {
                 Mata Kuliah Aktif
               </h2>
               <Link href="/workspace" className="text-xs text-primary hover:text-primary/80 font-semibold inline-flex items-center transition-colors">
-                Lihat Semua Workspace
+                Lihat semua ruang kerja
                 <ChevronRight size={14} className="ml-0.5" />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {classProgress.map((item, idx) => (
-                <div key={idx} className="bg-card border border-border hover:border-primary/30 rounded-2xl p-5 flex flex-col justify-between space-y-5 transition-colors shadow-sm group">
+                <div key={idx} className="bg-card border border-border hover:border-primary/30 rounded-2xl p-5 flex flex-col justify-between space-y-5 shadow-sm group hover-lift">
                   <div>
                     <div className="flex justify-between items-start gap-3">
                       <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2">{item.name}</h3>
@@ -344,16 +344,16 @@ export default function DashboardPage() {
             
             <div className="space-y-3">
               <p className="text-sm text-foreground leading-relaxed font-medium">
-                Tugas <span className="text-primary font-bold">Metodologi Penelitian</span> deadline 2 hari lagi. Progressmu baru 35%. Butuh bantuan mengekstrak referensi dari draf?
+                Tenggat tugas <span className="text-primary font-bold">Metodologi Penelitian</span> tinggal 2 hari lagi, sementara progres Anda baru mencapai 35%. Perlu bantuan untuk menyarikan referensi dari draf?
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <Link href="/writing" className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs transition-colors cursor-pointer inline-flex items-center shadow-sm">
-                  <PenTool size={14} className="mr-1.5" />
-                  Bantu Menulis
+                <Link href="/writing" className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm min-h-[44px]">
+                  <PenTool size={14} />
+                  Bantu menulis
                 </Link>
-                <Link href="/tutor" className="px-3.5 py-2 bg-background hover:bg-muted text-foreground font-semibold rounded-xl text-xs border border-border transition-colors cursor-pointer inline-flex items-center shadow-sm">
-                  <Bot size={14} className="mr-1.5" />
-                  Socratic Tutor
+                <Link href="/tutor" className="px-3.5 py-2 bg-background hover:bg-muted text-foreground font-semibold rounded-xl text-xs border border-border transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm min-h-[44px]">
+                  <Bot size={14} />
+                  Tutor Socratic
                 </Link>
               </div>
             </div>
@@ -364,16 +364,16 @@ export default function DashboardPage() {
 
       {/* Quick Action Navigation Grid */}
       <motion.section variants={item} className="space-y-4 pt-4">
-        <h2 className="text-base font-bold tracking-tight text-foreground px-1">Akses Cepat EduSparq</h2>
-        
+        <h2 className="text-base font-bold tracking-tight text-foreground px-1">Akses Cepat</h2>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickFeatures.map((feat, idx) => {
             const Icon = feat.icon;
             return (
-              <Link 
-                key={idx} 
-                href={feat.href} 
-                className="group bg-card border border-border hover:border-primary/40 rounded-3xl p-6 flex flex-col justify-between h-40 transition-all hover:shadow-md hover:-translate-y-1"
+              <Link
+                key={idx}
+                href={feat.href}
+                className="group bg-card border border-border hover:border-primary/40 rounded-3xl p-6 flex flex-col justify-between h-40 hover:shadow-md hover-lift"
               >
                 <div className="bg-primary/10 text-primary w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
                   <Icon size={24} strokeWidth={2.5} />

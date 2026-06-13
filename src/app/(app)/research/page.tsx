@@ -105,49 +105,53 @@ export default function ResearchPage() {
       className="space-y-6 max-w-3xl"
     >
       {/* Header */}
-      <motion.div variants={itemVariants}>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <Search size={24} className="text-primary" />
-          Penelitian
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Temukan sudut pandang riset, referensi kunci, dan gambaran literatur untuk topikmu.
-        </p>
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm bg-grid">
+        <div className="relative space-y-2">
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
+            <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
+              <Search size={20} />
+            </span>
+            Penelitian
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+            Temukan sudut pandang riset, referensi kunci, dan gambaran literatur untuk topik yang Anda kaji.
+          </p>
+
+          {/* Search bar */}
+          <motion.form variants={itemVariants} onSubmit={handleSubmit} className="pt-3">
+            <div className="relative">
+              <Search
+                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari jurnal, artikel, atau topik penelitian..."
+                className="w-full pl-12 pr-28 min-h-[56px] rounded-2xl bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !query.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:shadow-none flex items-center gap-1.5"
+              >
+                {isLoading ? (
+                  <RefreshCw size={15} className="animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles size={14} /> Cari
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.form>
+        </div>
       </motion.div>
 
-      {/* Search bar */}
-      <motion.form variants={itemVariants} onSubmit={handleSubmit}>
-        <div className="relative">
-          <Search
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-          />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari jurnal, paper, atau topik penelitian..."
-            className="w-full pl-12 pr-28 py-4 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !query.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5"
-          >
-            {isLoading ? (
-              <RefreshCw size={15} className="animate-spin" />
-            ) : (
-              <>
-                <Sparkles size={14} /> Cari
-              </>
-            )}
-          </button>
-        </div>
-      </motion.form>
-
       {/* Popular topics */}
-      <motion.div variants={itemVariants} className="space-y-2.5">
+      <motion.div variants={itemVariants} className="space-y-3">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Topik Populer
         </span>
@@ -157,7 +161,7 @@ export default function ResearchPage() {
               key={topic}
               onClick={() => handleTopic(topic)}
               disabled={isLoading}
-              className="px-3.5 py-2 rounded-full bg-muted border border-border text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary transition-all disabled:opacity-60"
+              className="px-4 min-h-[44px] rounded-full bg-muted border border-border text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-60"
             >
               {topic}
             </button>
@@ -168,27 +172,30 @@ export default function ResearchPage() {
       {/* Result / states */}
       <motion.div variants={itemVariants}>
         {error ? (
-          <div className="bg-card border border-border rounded-3xl p-6 text-center space-y-2 shadow-sm">
+          <div className="bg-card border border-border rounded-3xl p-8 text-center space-y-3 shadow-sm">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-400/10 text-amber-500 flex items-center justify-center">
+              <RefreshCw size={22} />
+            </div>
             <p className="text-sm font-bold text-foreground">
-              Yah, asisten riset lagi nggak bisa dihubungi.
+              Asisten riset belum dapat dihubungi.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Coba ulangi beberapa saat lagi, atau ubah kata kuncinya. Topik populer di atas tetap bisa dipilih.
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+              Silakan coba kembali beberapa saat lagi atau perbarui kata kunci Anda. Topik populer di atas tetap dapat dipilih.
             </p>
           </div>
         ) : result || isLoading ? (
-          <div className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
-                <Sparkles size={12} /> AI • mode Riset
+          <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4 shadow-sm animate-fade-up">
+            <div className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                <Sparkles size={12} /> AI · Mode Riset
               </span>
               {result && (
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs font-semibold text-primary hover:underline"
                 >
-                  {copied ? <Check size={12} /> : <Copy size={12} />}
-                  {copied ? "Tersalin!" : "Salin"}
+                  {copied ? <Check size={13} /> : <Copy size={13} />}
+                  {copied ? "Tersalin" : "Salin"}
                 </button>
               )}
             </div>
@@ -196,34 +203,32 @@ export default function ResearchPage() {
             <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
               {result}
               {isLoading && (
-                <span className="inline-flex gap-0.5 ml-1 align-middle">
-                  <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:300ms]" />
+                <span className="inline-flex gap-1 ml-1 align-middle">
+                  <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0ms] opacity-70" />
+                  <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:150ms] opacity-70" />
+                  <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:300ms] opacity-70" />
                 </span>
               )}
             </div>
 
             {result && !isLoading && (
-              <div className="flex items-start gap-2 pt-3 border-t border-border text-xs text-muted-foreground">
-                <Quote size={14} className="shrink-0 mt-0.5 text-amber-400" />
+              <div className="flex items-start gap-2.5 pt-4 border-t border-border text-xs text-muted-foreground">
+                <Quote size={15} className="shrink-0 mt-0.5 text-amber-400" />
                 <p className="leading-relaxed">
-                  Ini hasil AI. Referensi & data yang disebutkan wajib kamu verifikasi mandiri
-                  sebelum dipakai di tugas atau publikasi.
+                  Hasil ini disusun oleh AI. Seluruh referensi dan data yang disebutkan wajib Anda verifikasi secara mandiri sebelum digunakan dalam tugas atau publikasi.
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <div className="bg-card border border-dashed border-border rounded-3xl p-8 text-center space-y-3 shadow-sm">
-            <div className="w-14 h-14 mx-auto rounded-3xl bg-primary/10 text-primary flex items-center justify-center">
-              <Search size={26} />
+          <div className="bg-card border border-dashed border-border rounded-3xl p-10 text-center space-y-4 shadow-sm">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-primary/15 to-teal-500/15 text-primary flex items-center justify-center">
+              <Search size={28} />
             </div>
-            <div className="space-y-1">
-              <h3 className="font-bold text-foreground text-sm">Mulai eksplorasi risetmu</h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Ketik topik di kolom pencarian atau pilih salah satu topik populer di atas untuk
-                dapat sudut pandang penelitian dan referensi awal.
+            <div className="space-y-1.5">
+              <h3 className="font-bold text-foreground">Mulai eksplorasi riset Anda</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Tuliskan topik pada kolom pencarian atau pilih salah satu topik populer di atas untuk memperoleh sudut pandang penelitian dan referensi awal.
               </p>
             </div>
           </div>
