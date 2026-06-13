@@ -6,7 +6,16 @@ import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag"
 import { checkRateLimit } from "@/lib/rate-limit";
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let groqClient: Groq | null = null;
+const getGroqClient = () => {
+  if (!groqClient) {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY belum diisi di .env.local");
+    }
+    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return groqClient;
+};
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   socratic: `Kamu adalah tutor akademik yang menggunakan metode Socratic untuk mahasiswa Indonesia. 
@@ -108,7 +117,7 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       try {
         // Call Groq API with streaming
-        const stream = await groq.chat.completions.create({
+        const stream = await getGroqClient().chat.completions.create({
           model: "llama3-70b-8192",
           messages: [
             { role: "system", content: systemPrompt },
