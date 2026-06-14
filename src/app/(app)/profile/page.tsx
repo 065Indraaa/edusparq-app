@@ -124,7 +124,7 @@ export default function ProfilePage() {
     }));
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-3xl">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-5xl">
       {/* Header */}
       <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
         <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
@@ -166,7 +166,8 @@ export default function ProfilePage() {
       )}
 
       {/* Form */}
-      <motion.form variants={itemVariants} onSubmit={handleSave} className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <motion.form variants={itemVariants} onSubmit={handleSave} className="lg:col-span-2 bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
         <PddiktiAutofill onFill={applyPddikti} />
 
         <div className="space-y-1.5">
@@ -256,7 +257,10 @@ export default function ProfilePage() {
         </div>
       </motion.form>
 
-      <GoogleConnectCard />
+        <div className="space-y-6">
+          <GoogleConnectCard />
+        </div>
+      </div>
     </motion.div>
   );
 }

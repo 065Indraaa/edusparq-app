@@ -142,7 +142,7 @@ export default function ResearchPage() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-6 max-w-3xl"
+      className="space-y-6 max-w-4xl"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm bg-grid">
