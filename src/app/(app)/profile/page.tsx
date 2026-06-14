@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { UserCircle, Save, RefreshCw, GraduationCap, Building2, BookOpen, Hash, CheckCircle2 } from "lucide-react";
+import { UniversityPicker } from "@/components/university-picker";
 
 interface ProfileForm {
   name: string;
@@ -106,7 +107,6 @@ export default function ProfilePage() {
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const fields: { key: keyof ProfileForm; label: string; placeholder: string; icon: React.ElementType }[] = [
-    { key: "universitas", label: "Universitas / Perguruan Tinggi", placeholder: "Contoh: Universitas Brawijaya", icon: Building2 },
     { key: "fakultas", label: "Fakultas", placeholder: "Contoh: Fakultas Ekonomi dan Bisnis", icon: GraduationCap },
     { key: "prodi", label: "Program Studi", placeholder: "Contoh: Akuntansi", icon: BookOpen },
   ];
@@ -163,6 +163,17 @@ export default function ProfilePage() {
             disabled={loading}
             placeholder="Nama lengkap Anda"
             className="w-full px-4 min-h-[48px] rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+            <Building2 size={13} className="text-primary" /> Universitas / Perguruan Tinggi
+          </label>
+          <UniversityPicker
+            value={form.universitas}
+            onChange={(v) => setForm((f) => ({ ...f, universitas: v }))}
+            disabled={loading}
           />
         </div>
 

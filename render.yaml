@@ -54,3 +54,5 @@ services:
         sync: false
       - key: PUSHER_CLUSTER
         sync: false
+      - key: API_CO_ID_KEY
+        sync: false
