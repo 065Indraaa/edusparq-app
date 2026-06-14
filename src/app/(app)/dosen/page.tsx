@@ -177,7 +177,10 @@ export default function DosenVirtualPage() {
         </div>
       </section>
 
-      <form onSubmit={submit} className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left column: Input Form */}
+        <div className="lg:col-span-6 space-y-6">
+          <form onSubmit={submit} className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">Mata kuliah (opsional)</label>
           <CourseSelect value={courseName} onChange={setCourseName} placeholder="Pilih mata kuliah" />
@@ -215,33 +218,48 @@ export default function DosenVirtualPage() {
           {grading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
           {grading ? "Menilai…" : "Nilai jawaban"}
         </button>
-      </form>
-
-      {result && <ResultCard ev={result} />}
-
-      {history.length > 0 && (
-        <div className="space-y-3 rounded-[1.75rem] border border-border bg-card p-4 sm:p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <History size={16} className="text-primary" /> Riwayat penilaian
-          </h2>
-          {history.map((h) => {
-            const tone = scoreTone(h.score);
-            return (
-              <div key={h._id} className="rounded-2xl p-3 sm:p-4 flex items-start gap-3 bg-muted/30 border border-border/70 hover:bg-muted/50 transition-colors">
-                <div className={`grid place-items-center w-12 h-12 rounded-xl border-2 ${tone.ring} ${tone.bg} shrink-0`}>
-                  <span className={`text-sm font-black ${tone.text}`}>{h.score}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{h.question}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {[h.courseName, h.verdict].filter(Boolean).join(" · ")}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+          </form>
         </div>
-      )}
+
+        {/* Right column: Results & History */}
+        <div className="lg:col-span-6 space-y-6">
+          {result ? (
+            <ResultCard ev={result} />
+          ) : (
+            <div className="bg-card border border-border rounded-[1.75rem] p-6 text-center space-y-3 shadow-sm">
+              <GraduationCap size={40} className="mx-auto text-primary opacity-40 animate-pulse" />
+              <h3 className="font-bold text-foreground text-sm">Siap Menilai Jawabanmu</h3>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Tulis soal tugas dan jawabanmu di sebelah kiri, lalu klik &ldquo;Nilai jawaban&rdquo;. Dosen Virtual akan mengevaluasi akurasinya secara mendalam di sini.
+              </p>
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <div className="space-y-3 rounded-[1.75rem] border border-border bg-card p-4 sm:p-5 shadow-sm">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <History size={16} className="text-primary" /> Riwayat penilaian
+              </h2>
+              {history.map((h) => {
+                const tone = scoreTone(h.score);
+                return (
+                  <div key={h._id} className="rounded-2xl p-3 sm:p-4 flex items-start gap-3 bg-muted/30 border border-border/70 hover:bg-muted/50 transition-colors">
+                    <div className={`grid place-items-center w-12 h-12 rounded-xl border-2 ${tone.ring} ${tone.bg} shrink-0`}>
+                      <span className={`text-sm font-black ${tone.text}`}>{h.score}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{h.question}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {[h.courseName, h.verdict].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 }

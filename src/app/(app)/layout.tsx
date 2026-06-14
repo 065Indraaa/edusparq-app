@@ -105,7 +105,7 @@ export default async function AppLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto w-full px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col min-h-screen bg-slate-50/50 dark:bg-transparent transition-colors duration-300">
+      <main className="flex-1 overflow-y-auto w-full px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col min-h-screen bg-batik-grid transition-colors duration-300">
  <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col"> <OnboardingGate />
           {children}
         </div>

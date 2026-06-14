@@ -4,33 +4,33 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 45 25% 98%;   /* Soft Ivory Cream #FDFBF7 */
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
+    --card: 45 25% 98%;
     --card-foreground: 222.2 84% 4.9%;
  
-    --popover: 0 0% 100%;
+    --popover: 45 25% 98%;
     --popover-foreground: 222.2 84% 4.9%;
  
-    --primary: 211 56% 23%;    /* Navy #1A3A5C — kebijaksanaan & stabilitas akademik */
+    --primary: 19 73% 27%;    /* Deep Soga Brown / Terracotta #7A3212 — kebijaksanaan & stabilitas akademik */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 40 30% 94%;
     --secondary-foreground: 222.2 47.4% 11.2%;
  
-    --muted: 210 40% 96.1%;
+    --muted: 40 28% 94%;
     --muted-foreground: 215.4 16.3% 46.9%;
  
-    --accent: 210 40% 96.1%;
+    --accent: 40 30% 94%;
     --accent-foreground: 222.2 47.4% 11.2%;
  
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 211 56% 23%;
+    --border: 36 24% 89%;
+    --input: 36 24% 88%;
+    --ring: 19 73% 27%;
 
     --radius: 0.75rem;
 
@@ -49,7 +49,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 199 78% 56%;   /* navy dicerahkan agar kontras di latar gelap */
+    --primary: 24 75% 58%;   /* Glowing Copper/Bronze batik soga */
     --primary-foreground: 211 60% 12%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -66,7 +66,7 @@
  
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 199 78% 56%;
+    --ring: 24 75% 58%;
 
     --success: 142.1 70% 45%;
     --warning: 43 96% 56%;
@@ -99,13 +99,26 @@
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-violet-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-amber-500;
   }
 
   .text-gradient-emerald {
     @apply bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-emerald-700 dark:from-emerald-400 dark:to-emerald-600;
   }
 }
+  .bg-batik-grid {
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(rgba(122, 50, 18, 0.04) 1px, transparent 1px),
+                      radial-gradient(rgba(122, 50, 18, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+  }
+  .dark .bg-batik-grid {
+    background-image: radial-gradient(rgba(244, 117, 43, 0.03) 1px, transparent 1px),
+                      radial-gradient(rgba(244, 117, 43, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+  }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {

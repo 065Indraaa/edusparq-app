@@ -142,7 +142,10 @@ export default function CatatanPage() {
         </div>
       </section>
 
-      <form onSubmit={generate} className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left column: input form */}
+        <div className="lg:col-span-6 space-y-6">
+          <form onSubmit={generate} className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {FORMATS.map((f) => {
             const Icon = f.icon;
@@ -189,45 +192,58 @@ export default function CatatanPage() {
           {busy ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
           {busy ? "Merapikan…" : "Rapikan dengan AI"}
         </button>
-      </form>
-
-      {result && (
-        <div className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 className="text-base font-bold text-foreground truncate">{result.judul}</h2>
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0">
-              <button onClick={() => copy(result.content)} className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Tersalin" : "Salin"}
-              </button>
-              <button onClick={() => download(result)} className="inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                <Download size={14} /> .md
-              </button>
-            </div>
-          </div>
-          <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed bg-muted/30 border border-border rounded-2xl p-4 overflow-x-auto">{result.content}</pre>
+          </form>
         </div>
-      )}
 
-      {history.length > 0 && (
-        <div className="space-y-2 rounded-[1.75rem] border border-border bg-card p-4 sm:p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-foreground">Catatan tersimpan</h2>
-          {history.map((n) => (
-            <div key={n._id} className="rounded-2xl p-3 sm:p-4 flex items-center gap-3 bg-muted/30 border border-border/70 hover:bg-muted/50 transition-colors">
-              <FileText size={16} className="text-primary shrink-0" />
-              <button onClick={() => setResult(n)} className="min-w-0 flex-1 text-left">
-                <p className="text-sm font-semibold text-foreground truncate">{n.judul}</p>
-                <p className="text-[11px] text-muted-foreground">{[n.formatType, n.courseName].filter(Boolean).join(" · ")}</p>
-              </button>
-              <button onClick={() => download(n)} aria-label="Unduh" className="text-muted-foreground hover:text-primary p-2 rounded-lg hover:bg-primary/10 transition-colors shrink-0">
-                <Download size={15} />
-              </button>
-              <button onClick={() => remove(n._id)} aria-label="Hapus" className="text-muted-foreground hover:text-destructive p-2 rounded-lg hover:bg-destructive/10 transition-colors shrink-0">
-                <Trash2 size={15} />
-              </button>
+        {/* Right column: output + history */}
+        <div className="lg:col-span-6 space-y-6">
+          {result ? (
+            <div className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="text-base font-bold text-foreground truncate">{result.judul}</h2>
+                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0">
+                  <button onClick={() => copy(result.content)} className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Tersalin" : "Salin"}
+                  </button>
+                  <button onClick={() => download(result)} className="inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <Download size={14} /> .md
+                  </button>
+                </div>
+              </div>
+              <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed bg-muted/30 border border-border rounded-2xl p-4 overflow-x-auto max-h-[60vh]">{result.content}</pre>
             </div>
-          ))}
+          ) : (
+            <div className="bg-card border border-border rounded-[1.75rem] p-6 text-center space-y-3 shadow-sm">
+              <NotebookPen size={40} className="mx-auto text-primary opacity-40 animate-pulse" />
+              <h3 className="font-bold text-foreground text-sm">Hasil rapi muncul di sini</h3>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Tulis coretanmu di kiri, pilih format, lalu klik &ldquo;Rapikan dengan AI&rdquo;. Catatan rapi siap unduh akan tampil di sini.
+              </p>
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <div className="space-y-2 rounded-[1.75rem] border border-border bg-card p-4 sm:p-5 shadow-sm">
+              <h2 className="text-sm font-bold text-foreground">Catatan tersimpan</h2>
+              {history.map((n) => (
+                <div key={n._id} className="rounded-2xl p-3 sm:p-4 flex items-center gap-3 bg-muted/30 border border-border/70 hover:bg-muted/50 transition-colors">
+                  <FileText size={16} className="text-primary shrink-0" />
+                  <button onClick={() => setResult(n)} className="min-w-0 flex-1 text-left">
+                    <p className="text-sm font-semibold text-foreground truncate">{n.judul}</p>
+                    <p className="text-[11px] text-muted-foreground">{[n.formatType, n.courseName].filter(Boolean).join(" · ")}</p>
+                  </button>
+                  <button onClick={() => download(n)} aria-label="Unduh" className="text-muted-foreground hover:text-primary p-2 rounded-lg hover:bg-primary/10 transition-colors shrink-0">
+                    <Download size={15} />
+                  </button>
+                  <button onClick={() => remove(n._id)} aria-label="Hapus" className="text-muted-foreground hover:text-destructive p-2 rounded-lg hover:bg-destructive/10 transition-colors shrink-0">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </motion.div>
   );
 }
