@@ -16,6 +16,7 @@ import {
   UserCircle,
   Building2,
   Library,
+  ClipboardCheck,
 } from "lucide-react";
 
 export type NavItem = {
@@ -49,6 +50,7 @@ export const navGroups: NavGroup[] = [
       { name: "Riset", href: "/research", icon: Search },
       { name: "Katalog", href: "/katalog", icon: Library },
       { name: "Latihan Ujian", href: "/exams", icon: GraduationCap },
+      { name: "Dosen Virtual", href: "/dosen", icon: ClipboardCheck },
     ],
   },
   {
