@@ -54,7 +54,6 @@ export default function DeadlinesPage() {
     title: "",
     dueDate: "",
     dueTime: "23:59",
-    weight: "",
     requirements: "",
   });
 
@@ -74,7 +73,7 @@ export default function DeadlinesPage() {
   }, [session]);
 
   const resetForm = () => {
-    setForm({ courseName: "", title: "", dueDate: "", dueTime: "23:59", weight: "", requirements: "" });
+    setForm({ courseName: "", title: "", dueDate: "", dueTime: "23:59", requirements: "" });
     setEditingId(null);
   };
 
@@ -84,7 +83,6 @@ export default function DeadlinesPage() {
       title: dl.title,
       dueDate: dl.dueDate,
       dueTime: dl.dueTime || "23:59",
-      weight: dl.weight || "",
       requirements: dl.requirements || "",
     });
     setEditingId(dl._id);
@@ -273,19 +271,6 @@ export default function DeadlinesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">Bobot nilai</label>
-                    <input
-                      type="text"
-                      placeholder="Misal: 15%"
-                      value={form.weight}
-                      onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
-                  </div>
-                  <div className="col-span-1" />
-                </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Catatan / ketentuan (opsional)</label>

@@ -102,6 +102,10 @@ export default function WorkspacePage() {
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [courseRefresh, setCourseRefresh] = useState(0);
   const [autofillingCourses, setAutofillingCourses] = useState(false);
+  const [addTugas, setAddTugas] = useState(false);
+  const [tugasTitle, setTugasTitle] = useState("");
+  const [tugasDate, setTugasDate] = useState("");
+  const [tugasTime, setTugasTime] = useState("23:59");
   const [files, setFiles] = useState<DocumentFile[]>([]);
   const [usingSampleData, setUsingSampleData] = useState<boolean>(true);
   const [notice, setNotice] = useState<string>("");
@@ -303,6 +307,28 @@ export default function WorkspacePage() {
           );
         }
         setNotice("");
+
+        // Materi punya tugas? Otomatis buat tenggat untuk mata kuliah yang sama.
+        if (addTugas && tugasTitle.trim() && tugasDate && selectedSubject) {
+          try {
+            await fetch("/api/deadlines", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                courseName: selectedSubject,
+                title: tugasTitle.trim(),
+                dueDate: tugasDate,
+                dueTime: tugasTime || "23:59",
+              }),
+            });
+            setNotice(`Materi tersimpan & tugas "${tugasTitle.trim()}" ditambahkan ke Tugas & Tenggat.`);
+            setAddTugas(false);
+            setTugasTitle("");
+            setTugasDate("");
+          } catch {
+            setNotice("Materi tersimpan, tapi gagal menambahkan tugas.");
+          }
+        }
       } else {
         setNotice("Berkas terunggah, namun metadata gagal disimpan.");
       }
@@ -669,6 +695,42 @@ export default function WorkspacePage() {
               placeholder="Pilih mata kuliah sebelum mengunggah"
             />
             <p className="text-[11px] text-muted-foreground">Materi yang diunggah akan dikelompokkan ke mata kuliah ini.</p>
+            <div className="pt-2 mt-1 border-t border-border">
+              <label className="flex items-center gap-2 cursor-pointer select-none py-1">
+                <input
+                  type="checkbox"
+                  checked={addTugas}
+                  onChange={(e) => setAddTugas(e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary"
+                />
+                <span className="text-xs font-semibold text-foreground">Ada tugas dari materi ini?</span>
+              </label>
+              {addTugas && (
+                <div className="space-y-2 mt-2">
+                  <input
+                    value={tugasTitle}
+                    onChange={(e) => setTugasTitle(e.target.value)}
+                    placeholder="Judul tugas, mis. Laporan Bab 3"
+                    className="w-full px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={tugasDate}
+                      onChange={(e) => setTugasDate(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                    />
+                    <input
+                      type="time"
+                      value={tugasTime}
+                      onChange={(e) => setTugasTime(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Tugas otomatis masuk ke Tugas &amp; Tenggat sesuai deadline ini.</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Drag & Drop Zone */}

@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -17,6 +20,8 @@ import {
   Building2,
   Library,
   ClipboardCheck,
+  Menu,
+  X,
 } from "lucide-react";
 
 export type NavItem = {
@@ -141,43 +146,116 @@ export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
   );
 }
 
-/** Mobile bottom navigation with active-route highlight. */
-export function BottomNav({ items = mobileNav }: { items?: NavItem[] }) {
+/** Mobile bottom navigation: 4 primary destinations + a "Menu" sheet with everything. */
+export function BottomNav() {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const primary = mobileNav.slice(0, 4);
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-border px-2 py-1.5 flex justify-around items-center select-none shadow-glass">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[48px] rounded-xl transition-all ${
-              active
-                ? "text-primary"
-                : "text-slate-500 hover:text-primary active:text-primary"
-            }`}
+    <>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-border px-2 py-1.5 flex justify-around items-center select-none shadow-glass">
+        {primary.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(pathname, item.href);
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[48px] rounded-xl transition-all ${
+                active ? "text-primary" : "text-slate-500 hover:text-primary active:text-primary"
+              }`}
+            >
+              <span className={`flex items-center justify-center transition-transform ${active ? "scale-110" : "scale-100"}`}>
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              </span>
+              <span className={`text-[10px] tracking-tight text-center transition-all ${active ? "font-bold" : "font-medium"}`}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="Buka semua menu"
+          className="flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[48px] rounded-xl transition-all text-slate-500 hover:text-primary active:text-primary"
+        >
+          <span className="flex items-center justify-center">
+            <Menu size={20} strokeWidth={2} />
+          </span>
+          <span className="text-[10px] tracking-tight text-center font-medium">Menu</span>
+        </button>
+      </nav>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end"
+            onClick={() => setMenuOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Semua menu"
           >
-            <span
-              className={`flex items-center justify-center transition-transform ${
-                active ? "scale-110" : "scale-100"
-              }`}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="w-full bg-card border-t border-border rounded-t-3xl max-h-[80vh] overflow-y-auto no-scrollbar p-5 pb-8"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-            </span>
-            <span
-              className={`text-[10px] tracking-tight text-center transition-all ${
-                active ? "font-bold" : "font-medium"
-              }`}
-            >
-              {item.name}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+              <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-base font-extrabold tracking-tight text-foreground">Semua Menu</span>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  aria-label="Tutup"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="space-y-5">
+                {navGroups.map((group) => (
+                  <div key={group.label} className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {group.label}
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {group.items.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(pathname, item.href);
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={() => setMenuOpen(false)}
+                            aria-current={active ? "page" : undefined}
+                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-colors min-h-[76px] ${
+                              active
+                                ? "border-primary/30 bg-primary/10 text-primary"
+                                : "border-border bg-muted/30 text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            <Icon size={20} className={active ? "text-primary" : "text-muted-foreground"} />
+                            <span className="text-[11px] font-semibold leading-tight">{item.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
