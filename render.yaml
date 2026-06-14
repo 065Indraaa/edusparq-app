@@ -11,7 +11,7 @@ services:
     runtime: node
     plan: free                      # free tier (ada cold start setelah idle)
     region: singapore               # paling dekat ke Indonesia (latensi rendah)
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start     # next start; otomatis membaca PORT dari Render
     healthCheckPath: /api/health    # endpoint diagnosis yang sudah ada
     autoDeploy: true                # redeploy otomatis tiap push ke branch utama
