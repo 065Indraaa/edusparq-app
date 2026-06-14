@@ -17,7 +17,8 @@ import {
   Eye as EyeIcon,
   X as CloseIcon,
   ExternalLink as ExternalLinkIcon,
-  Database as DatabaseIcon
+  Database as DatabaseIcon,
+  RefreshCw as RefreshIcon
 } from "lucide-react";
 import { extractText, isExtractable } from "@/lib/extract-text";
 
@@ -109,6 +110,13 @@ export default function WorkspacePage() {
   const [viewerFile, setViewerFile] = useState<DocumentFile | null>(null);
   const viewerCloseRef = useRef<HTMLButtonElement | null>(null);
 
+  const [inspectorChunks, setInspectorChunks] = useState<{ content: string; chunkIndex: number }[]>([]);
+  const [loadingChunks, setLoadingChunks] = useState(false);
+  const [summaryContent, setSummaryContent] = useState("");
+  const [summarizing, setSummarizing] = useState(false);
+  const [flashcardGenerating, setFlashcardGenerating] = useState(false);
+  const [reindexing, setReindexing] = useState(false);
+
   // Accessibility: close the viewer on Esc and move focus to the close button.
   useEffect(() => {
     if (!viewerFile) return;
@@ -122,6 +130,29 @@ export default function WorkspacePage() {
       clearTimeout(t);
     };
   }, [viewerFile]);
+
+  useEffect(() => {
+    if (!inspectingFile) {
+      setInspectorChunks([]);
+      setSummaryContent("");
+      return;
+    }
+    const isReal =
+      !inspectingFile.id.startsWith("demo-") &&
+      !usingSampleData &&
+      !/^\d+$/.test(inspectingFile.id);
+    if (!isReal) {
+      setInspectorChunks([]);
+      setSummaryContent("");
+      return;
+    }
+    setLoadingChunks(true);
+    fetch(`/api/documents/${inspectingFile.id}/chunks`)
+      .then((r) => r.json())
+      .then((data) => setInspectorChunks(Array.isArray(data) ? data : []))
+      .catch(() => setInspectorChunks([]))
+      .finally(() => setLoadingChunks(false));
+  }, [inspectingFile?.id, usingSampleData]);
 
   // Opens the in-app viewer for PDFs; for other types opens the stored file in
   // a new tab when a URL is available.
@@ -423,6 +454,78 @@ export default function WorkspacePage() {
     );
   };
 
+  const isRealDocFile = (file: DocumentFile) =>
+    !file.id.startsWith("demo-") && !usingSampleData && !/^\d+$/.test(file.id);
+
+  const handleSummarize = async () => {
+    if (!inspectingFile || summarizing) return;
+    setSummarizing(true);
+    setSummaryContent("");
+    try {
+      const res = await fetch(`/api/documents/${inspectingFile.id}/summarize`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setNotice(err?.error || "Gagal meringkas dokumen.");
+        return;
+      }
+      const data = await res.json();
+      setSummaryContent(data?.note?.content || "");
+    } catch {
+      setNotice("Terjadi kendala koneksi saat meringkas.");
+    } finally {
+      setSummarizing(false);
+    }
+  };
+
+  const handleGenerateFlashcards = async () => {
+    if (!inspectingFile || flashcardGenerating) return;
+    setFlashcardGenerating(true);
+    try {
+      const res = await fetch("/api/flashcards/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: inspectingFile.id }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setNotice(err?.error || "Gagal membuat flashcard.");
+        return;
+      }
+      const data = await res.json();
+      const n = Array.isArray(data.created) ? data.created.length : 0;
+      setNotice(`${n} flashcard dibuat dari materi ini. Buka halaman Persiapan Ujian untuk melihatnya.`);
+    } catch {
+      setNotice("Terjadi kendala koneksi saat membuat flashcard.");
+    } finally {
+      setFlashcardGenerating(false);
+    }
+  };
+
+  const handleReindex = async () => {
+    if (!inspectingFile || reindexing) return;
+    setReindexing(true);
+    try {
+      const res = await fetch(`/api/documents/${inspectingFile.id}/extract`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setNotice(err?.error || "Gagal mengindeks ulang dokumen.");
+        return;
+      }
+      const data = await res.json();
+      setNotice(data.indexed ? `Berhasil mengindeks ${data.chunks} bagian.` : (data.reason || "Tidak ada teks yang bisa diekstraksi."));
+      setLoadingChunks(true);
+      fetch(`/api/documents/${inspectingFile.id}/chunks`)
+        .then((r) => r.json())
+        .then((d) => setInspectorChunks(Array.isArray(d) ? d : []))
+        .catch(() => setInspectorChunks([]))
+        .finally(() => setLoadingChunks(false));
+    } catch {
+      setNotice("Terjadi kendala koneksi saat mengindeks ulang.");
+    } finally {
+      setReindexing(false);
+    }
+  };
+
   const filteredFiles = selectedSubject ? files.filter(f => f.subject === selectedSubject) : files;
 
   const containerVariants = {
@@ -666,52 +769,74 @@ export default function WorkspacePage() {
                 </span>
               </div>
 
-              {(() => {
-                const matched = mockChunks.filter(c => inspectingFile.name.includes(c.source.split(".")[0]));
-                // Real documents are chunked server-side; the inspector preview
-                // here is illustrative. Show a placeholder when no sample chunks
-                // match (e.g. a real uploaded file or a non-text asset).
-                if (matched.length === 0) {
-                  return (
-                    <div className="p-8 text-center text-muted-foreground text-sm font-medium bg-muted/20 rounded-2xl border border-dashed border-border space-y-2">
-                      <p className="font-semibold text-foreground">
-                        {inspectingFile.indexed
-                          ? "Konten berkas ini telah terindeks untuk Tutor AI."
-                          : "Pratinjau potongan teks belum tersedia untuk berkas ini."}
+              {/* AI actions — real indexed documents only */}
+              {isRealDocFile(inspectingFile) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleSummarize}
+                    disabled={summarizing}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all disabled:opacity-60"
+                  >
+                    {summarizing ? <RefreshIcon size={12} className="animate-spin" /> : <SparklesIcon size={12} />}
+                    Ringkas
+                  </button>
+                  <button
+                    onClick={handleGenerateFlashcards}
+                    disabled={flashcardGenerating}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all disabled:opacity-60"
+                  >
+                    {flashcardGenerating ? <RefreshIcon size={12} className="animate-spin" /> : <DatabaseIcon size={12} />}
+                    Buat Flashcard
+                  </button>
+                  <button
+                    onClick={handleReindex}
+                    disabled={reindexing}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all disabled:opacity-60"
+                  >
+                    {reindexing ? <RefreshIcon size={12} className="animate-spin" /> : <CheckIcon size={12} />}
+                    Indeks ulang
+                  </button>
+                </div>
+              )}
+              {summaryContent && (
+                <div className="rounded-2xl bg-muted/40 border border-border p-4 space-y-2">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-widest block">Ringkasan</span>
+                  <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{summaryContent}</p>
+                </div>
+              )}
+              {loadingChunks ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshIcon size={18} className="animate-spin text-muted-foreground" />
+                </div>
+              ) : inspectorChunks.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-sm font-medium bg-muted/20 rounded-2xl border border-dashed border-border space-y-2">
+                  <p className="font-semibold text-foreground">
+                    {inspectingFile.indexed
+                      ? "Konten berkas ini telah terindeks untuk Tutor AI."
+                      : "Pratinjau potongan teks belum tersedia untuk berkas ini."}
+                  </p>
+                  <p className="text-xs leading-relaxed max-w-md mx-auto">
+                    Konten teks (TXT, MD, CSV, JSON) diekstraksi di peramban dan diindeks secara aman ke basis pengetahuan privat Anda. Berkas PDF, DOCX, gambar, audio, dan video saat ini hanya disimpan; ekstraksi teksnya memerlukan pustaka tambahan atau pipeline di sisi server.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {inspectorChunks.map((chunk, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.04 }}
+                      className="p-5 rounded-2xl bg-muted/30 border border-border space-y-3 hover:border-primary/30 transition-colors"
+                    >
+                      <span className="font-bold text-xs text-foreground block">Bagian {chunk.chunkIndex + 1}</span>
+                      <p className="text-xs text-muted-foreground italic leading-relaxed font-mono">
+                        &ldquo;{chunk.content}&rdquo;
                       </p>
-                      <p className="text-xs leading-relaxed max-w-md mx-auto">
-                        Konten teks (TXT, MD, CSV, JSON) diekstraksi di peramban dan diindeks secara aman ke basis pengetahuan privat Anda. Berkas PDF, DOCX, gambar, audio, dan video saat ini hanya disimpan; ekstraksi teksnya memerlukan pustaka tambahan atau pipeline di sisi server.
-                      </p>
-                    </div>
-                  );
-                }
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {matched.map((chunk, idx) => (
-                      <div key={idx} className="p-5 rounded-2xl bg-muted/30 border border-border space-y-3 flex flex-col justify-between hover:border-primary/30 transition-colors">
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="font-bold text-xs text-foreground leading-snug">{chunk.heading}</span>
-                            <span className="text-[9px] font-bold text-primary uppercase tracking-wider px-2 py-0.5 rounded-md bg-primary/10 shrink-0 border border-primary/20">
-                              {chunk.type}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground italic leading-relaxed font-mono">
-                            &ldquo;{chunk.content}&rdquo;
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-3 border-t border-border mt-3">
-                          <span className="flex items-center font-medium">
-                            <InfoIcon size={14} className="mr-1.5 opacity-70" />
-                            Halaman {chunk.page}
-                          </span>
-                          <span className="font-mono opacity-70">id: {chunk.id}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 

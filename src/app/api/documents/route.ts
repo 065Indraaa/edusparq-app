@@ -5,7 +5,9 @@ import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { chunkText } from "@/lib/rag";
 import { z } from "zod";
+import { extractTextFromUrl } from "@/lib/server-extract";
 
+export const runtime = "nodejs";
 const CreateSchema = z.object({
   courseName: z.string().min(1),
   originalName: z.string().min(1),
@@ -81,6 +83,30 @@ export async function POST(req: NextRequest) {
           chunkIndex,
         }))
       );
+    }
+  }
+
+  // Server-side PDF/DOCX extraction when no textContent was provided by the client
+  if (!(typeof textContent === "string" && textContent.trim().length > 0) &&
+      (fileType === "pdf" || fileType === "docx")) {
+    try {
+      const extracted = await extractTextFromUrl(fileUrl, fileType);
+      if (extracted.length > 0) {
+        const extractedChunks = chunkText(extracted);
+        if (extractedChunks.length > 0) {
+          await DocumentChunk.insertMany(
+            extractedChunks.map((content, chunkIndex) => ({
+              userId: session.user.id,
+              documentId: doc._id,
+              courseName,
+              content,
+              chunkIndex,
+            }))
+          );
+        }
+      }
+    } catch (err) {
+      console.error("[documents/route] server extraction error:", err);
     }
   }
 
