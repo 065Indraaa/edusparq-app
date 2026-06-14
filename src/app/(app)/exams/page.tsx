@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Wand2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { CourseSelect } from "@/components/course-select";
 
 interface Flashcard {
   _id: string;
@@ -467,9 +468,11 @@ export default function ExamsPage() {
                       onChange={(e) => setNewCard({ ...newCard, back: e.target.value })}
                       className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all resize-none" />
                     <div className="grid grid-cols-2 gap-3">
-                      <input placeholder="Mata kuliah (opsional)" value={newCard.courseName}
-                        onChange={(e) => setNewCard({ ...newCard, courseName: e.target.value })}
-                        className="px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
+                      <CourseSelect
+                        value={newCard.courseName}
+                        onChange={(v) => setNewCard({ ...newCard, courseName: v })}
+                        placeholder="Mata kuliah (opsional)"
+                      />
                       <select value={newCard.difficulty} onChange={(e) => setNewCard({ ...newCard, difficulty: e.target.value as Flashcard["difficulty"] })}
                         className="px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-all">
                         <option value="easy">Mudah</option>

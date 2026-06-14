@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw, Pencil, Bell, BellRing } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { CourseSelect } from "@/components/course-select";
 
 interface Deadline {
   _id: string;
@@ -244,13 +245,9 @@ export default function DeadlinesPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Mata kuliah</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Misal: Ekonomi Makro Internasional"
+                  <CourseSelect
                     value={form.courseName}
-                    onChange={(e) => setForm({ ...form, courseName: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    onChange={(v) => setForm({ ...form, courseName: v })}
                   />
                 </div>
 

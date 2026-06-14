@@ -21,6 +21,8 @@ import {
   RefreshCw as RefreshIcon
 } from "lucide-react";
 import { extractText, isExtractable } from "@/lib/extract-text";
+import { CourseSelect } from "@/components/course-select";
+import { AddCourseForm } from "@/components/add-course-form";
 
 interface DocumentFile {
   id: string;
@@ -98,6 +100,7 @@ export default function WorkspacePage() {
 
   const [selectedSemester, setSelectedSemester] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [courseRefresh, setCourseRefresh] = useState(0);
   const [files, setFiles] = useState<DocumentFile[]>([]);
   const [usingSampleData, setUsingSampleData] = useState<boolean>(true);
   const [notice, setNotice] = useState<string>("");
@@ -623,11 +626,27 @@ export default function WorkspacePage() {
               ))}
             </div>
 
+            <AddCourseForm
+              defaultSemester={Number((selectedSemester || "").replace(/\D/g, "")) || undefined}
+              onAdded={() => setCourseRefresh((x) => x + 1)}
+            />
+
           </div>
         </motion.div>
 
         {/* Center: File Table & Drag Drop Upload */}
         <motion.div variants={itemVariants} className="lg:col-span-3 space-y-6">
+
+          <div className="bg-card border border-border rounded-3xl p-4 space-y-2 shadow-sm">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mata kuliah untuk materi ini</label>
+            <CourseSelect
+              value={selectedSubject}
+              onChange={setSelectedSubject}
+              refreshKey={courseRefresh}
+              placeholder="Pilih mata kuliah sebelum mengunggah"
+            />
+            <p className="text-[11px] text-muted-foreground">Materi yang diunggah akan dikelompokkan ke mata kuliah ini.</p>
+          </div>
 
           {/* Drag & Drop Zone */}
           <div
