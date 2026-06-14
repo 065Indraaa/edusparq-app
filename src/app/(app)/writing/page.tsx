@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PenTool, Sparkles, BookOpen, Quote, Plus, Copy, Trash2, RefreshCw, Check, Download } from "lucide-react";
+import { PenTool, Sparkles, BookOpen, Quote, Plus, Copy, Trash2, RefreshCw, Check, Download, FileText } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { formatCitation as formatCitationLib, CITATION_STYLES, type CitationStyle } from "@/lib/citation-format";
+import DocumentStudio from "./DocumentStudio";
 
 interface Citation {
   _id: string;
@@ -63,7 +64,7 @@ const itemVariants = {
 
 export default function WritingPage() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<"outline" | "paraphrase" | "citation">("outline");
+  const [activeTab, setActiveTab] = useState<"dokumen" | "outline" | "paraphrase" | "citation">("dokumen");
 
   // Real campus context from the user's profile — drives outline conventions.
   const [universitas, setUniversitas] = useState("");
@@ -285,6 +286,7 @@ export default function WritingPage() {
       {/* Tabs */}
       <motion.div variants={itemVariants} className="flex bg-muted p-1 rounded-2xl gap-1 max-w-md">
         {[
+          { id: "dokumen", label: "Dokumen", icon: FileText },
           { id: "outline", label: "Kerangka", icon: BookOpen },
           { id: "paraphrase", label: "Parafrase", icon: Sparkles },
           { id: "citation", label: "Pustaka", icon: Quote },
@@ -305,6 +307,9 @@ export default function WritingPage() {
         ))}
       </motion.div>
 
+      {activeTab === "dokumen" ? (
+        <DocumentStudio universitas={universitas} prodi={prodi} />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div variants={itemVariants} className="lg:col-span-2">
 
@@ -577,6 +582,7 @@ export default function WritingPage() {
           </div>
         </motion.div>
       </div>
+      )}
     </motion.div>
   );
 }
