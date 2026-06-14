@@ -23,6 +23,7 @@ import {
   Menu,
   X,
   CalendarRange,
+  NotebookPen,
 } from "lucide-react";
 
 export type NavItem = {
@@ -57,6 +58,7 @@ export const navGroups: NavGroup[] = [
       { name: "Katalog", href: "/katalog", icon: Library },
       { name: "Latihan Ujian", href: "/exams", icon: GraduationCap },
       { name: "Dosen Virtual", href: "/dosen", icon: ClipboardCheck },
+      { name: "Catatan", href: "/catatan", icon: NotebookPen },
     ],
   },
   {
