@@ -110,6 +110,26 @@ h1, h2, h3, h4, h5, .font-display {
   letter-spacing: -0.025em;
 }
 
+/* Smooth, alive cards app-wide — transitions only; gentle warm hover lift */
+[class*="rounded-2xl"][class*="border"],
+[class*="rounded-3xl"][class*="border"],
+[class*="rounded-[1"][class*="border"],
+[class*="rounded-[2"][class*="border"] {
+  transition: box-shadow 0.28s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+}
+[class*="bg-card"][class*="shadow-sm"]:hover {
+  box-shadow: 0 12px 28px -14px rgba(122, 50, 18, 0.20);
+}
+/* Inputs & selects: smooth, soft focus glow */
+input, textarea, select {
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+/* Animated brand gradient text (smooth, subtle shimmer) */
+.text-gradient {
+  background-size: 180% 180%;
+  animation: gradient-pan 8s ease infinite;
+}
+
 /* Glassmorphism Utilities */
 @layer utilities {
   .glass-panel {

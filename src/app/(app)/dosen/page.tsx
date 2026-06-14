@@ -157,7 +157,7 @@ export default function DosenVirtualPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
               <GraduationCap size={14} /> Evaluasi Jawaban
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Dosen Virtual</h1>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Dosen Virtual</h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
               Uji jawabanmu dengan skor 0–100, daftar kekuatan, bagian yang bolong, dan contoh jawaban ideal.
             </p>

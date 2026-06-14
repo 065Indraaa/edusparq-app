@@ -129,7 +129,7 @@ export default function CatatanPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
               <Wand2 size={14} /> AI Note Studio
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Catatan Pintar</h1>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Catatan Pintar</h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
               Ubah coretan kuliah jadi dokumen rapi, outline slide, atau ringkasan poin yang siap dibaca ulang.
             </p>

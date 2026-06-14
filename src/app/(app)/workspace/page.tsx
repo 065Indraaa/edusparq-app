@@ -577,7 +577,7 @@ export default function WorkspacePage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
             <WorkspaceIcon size={14} /> Basis Pengetahuan
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Ruang Kerja Akademik</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Ruang Kerja Akademik</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
             Kelola materi kuliah, unggah dokumen, dan bangun basis pengetahuan pribadi untuk Tutor AI Anda.
           </p>

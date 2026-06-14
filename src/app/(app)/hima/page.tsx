@@ -403,7 +403,7 @@ export default function HimaPage() {
           <div className="w-16 h-16 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
             <Building2 size={32} className="text-primary" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Sistem Informasi HIMA</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Sistem Informasi HIMA</h1>
           <p className="text-sm text-muted-foreground">Buat organisasi baru atau bergabung dengan kode undangan.</p>
         </motion.div>
 
@@ -684,7 +684,7 @@ export default function HimaPage() {
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
                 <Crown size={14} /> HIMA Workspace
               </div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground truncate">{activeOrg.nama}</h1>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient truncate">{activeOrg.nama}</h1>
               <p className="text-sm text-muted-foreground mt-2">
               {activeOrg.prodi && <span>{activeOrg.prodi} · </span>}
               {activeOrg.universitas && <span>{activeOrg.universitas} · </span>}
