@@ -36,21 +36,13 @@ interface Analytics {
   recentActivityDays: { date: string; count: number }[];
 }
 
-// Sample data used when not signed in, on fetch failure, or when the account is
-// brand new — keeps the dashboard visually complete instead of showing zeros.
-const SAMPLE: Analytics = {
-  totals: { chats: 48, documents: 12, deadlines: 9, flashcards: 36, citations: 21, courses: 6 },
-  deadlinesByStatus: { pending: 4, done: 4, overdue: 1 },
-  chatsByMode: { socratic: 18, helper: 22, research: 8 },
-  recentActivityDays: [
-    { date: "", count: 3 },
-    { date: "", count: 6 },
-    { date: "", count: 4 },
-    { date: "", count: 9 },
-    { date: "", count: 7 },
-    { date: "", count: 11 },
-    { date: "", count: 8 },
-  ],
+// Empty analytics shape — shown as honest zeros for brand-new accounts or when
+// the user is not signed in. No fabricated sample numbers.
+const EMPTY: Analytics = {
+  totals: { chats: 0, documents: 0, deadlines: 0, flashcards: 0, citations: 0, courses: 0 },
+  deadlinesByStatus: { pending: 0, done: 0, overdue: 0 },
+  chatsByMode: { socratic: 0, helper: 0, research: 0 },
+  recentActivityDays: [],
 };
 
 const DONUT_COLORS = ["hsl(var(--primary))", "#8b5cf6", "#06b6d4"];
@@ -63,7 +55,7 @@ function buildLinePath(points: { x: number; y: number }[]) {
 export default function AnalyticsPage() {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [usingSample, setUsingSample] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -71,19 +63,14 @@ export default function AnalyticsPage() {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: Analytics) => {
         if (!active) return;
-        // Treat a completely empty account as "no data yet" → show the sample.
         const total = Object.values(d.totals || {}).reduce((a, b) => a + b, 0);
-        if (!d.totals || total === 0) {
-          setData(SAMPLE);
-          setUsingSample(true);
-        } else {
-          setData(d);
-        }
+        setData(d);
+        setIsEmpty(!d.totals || total === 0);
       })
       .catch(() => {
         if (!active) return;
-        setData(SAMPLE);
-        setUsingSample(true);
+        setData(EMPTY);
+        setIsEmpty(true);
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -91,7 +78,7 @@ export default function AnalyticsPage() {
     };
   }, []);
 
-  const d = data ?? SAMPLE;
+  const d = data ?? EMPTY;
 
   const metrics = [
     { label: "Sesi Tutor AI", value: d.totals.chats, icon: MessageSquare, accent: "text-primary" },
@@ -165,9 +152,9 @@ export default function AnalyticsPage() {
         <p className="text-sm text-muted-foreground mt-1">
           Ringkasan aktivitas belajar Anda di EduSparq, dihimpun dari data Anda sendiri.
         </p>
-        {usingSample && !loading && (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
-            Menampilkan data contoh. Mulai gunakan fitur EduSparq untuk melihat statistik Anda.
+        {isEmpty && !loading && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+            Belum ada aktivitas. Mulai gunakan Tutor AI, unggah dokumen, atau buat flashcard untuk melihat statistik nyata Anda di sini.
           </p>
         )}
       </motion.div>

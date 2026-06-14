@@ -18,11 +18,22 @@ export const citationSchema = z.object({
   page: z.string().optional(),
 });
 
+// Indonesian letter grades accepted on courses. Empty = not graded yet.
+export const GRADE_VALUES = ["", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "E"] as const;
+
 export const courseSchema = z.object({
   name: z.string().min(1),
   semester: z.union([z.string().min(1), z.number()]).transform((v) => String(v)),
-  lecturer: z.string().optional(),
-  sks: z.union([z.string(), z.number()]).optional(),
+  // Aligned to the Course model fields (instructor/credits), not lecturer/sks.
+  instructor: z.string().optional(),
+  credits: z.union([z.string(), z.number()]).optional().transform((v) =>
+    v === undefined || v === "" ? undefined : Number(v)
+  ),
+  progress: z.union([z.string(), z.number()]).optional().transform((v) =>
+    v === undefined || v === "" ? undefined : Number(v)
+  ),
+  grade: z.enum(GRADE_VALUES).optional(),
+  color: z.string().optional(),
 });
 
 export const flashcardSchema = z.object({

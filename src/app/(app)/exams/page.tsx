@@ -22,17 +22,12 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 26 } },
 };
 
-// Contoh prediksi — ditampilkan sebagai ilustrasi sebelum pengguna menyusun
-// prediksi dari materinya sendiri melalui Tutor AI.
-const predictions = [
-  { topic: "Regresi Linier & Asumsi Klasik", probability: 92, type: "Hitungan & Studi Kasus" },
-  { topic: "Uji Validitas & Reliabilitas", probability: 84, type: "Analisis Keluaran SPSS" },
-  { topic: "Etika Penelitian & Plagiarisme", probability: 58, type: "Teori Deskriptif" },
-];
-
 export default function ExamsPage() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<"predict" | "flashcard">("predict");
+
+  // Real courses, used to prefill the prediction course field and flashcard form.
+  const [courses, setCourses] = useState<string[]>([]);
 
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loadingCards, setLoadingCards] = useState(true);

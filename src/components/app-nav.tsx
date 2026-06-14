@@ -13,6 +13,7 @@ import {
   GraduationCap,
   BarChart3,
   Search,
+  UserCircle,
 } from "lucide-react";
 
 export type NavItem = {
@@ -35,6 +36,7 @@ export const navigation: NavItem[] = [
   { name: "Kelompok", href: "/collab", icon: Users },
   { name: "Ujian", href: "/exams", icon: GraduationCap },
   { name: "Analitik", href: "/analytics", icon: BarChart3 },
+  { name: "Profil", href: "/profile", icon: UserCircle },
 ];
 
 function isActive(pathname: string, href: string) {

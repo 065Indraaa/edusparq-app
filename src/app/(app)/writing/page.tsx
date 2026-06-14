@@ -20,59 +20,20 @@ interface Citation {
   url: string;
 }
 
-const uniTemplates = {
-  UI: {
-    name: "Universitas Indonesia (UI 2026)",
-    structure: [
-      "Halaman Judul & Pernyataan Orisinalitas",
-      "Abstrak (Bahasa Indonesia & Inggris, max 250 kata)",
-      "Bab 1: Pendahuluan (Latar Belakang, Perumusan Masalah, Tujuan & Manfaat)",
-      "Bab 2: Tinjauan Pustaka (Teori Utama, Kajian Empiris, Kerangka Pemikiran, Hipotesis)",
-      "Bab 3: Metode Penelitian (Desain, Variabel, Populasi & Sampel, Metode Analisis)",
-      "Bab 4: Hasil & Pembahasan (Deskripsi Data, Hasil Pengujian, Interpretasi)",
-      "Bab 5: Penutup (Kesimpulan & Saran)",
-      "Daftar Pustaka (Format APA Edisi 7)",
-    ],
-  },
-  UGM: {
-    name: "Universitas Gadjah Mada (UGM)",
-    structure: [
-      "Halaman Judul, Lembar Pengesahan, Kata Pengantar",
-      "Intisari (Abstrak Indonesia & Abstract Inggris)",
-      "Bab I: Pendahuluan (Latar Belakang, Rumusan Masalah, Keaslian Penelitian)",
-      "Bab II: Landasan Teori & Tinjauan Pustaka",
-      "Bab III: Metode Penelitian",
-      "Bab IV: Hasil Penelitian & Pembahasan",
-      "Bab V: Kesimpulan, Keterbatasan & Saran",
-      "Daftar Pustaka (Gaya Harvard UGM)",
-    ],
-  },
-  ITB: {
-    name: "Institut Teknologi Bandung (ITB)",
-    structure: [
-      "Sampul Depan & Halaman Pengesahan",
-      "Abstrak (Satu Paragraf, max 200 kata, Kata Kunci)",
-      "Bab 1: Pendahuluan (Latar Belakang, Ruang Lingkup, Tujuan)",
-      "Bab 2: Tinjauan Pustaka (Kerangka Teoretis, State of the Art)",
-      "Bab 3: Metodologi / Perancangan Sistem",
-      "Bab 4: Pengujian & Analisis Hasil",
-      "Bab 5: Simpulan & Saran",
-      "Daftar Pustaka (Format IEEE / Harvard)",
-    ],
-  },
-  UNPAD: {
-    name: "Universitas Padjadjaran (Unpad)",
-    structure: [
-      "Bagian Awal (Judul, Abstrak, Abstract)",
-      "Bab I: Pendahuluan (Latar Belakang, Identifikasi Masalah)",
-      "Bab II: Kajian Pustaka & Kerangka Pemikiran",
-      "Bab III: Objek & Metode Penelitian",
-      "Bab IV: Hasil Penelitian & Pembahasan",
-      "Bab V: Simpulan & Saran",
-      "Daftar Pustaka (Format Turabian / APA)",
-    ],
-  },
-};
+// A single, generic Indonesian academic paper structure that applies across
+// universities. The user's real campus (from their profile) is injected into the
+// AI prompt so the outline follows their institution's conventions instead of a
+// hardcoded list of four campuses.
+const GENERIC_STRUCTURE = [
+  "Halaman Judul & Pernyataan Orisinalitas",
+  "Abstrak (Bahasa Indonesia & Inggris)",
+  "Bab 1: Pendahuluan (Latar Belakang, Rumusan Masalah, Tujuan & Manfaat)",
+  "Bab 2: Tinjauan Pustaka (Landasan Teori, Kajian Empiris, Kerangka Pemikiran, Hipotesis)",
+  "Bab 3: Metode Penelitian (Desain, Variabel, Populasi & Sampel, Teknik Analisis)",
+  "Bab 4: Hasil & Pembahasan (Deskripsi Data, Hasil Pengujian, Interpretasi)",
+  "Bab 5: Penutup (Kesimpulan & Saran)",
+  "Daftar Pustaka",
+];
 
 function formatCitation(cit: Citation, style: CitationStyle) {
   return formatCitationLib(
@@ -104,9 +65,13 @@ export default function WritingPage() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<"outline" | "paraphrase" | "citation">("outline");
 
+  // Real campus context from the user's profile — drives outline conventions.
+  const [universitas, setUniversitas] = useState("");
+  const [prodi, setProdi] = useState("");
+
   // Outline
-  const [selectedUni, setSelectedUni] = useState<keyof typeof uniTemplates>("UI");
   const [paperTopic, setPaperTopic] = useState("");
+  const [citationGuide, setCitationGuide] = useState("APA");
   const [generatedOutline, setGeneratedOutline] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [outlineCopied, setOutlineCopied] = useState(false);
@@ -134,6 +99,20 @@ export default function WritingPage() {
       .finally(() => setLoadingCitations(false));
   }, [session]);
 
+  // Load the user's real campus context so the outline follows their institution.
+  useEffect(() => {
+    if (!session?.user) return;
+    fetch("/api/user/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          setUniversitas(data.user.universitas || "");
+          setProdi(data.user.prodi || "");
+        }
+      })
+      .catch(() => {});
+  }, [session]);
+
   const handleGenerateOutline = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paperTopic.trim()) return;
@@ -141,16 +120,18 @@ export default function WritingPage() {
     setGeneratedOutline(null);
     setOutlineCopied(false);
 
-    const tpl = uniTemplates[selectedUni];
-    const fallback = `# Outline: ${paperTopic}\n\nFormat: ${tpl.name}\n\n${tpl.structure
-      .map((s, i) => `${i + 1}. ${s}`)
-      .join("\n")}`;
+    const campusLabel = universitas.trim() || "perguruan tinggi di Indonesia";
+    const fallback = `# Outline: ${paperTopic}\n\nAcuan struktur: ${campusLabel}${
+      prodi ? ` (${prodi})` : ""
+    }\n\n${GENERIC_STRUCTURE.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
 
-    const prompt = `Buatkan OUTLINE (kerangka) makalah akademik yang terstruktur dalam Bahasa Indonesia untuk topik berikut:\n"${paperTopic}"\n\nGunakan struktur panduan kampus ${tpl.name} sebagai acuan bab/bagian:\n${tpl.structure
-      .map((s, i) => `${i + 1}. ${s}`)
-      .join(
-        "\n"
-      )}\n\nUntuk tiap bab/bagian, sesuaikan dengan topik di atas dan beri 2-4 sub-poin singkat sebagai isi. Balas dalam format Markdown dengan penomoran yang rapi. Jangan menulis paragraf panjang, cukup kerangka poin.`;
+    const prompt = `Buatkan OUTLINE (kerangka) makalah akademik yang terstruktur dalam Bahasa Indonesia untuk topik berikut:\n"${paperTopic}"\n\nKonteks penulis:\n- Perguruan tinggi: ${campusLabel}\n${
+      prodi ? `- Program studi: ${prodi}\n` : ""
+    }- Gaya sitasi: ${citationGuide}\n\nGunakan struktur baku karya ilmiah Indonesia berikut sebagai acuan bab/bagian, dan sesuaikan istilah dengan konvensi yang umum dipakai di ${campusLabel}:\n${GENERIC_STRUCTURE.map(
+      (s, i) => `${i + 1}. ${s}`
+    ).join(
+      "\n"
+    )}\n\nUntuk tiap bab/bagian, sesuaikan dengan topik di atas dan beri 2-4 sub-poin singkat sebagai isi. Balas dalam format Markdown dengan penomoran yang rapi. Jangan menulis paragraf panjang, cukup kerangka poin.`;
 
     try {
       const res = await fetch("/api/chat", {
@@ -331,18 +312,35 @@ export default function WritingPage() {
             <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
               <div className="space-y-1">
                 <h2 className="font-bold text-foreground">Susun Kerangka Makalah</h2>
-                <p className="text-xs text-muted-foreground leading-relaxed">Pilih panduan kampus dan tuliskan topik Anda untuk memperoleh kerangka bab yang terstruktur.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Kerangka disusun mengikuti struktur karya ilmiah Indonesia dan disesuaikan dengan
+                  perguruan tinggi Anda.
+                </p>
               </div>
+
+              {/* Real campus context from profile */}
+              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                {universitas ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary font-semibold">
+                    <BookOpen size={12} /> {universitas}{prodi ? ` · ${prodi}` : ""}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-muted-foreground font-medium">
+                    Lengkapi universitas di halaman Profil agar kerangka lebih relevan.
+                  </span>
+                )}
+              </div>
+
               <form onSubmit={handleGenerateOutline} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground">Format panduan kampus</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Gaya sitasi</label>
                   <select
-                    value={selectedUni}
-                    onChange={(e) => setSelectedUni(e.target.value as keyof typeof uniTemplates)}
+                    value={citationGuide}
+                    onChange={(e) => setCitationGuide(e.target.value)}
                     className="w-full px-4 min-h-[48px] rounded-2xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   >
-                    {Object.entries(uniTemplates).map(([key, val]) => (
-                      <option key={key} value={key}>{val.name}</option>
+                    {CITATION_STYLES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                 </div>
@@ -369,7 +367,7 @@ export default function WritingPage() {
               {generatedOutline && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="border-t border-border pt-5 space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="font-bold text-sm text-foreground">Kerangka {uniTemplates[selectedUni].name}</span>
+                    <span className="font-bold text-sm text-foreground">Kerangka {universitas.trim() || "Karya Ilmiah"}</span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={handleCopyOutline}

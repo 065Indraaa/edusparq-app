@@ -1,18 +1,16 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, Sparkles, Copy, Check, RefreshCw, Quote } from "lucide-react";
+import { useSession } from "next-auth/react";
 
-const POPULAR_TOPICS = [
+// Generic fallback topics, used only when the user has no courses/prodi yet.
+const GENERIC_TOPICS = [
   "Dampak AI terhadap pendidikan tinggi",
-  "Inklusi keuangan petani Indonesia",
   "Kesehatan mental mahasiswa",
-  "Energi terbarukan & transisi hijau",
-  "Ekonomi digital UMKM",
-  "Perubahan iklim & ketahanan pangan",
   "Literasi digital generasi Z",
-  "Smart city di Indonesia",
+  "Energi terbarukan & transisi hijau",
 ];
 
 const containerVariants = {
@@ -29,12 +27,52 @@ const itemVariants = {
 };
 
 export default function ResearchPage() {
+  const { data: session } = useSession();
   const [query, setQuery] = useState("");
   const [result, setResult] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [topics, setTopics] = useState<string[]>(GENERIC_TOPICS);
+  const [topicsFromCourses, setTopicsFromCourses] = useState(false);
+  const [prodi, setProdi] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Build topic suggestions from the user's real courses (and prodi). This keeps
+  // suggestions relevant to whatever the student is actually studying, on any campus.
+  useEffect(() => {
+    if (!session?.user) return;
+    let active = true;
+    Promise.all([
+      fetch("/api/courses").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/user/profile").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([courses, profile]) => {
+      if (!active) return;
+      const userProdi = profile?.user?.prodi || "";
+      setProdi(userProdi);
+      const courseNames: string[] = Array.isArray(courses)
+        ? courses.map((c: { name?: string }) => c?.name).filter(Boolean)
+        : [];
+      if (courseNames.length > 0) {
+        const derived = courseNames
+          .slice(0, 8)
+          .map((name) => `Isu terkini dalam ${name}`);
+        setTopics(derived);
+        setTopicsFromCourses(true);
+      } else if (userProdi) {
+        setTopics([
+          `Tren penelitian terbaru di bidang ${userProdi}`,
+          `Tantangan utama ${userProdi} di Indonesia`,
+          `Penerapan teknologi pada ${userProdi}`,
+          `Studi kasus ${userProdi} di Indonesia`,
+        ]);
+        setTopicsFromCourses(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   const runSearch = async (q: string) => {
     if (!q.trim() || isLoading) return;
@@ -42,7 +80,9 @@ export default function ResearchPage() {
     setResult("");
     setError(false);
 
-    const prompt = `Kamu asisten riset akademik. Untuk topik/pertanyaan riset berikut, berikan dalam Bahasa Indonesia:\n"${q}"\n\n1. 3-5 sudut pandang / angle penelitian yang relevan dan bisa diteliti.\n2. Daftar kata kunci & referensi kunci (nama penulis/teori/jurnal yang biasa dipakai di bidang ini).\n3. Ringkasan singkat tinjauan literatur (literature overview) 1-2 paragraf.\n\nBalas rapi dengan heading bernomor. Ingatkan bahwa referensi yang disebut perlu diverifikasi sendiri.`;
+    const prompt = `Kamu asisten riset akademik. ${
+      prodi ? `Penanya adalah mahasiswa program studi ${prodi}. ` : ""
+    }Untuk topik/pertanyaan riset berikut, berikan dalam Bahasa Indonesia:\n"${q}"\n\n1. 3-5 sudut pandang / angle penelitian yang relevan dan bisa diteliti.\n2. Daftar kata kunci & referensi kunci (nama penulis/teori/jurnal yang biasa dipakai di bidang ini).\n3. Ringkasan singkat tinjauan literatur (literature overview) 1-2 paragraf.\n\nBalas rapi dengan heading bernomor. Ingatkan bahwa referensi yang disebut perlu diverifikasi sendiri.`;
 
     try {
       const res = await fetch("/api/chat", {
@@ -150,13 +190,13 @@ export default function ResearchPage() {
         </div>
       </motion.div>
 
-      {/* Popular topics */}
+      {/* Topic suggestions */}
       <motion.div variants={itemVariants} className="space-y-3">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Topik Populer
+          {topicsFromCourses ? "Berdasarkan mata kuliah & prodi Anda" : "Topik untuk memulai"}
         </span>
         <div className="flex flex-wrap gap-2">
-          {POPULAR_TOPICS.map((topic) => (
+          {topics.map((topic) => (
             <button
               key={topic}
               onClick={() => handleTopic(topic)}
