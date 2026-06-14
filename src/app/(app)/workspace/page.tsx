@@ -35,20 +35,9 @@ interface DocumentFile {
   fileUrl?: string;
 }
 
-const initialFiles: DocumentFile[] = [
-  { id: "1", name: "Syllabus_Metodologi_Penelitian_2026.pdf", type: "pdf", size: "1.4 MB", uploadedAt: "01/06/2026", status: "Indexed", subject: "Metodologi Penelitian Ekonomi" },
-  { id: "2", name: "Bab 2 - Tinjauan Pustaka & Hipotesis.docx", type: "docx", size: "850 KB", uploadedAt: "08/06/2026", status: "Indexed", subject: "Metodologi Penelitian Ekonomi" },
-  { id: "3", name: "Kuliah_Umum_Kebijakan_Fiskal.mp3", type: "audio", size: "24.5 MB", uploadedAt: "10/06/2026", status: "Indexed", subject: "Ekonomi Makro Internasional" },
-  { id: "4", name: "Recording_Zoom_Asistensi_Kuis_3.mp4", type: "video", size: "110.2 MB", uploadedAt: "12/06/2026", status: "Indexed", subject: "Pengantar Akuntansi Keuangan II" },
-  { id: "5", name: "Screenshot_WA_Papan_Tulis_Soal.png", type: "image", size: "2.1 MB", uploadedAt: "12/06/2026", status: "Indexed", subject: "Teori Permainan (Game Theory)" },
-];
+const initialFiles: DocumentFile[] = [];
 
-const mockChunks = [
-  { id: "c1", heading: "Bab 1: Pendahuluan - Latar Belakang", content: "Metodologi penelitian ekonomi merupakan kerangka sistematis untuk menganalisis keputusan ekonomi masyarakat. Pendekatan empiris memerlukan instrumen yang valid...", type: "Teori & Definisi", page: 3, source: "Syllabus_Metodologi_Penelitian_2026.pdf" },
-  { id: "c2", heading: "Bab 2: Landasan Teori - Kajian Empiris", content: "Penelitian terdahulu oleh Suhardi (2023) membuktikan bahwa tingkat suku bunga memiliki korelasi negatif yang signifikan terhadap indeks investasi jangka panjang di Indonesia...", type: "Kajian Literatur", page: 14, source: "Bab 2 - Tinjauan Pustaka & Hipotesis.docx" },
-  { id: "c3", heading: "Transkrip Kuliah Umum - Kebijakan Fiskal", content: "[00:12:45] Pembicara (Prof. Chatib): 'Ketika pemerintah menerapkan stimulus fiskal sebesar 5% PDB, efek multiplier akan terasa di sektor UMKM dalam waktu kurang dari dua kuartal...'", type: "Transkripsi Audio", page: 1, source: "Kuliah_Umum_Kebijakan_Fiskal.mp3" },
-  { id: "c4", heading: "Transkrip Zoom - Penjelasan Kuis Soal 2", content: "[00:45:10] Asisten (Siti): 'Untuk pencatatan jurnal depresiasi garis lurus, pastikan nilai residu dikurangkan terlebih dahulu sebelum dibagi masa manfaat...'", type: "Transkripsi Video & Diarization", page: 1, source: "Recording_Zoom_Asistensi_Kuis_3.mp4" },
-];
+const mockChunks: { id: string; heading: string; content: string; type: string; page: number; source: string }[] = [];
 
 // Maps a fileType enum value to the UI type and an icon.
 function normalizeType(t: string): DocumentFile["type"] {
@@ -106,9 +95,9 @@ export default function WorkspacePage() {
   const { status: authStatus } = useSession();
   const isLoggedIn = authStatus === "authenticated";
 
-  const [selectedSemester, setSelectedSemester] = useState<string>("Semester 3");
-  const [selectedSubject, setSelectedSubject] = useState<string>("Metodologi Penelitian Ekonomi");
-  const [files, setFiles] = useState<DocumentFile[]>(initialFiles);
+  const [selectedSemester, setSelectedSemester] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [files, setFiles] = useState<DocumentFile[]>([]);
   const [usingSampleData, setUsingSampleData] = useState<boolean>(true);
   const [notice, setNotice] = useState<string>("");
 
@@ -116,7 +105,7 @@ export default function WorkspacePage() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadStep, setUploadStep] = useState<string>("");
   const [uploadFileName, setUploadFileName] = useState<string>("");
-  const [inspectingFile, setInspectingFile] = useState<DocumentFile | null>(initialFiles[0]);
+  const [inspectingFile, setInspectingFile] = useState<DocumentFile | null>(null);
   const [viewerFile, setViewerFile] = useState<DocumentFile | null>(null);
   const viewerCloseRef = useRef<HTMLButtonElement | null>(null);
 
@@ -186,18 +175,11 @@ export default function WorkspacePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, authStatus]);
 
-  const semesters = ["Semester 1", "Semester 2", "Semester 3", "Semester 4"];
-  const subjects = {
-    "Semester 1": ["Pengantar Ilmu Ekonomi", "Matematika Ekonomi I", "Akuntansi Dasar"],
-    "Semester 2": ["Ekonomi Mikro I", "Statistika Ekonomi I", "Akuntansi Keuangan I"],
-    "Semester 3": [
-      "Metodologi Penelitian Ekonomi",
-      "Ekonomi Makro Internasional",
-      "Pengantar Akuntansi Keuangan II",
-      "Teori Permainan (Game Theory)"
-    ],
-    "Semester 4": ["Ekonometrika I", "Ekonomi Pembangunan", "Perpajakan Indonesia"]
-  }[selectedSemester] || [];
+  // Subjects derived from uploaded documents
+  const allSubjects = Array.from(new Set(files.map(f => f.subject).filter(Boolean)));
+  const subjects = allSubjects;
+  // Semesters dropdown: static list
+  const semesters = ["Semua", "Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6", "Semester 7", "Semester 8"];
 
   // Real upload flow: upload to Cloudinary via /api/upload, then persist
   // metadata via /api/documents, then refresh the list. Degrades gracefully.
@@ -441,7 +423,7 @@ export default function WorkspacePage() {
     );
   };
 
-  const filteredFiles = files.filter(f => f.subject === selectedSubject);
+  const filteredFiles = selectedSubject ? files.filter(f => f.subject === selectedSubject) : files;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -506,13 +488,6 @@ export default function WorkspacePage() {
                   value={selectedSemester}
                   onChange={(e) => {
                     setSelectedSemester(e.target.value);
-                    const firstSub = {
-                      "Semester 1": "Pengantar Ilmu Ekonomi",
-                      "Semester 2": "Ekonomi Mikro I",
-                      "Semester 3": "Metodologi Penelitian Ekonomi",
-                      "Semester 4": "Ekonometrika I"
-                    }[e.target.value] || "";
-                    setSelectedSubject(firstSub);
                   }}
                   className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-muted text-foreground border border-transparent focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer appearance-none outline-none transition-all"
                 >

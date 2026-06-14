@@ -32,15 +32,32 @@ type DeadlineView = {
   daysLeft: number;
 };
 
+type ApiCourse = {
+  _id: string;
+  name: string;
+  instructor?: string;
+  progress?: number;
+  semester?: string;
+  grade?: string;
+  credits?: number;
+};
+
+type CourseProgress = {
+  name: string;
+  progress: number;
+  instructor: string;
+  deadline: string;
+};
+
 export default function DashboardPage() {
   const { data: session } = useSession();
 
   // Sample/fallback stats — used when not logged in or fetch fails/empty.
   const fallbackStats = [
-    { label: "IPK Kumulatif", value: "3.84" },
-    { label: "SKS Diambil", value: "62" },
-    { label: "Mata Kuliah", value: "6" },
-    { label: "Dokumen", value: "48" },
+    { label: "IPK Kumulatif", value: "-" },
+    { label: "SKS Diambil", value: "0" },
+    { label: "Mata Kuliah", value: "0" },
+    { label: "Dokumen", value: "0" },
   ];
 
   // Sample/fallback deadlines — kept rich for demo.
@@ -53,6 +70,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(fallbackStats);
   const [deadlines, setDeadlines] = useState<DeadlineView[]>(fallbackDeadlines);
   const [loading, setLoading] = useState(false);
+  const [classProgress, setClassProgress] = useState<CourseProgress[]>([]);
+  const [userSemester, setUserSemester] = useState<string>("");
 
   // Adaptive greeting — computed after mount to avoid hydration mismatch.
   const [timeGreeting, setTimeGreeting] = useState("Halo");
@@ -84,9 +103,10 @@ export default function DashboardPage() {
     const run = async () => {
       setLoading(true);
       try {
-        const [profileRes, deadlinesRes] = await Promise.all([
+        const [profileRes, deadlinesRes, coursesRes] = await Promise.all([
           fetch("/api/user/profile").catch(() => null),
           fetch("/api/deadlines").catch(() => null),
+          fetch("/api/courses").catch(() => null),
         ]);
 
         // --- Stats from profile ---
@@ -96,11 +116,12 @@ export default function DashboardPage() {
           if (s) {
             if (!cancelled) {
               setStats([
-                fallbackStats[0], // IPK — no source, keep placeholder
-                fallbackStats[1], // SKS — no source, keep placeholder
-                { label: "Mata Kuliah", value: String(s.courseCount ?? fallbackStats[2].value) },
-                { label: "Dokumen", value: String(s.documentCount ?? fallbackStats[3].value) },
+                { label: "IPK Kumulatif", value: s.ipk !== null && s.ipk !== undefined ? Number(s.ipk).toFixed(2) : "-" },
+                { label: "SKS Diambil", value: String(s.sks ?? 0) },
+                { label: "Mata Kuliah", value: String(s.courseCount ?? 0) },
+                { label: "Dokumen", value: String(s.documentCount ?? 0) },
               ]);
+              if (profile?.user?.semester) setUserSemester(`Semester ${profile.user.semester}`);
             }
           }
         }
@@ -129,6 +150,20 @@ export default function DashboardPage() {
             if (!cancelled && view.length > 0) setDeadlines(view);
           }
         }
+
+        // --- Course progress from real courses ---
+        if (coursesRes?.ok) {
+          const rawCourses = await coursesRes.json().catch(() => null);
+          if (Array.isArray(rawCourses) && rawCourses.length > 0 && !cancelled) {
+            const mapped: CourseProgress[] = (rawCourses as ApiCourse[]).slice(0, 4).map((c) => ({
+              name: c.name,
+              progress: typeof c.progress === "number" ? c.progress : 0,
+              instructor: c.instructor || "Dosen",
+              deadline: c.grade ? `Nilai: ${c.grade}` : "Lihat tenggat",
+            }));
+            setClassProgress(mapped);
+          }
+        }
       } catch {
         // Swallow — fallbacks already in place.
       } finally {
@@ -147,12 +182,6 @@ export default function DashboardPage() {
   const dueLabel = (daysLeft: number) =>
     daysLeft < 0 ? "Terlambat" : daysLeft === 0 ? "Hari ini" : `H-${daysLeft}`;
 
-  const classProgress = [
-    { name: "Metodologi Penelitian Ekonomi", progress: 35, instructor: "Prof. Dr. Sri Mulyani", deadline: "H-2: Makalah Bab 3" },
-    { name: "Ekonomi Makro Internasional", progress: 75, instructor: "Dr. Chatib Basri", deadline: "H-5: Kuis Mandiri 4" },
-    { name: "Pengantar Akuntansi Keuangan II", progress: 90, instructor: "Dr. Sylvia Veronica", deadline: "UAS Dekat" },
-    { name: "Teori Permainan (Game Theory)", progress: 50, instructor: "Prof. Ari Kuncoro", deadline: "H-4: Analisis Kasus" },
-  ];
 
   const quickFeatures = [
     { name: "Tutor Socratic", desc: "Pahami konsep yang rumit melalui bimbingan kritis.", icon: Bot, href: "/tutor" },
@@ -196,7 +225,7 @@ export default function DashboardPage() {
               {timeGreeting}, {firstName}.
             </h1>
             <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-              Selamat datang kembali di ruang kerja akademik Anda. Saat ini Anda berada pada <span className="font-semibold text-foreground">Minggu ke-8 (fase UTS)</span>. Mari selesaikan tenggat minggu ini secara efisien.
+              Selamat datang kembali di ruang kerja akademik Anda.{userSemester ? ` Saat ini Anda berada pada semester aktif.` : " Mari selesaikan tenggat minggu ini secara efisien."}
             </p>
           </div>
 
@@ -227,7 +256,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold tracking-tight text-foreground flex items-center">
                 <CalendarDays size={18} className="mr-2 text-primary" />
-                Lini Masa Semester 3
+                {userSemester ? `Lini Masa ${userSemester}` : "Lini Masa Semester Ini"}
               </h2>
               <span className="text-xs text-primary font-semibold bg-primary/10 px-2.5 py-1 rounded-full">Ganjil 2026/2027</span>
             </div>
@@ -245,7 +274,7 @@ export default function DashboardPage() {
               </div>
               <div className="text-xs text-muted-foreground leading-relaxed pt-2 flex items-start bg-muted/30 p-3 rounded-xl">
                 <Info size={16} className="mr-2 mt-0.5 text-primary shrink-0" />
-                <span>Anda telah menyelesaikan 50% perjalanan semester ini. Terdapat 3 tugas aktif yang memerlukan peninjauan materi dari berkas kuliah yang telah diunggah.</span>
+                 <span>{`Anda memiliki ${stats[2]?.value || 0} mata kuliah aktif dan ${stats[3]?.value || 0} dokumen tersimpan. Gunakan Tutor AI untuk memaksimalkan persiapan ujian.`}</span>
               </div>
             </div>
           </motion.div>
@@ -264,7 +293,13 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {classProgress.map((item, idx) => (
+              {classProgress.length === 0 ? (
+                <div className="col-span-2 p-10 text-center text-muted-foreground text-sm bg-muted/30 rounded-2xl border border-dashed border-border">
+                  <BookOpen size={24} className="mx-auto mb-3 opacity-40" />
+                  <p className="font-semibold">Belum ada mata kuliah.</p>
+                  <p className="text-xs mt-1">Tambahkan mata kuliah melalui halaman Profil untuk memulai.</p>
+                </div>
+              ) : classProgress.map((item, idx) => (
                 <div key={idx} className="bg-card border border-border hover:border-primary/30 rounded-2xl p-5 flex flex-col justify-between space-y-5 shadow-sm group hover-lift">
                   <div>
                     <div className="flex justify-between items-start gap-3">
@@ -344,7 +379,9 @@ export default function DashboardPage() {
             
             <div className="space-y-3">
               <p className="text-sm text-foreground leading-relaxed font-medium">
-                Tenggat tugas <span className="text-primary font-bold">Metodologi Penelitian</span> tinggal 2 hari lagi, sementara progres Anda baru mencapai 35%. Perlu bantuan untuk menyarikan referensi dari draf?
+                {deadlines.length > 0
+                  ? `Tenggat "${deadlines[0].title}" dari ${deadlines[0].course} pada ${deadlines[0].date}. Perlu bantuan untuk mempersiapkan materi?`
+                  : "Tambahkan tenggat tugas dan unggah materi kuliah untuk mendapatkan rekomendasi belajar yang personal."}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Link href="/writing" className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm min-h-[44px]">

@@ -2,23 +2,38 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Users, Sparkles, Plus, CheckCircle2, ChevronRight, MessageSquare, Save } from "lucide-react";
+import { Users, Sparkles, Plus, CheckCircle2, MessageSquare, Save, LogIn, Hash, Copy, Check, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import PusherClient from "pusher-js";
 
+interface Member {
+  userId: string;
+  name: string;
+  joinedAt: string;
+}
+
+interface Group {
+  _id: string;
+  name: string;
+  joinCode: string;
+  ownerId: string;
+  members: Member[];
+}
+
 interface GroupTask {
-  id: string;
+  _id: string;
   title: string;
   assignee: string;
   dueDate: string;
   completed: boolean;
 }
 
-// Fixed demo room + events shared across collaborators.
-const COLLAB_CHANNEL = "collab-demo";
+interface Poll {
+  _id: string;
+  question: string;
+  options: { _id: string; label: string; voterIds: string[] }[];
+}
 
-// Detect realtime support purely from the public client key. If it's missing or
-// still a placeholder ("your-..."), we stay in local-only prototype mode.
 function detectRealtime(): { enabled: boolean; key: string; cluster: string } {
   const key = process.env.NEXT_PUBLIC_PUSHER_KEY || "";
   const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "";
@@ -41,206 +56,467 @@ const itemVariants = {
 export default function CollabPage() {
   const { data: session } = useSession();
   const myId = session?.user?.id || null;
+  const myName = session?.user?.name || "Saya";
 
-  // Realtime is decided once at mount from public env. Default = local-only.
   const realtimeRef = useRef(detectRealtime());
   const [realtimeEnabled] = useState(() => realtimeRef.current.enabled);
 
-  const [tasks, setTasks] = useState<GroupTask[]>([
-    { id: "1", title: "Ekstraksi data kuesioner primer", assignee: "Ahmad Zaelani", dueDate: "14 Juni", completed: true },
-    { id: "2", title: "Menulis Kajian Teori Bab 2", assignee: "Siti Rahmawati", dueDate: "16 Juni", completed: false },
-    { id: "3", title: "Analisis Output Regresi Bab 3", assignee: session?.user?.name || "Saya", dueDate: "18 Juni", completed: false },
-    { id: "4", title: "Membuat PPT Slide Presentasi", assignee: "Budi Santoso", dueDate: "21 Juni", completed: false },
-  ]);
+  // Group state
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [activeGroup, setActiveGroup] = useState<Group | null>(null);
+  const [loadingGroups, setLoadingGroups] = useState(true);
 
-  const [docContent, setDocContent] = useState(
-    "BAB 3 - METODOLOGI PENELITIAN\n\n3.1 Desain Penelitian\nPenelitian ini menggunakan pendekatan kuantitatif dengan analisis regresi berganda. Data dikumpulkan melalui kuesioner online yang disebarkan kepada 150 mahasiswa tingkat akhir...\n\n3.2 Pengolahan Data\n[Ahmad sedang menyunting di sini]\nCatatan Ahmad: Sedang memvalidasi 120 baris responden SPSS, sebagian data outlier akan di-drop..."
-  );
+  // Group creation/join UI
+  const [showGroupForm, setShowGroupForm] = useState<"create" | "join" | null>(null);
+  const [groupName, setGroupName] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [groupLoading, setGroupLoading] = useState(false);
+  const [groupError, setGroupError] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  const [typingUser, setTypingUser] = useState<string | null>(realtimeRef.current.enabled ? null : "Ahmad Zaelani");
-  const [votes, setVotes] = useState({ topic1: 3, topic2: 1 });
-  const [myVote, setMyVote] = useState<"topic1" | "topic2" | null>(null);
-
-  // Form State
+  // Tasks
+  const [tasks, setTasks] = useState<GroupTask[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
 
-  // ----- Realtime plumbing -----
-  // Fire-and-forget broadcast helper. Errors (incl. 503 unconfigured) are
-  // swallowed so the UI always stays usable in local-only mode.
-  const broadcast = useCallback(
-    (event: string, data: unknown) => {
-      if (!realtimeEnabled) return;
-      fetch("/api/collab", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: COLLAB_CHANNEL, event, data }),
-      }).catch(() => {
-        /* stay local on any error */
-      });
-    },
-    [realtimeEnabled]
-  );
+  // Shared doc
+  const [docContent, setDocContent] = useState("");
+  const [savingDoc, setSavingDoc] = useState(false);
+  const [typingUser, setTypingUser] = useState<string | null>(null);
 
-  // Debounced document broadcast (~400ms) to avoid spamming on every keystroke.
+  // Poll
+  const [poll, setPoll] = useState<Poll | null>(null);
+  const [myVotedOptionId, setMyVotedOptionId] = useState<string | null>(null);
+
+  // Realtime
   const docDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Subscribe to the demo channel when realtime is enabled.
+  // Load groups on mount
   useEffect(() => {
-    if (!realtimeEnabled) {
-      // Local-only: keep the subtle placeholder typing indicator from cycling.
-      const users = ["Siti Rahmawati", "Ahmad Zaelani", null];
-      let userIndex = 0;
-      const interval = setInterval(() => {
-        setTypingUser(users[userIndex]);
-        userIndex = (userIndex + 1) % users.length;
-      }, 4000);
-      return () => clearInterval(interval);
-    }
+    if (!session?.user) return;
+    let active = true;
+    setLoadingGroups(true);
+    fetch("/api/collab/groups")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (!active) return;
+        const gs: Group[] = Array.isArray(data) ? data : [];
+        setGroups(gs);
+        if (gs.length > 0) setActiveGroup(gs[0]);
+      })
+      .catch(() => active && setGroups([]))
+      .finally(() => active && setLoadingGroups(false));
+    return () => { active = false; };
+  }, [session]);
 
+  // Load tasks + doc + poll when group changes
+  useEffect(() => {
+    if (!activeGroup) { setTasks([]); setDocContent(""); setPoll(null); return; }
+    const gid = activeGroup._id;
+    let active = true;
+    setLoadingTasks(true);
+
+    Promise.all([
+      fetch(`/api/collab/tasks?groupId=${gid}`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/collab/doc?groupId=${gid}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`/api/collab/poll?groupId=${gid}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([tasksData, docData, pollData]) => {
+      if (!active) return;
+      setTasks(Array.isArray(tasksData) ? tasksData : []);
+      setDocContent(docData?.content || "");
+      setPoll(pollData && pollData._id ? pollData : null);
+      if (pollData?.options && myId) {
+        for (const opt of pollData.options) {
+          if (opt.voterIds?.includes(myId)) { setMyVotedOptionId(opt._id); break; }
+        }
+      }
+    }).finally(() => active && setLoadingTasks(false));
+    return () => { active = false; };
+  }, [activeGroup?._id, myId]);
+
+  // Realtime Pusher subscription
+  useEffect(() => {
+    if (!realtimeEnabled || !activeGroup) return;
     const { key, cluster } = realtimeRef.current;
     const pusher = new PusherClient(key, { cluster });
-    const channel = pusher.subscribe(COLLAB_CHANNEL);
+    const channelName = `collab-${activeGroup._id}`;
+    const channel = pusher.subscribe(channelName);
+    const fromMe = (p: { senderId?: string }) => !!myId && p?.senderId === myId;
 
-    const fromMe = (payload: { senderId?: string }) =>
-      !!myId && payload?.senderId === myId;
-
-    channel.bind("doc:update", (payload: { content?: string; senderId?: string }) => {
-      if (fromMe(payload)) return;
-      if (typeof payload?.content === "string") setDocContent(payload.content);
+    channel.bind("doc:update", (p: { content?: string; senderId?: string }) => {
+      if (fromMe(p)) return;
+      if (typeof p?.content === "string") setDocContent(p.content);
     });
-
-    channel.bind("vote:update", (payload: { votes?: { topic1: number; topic2: number }; senderId?: string }) => {
-      if (fromMe(payload)) return;
-      if (payload?.votes) setVotes(payload.votes);
+    channel.bind("task:update", (p: { tasks?: GroupTask[]; senderId?: string }) => {
+      if (fromMe(p)) return;
+      if (Array.isArray(p?.tasks)) setTasks(p.tasks);
     });
-
-    channel.bind("task:update", (payload: { tasks?: GroupTask[]; senderId?: string }) => {
-      if (fromMe(payload)) return;
-      if (Array.isArray(payload?.tasks)) setTasks(payload.tasks);
-    });
-
-    channel.bind("typing", (payload: { name?: string | null; senderId?: string }) => {
-      if (fromMe(payload)) return;
-      setTypingUser(payload?.name ?? null);
+    channel.bind("typing", (p: { name?: string | null; senderId?: string }) => {
+      if (fromMe(p)) return;
+      setTypingUser(p?.name ?? null);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => setTypingUser(null), 2500);
     });
 
     return () => {
       channel.unbind_all();
-      pusher.unsubscribe(COLLAB_CHANNEL);
+      pusher.unsubscribe(channelName);
       pusher.disconnect();
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      if (docDebounceRef.current) clearTimeout(docDebounceRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [realtimeEnabled, myId]);
+  }, [realtimeEnabled, activeGroup?._id, myId]);
+
+  const broadcast = useCallback((event: string, data: unknown) => {
+    if (!realtimeEnabled || !activeGroup) return;
+    fetch("/api/collab", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channel: `collab-${activeGroup._id}`, event, data }),
+    }).catch(() => {});
+  }, [realtimeEnabled, activeGroup]);
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groupName.trim()) return;
+    setGroupLoading(true);
+    setGroupError("");
+    try {
+      const res = await fetch("/api/collab/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", name: groupName }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setGroupError(data.error || "Gagal membuat grup."); return; }
+      setGroups(prev => [data, ...prev]);
+      setActiveGroup(data);
+      setShowGroupForm(null);
+      setGroupName("");
+    } catch { setGroupError("Terjadi kesalahan jaringan."); }
+    finally { setGroupLoading(false); }
+  };
+
+  const handleJoinGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setGroupLoading(true);
+    setGroupError("");
+    try {
+      const res = await fetch("/api/collab/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "join", joinCode: joinCode.toUpperCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setGroupError(data.error || "Kode tidak ditemukan."); return; }
+      setGroups(prev => prev.find(g => g._id === data._id) ? prev : [data, ...prev]);
+      setActiveGroup(data);
+      setShowGroupForm(null);
+      setJoinCode("");
+    } catch { setGroupError("Terjadi kesalahan jaringan."); }
+    finally { setGroupLoading(false); }
+  };
 
   const handleDocChange = (value: string) => {
     setDocContent(value);
-    if (!realtimeEnabled) return;
-    // Signal "I'm typing" immediately, then debounce the heavier content sync.
-    broadcast("typing", { name: session?.user?.name || "Saya" });
-    if (docDebounceRef.current) clearTimeout(docDebounceRef.current);
-    docDebounceRef.current = setTimeout(() => {
-      broadcast("doc:update", { content: value });
-    }, 400);
+    if (realtimeEnabled) {
+      broadcast("typing", { name: myName, senderId: myId });
+      if (docDebounceRef.current) clearTimeout(docDebounceRef.current);
+      docDebounceRef.current = setTimeout(() => {
+        broadcast("doc:update", { content: value, senderId: myId });
+      }, 400);
+    }
   };
 
-  const handleVote = (topic: "topic1" | "topic2") => {
-    if (myVote) return;
-    const next = { ...votes, [topic]: votes[topic] + 1 };
-    setVotes(next);
-    setMyVote(topic);
-    broadcast("vote:update", { votes: next });
+  const handleSaveDoc = async () => {
+    if (!activeGroup) return;
+    setSavingDoc(true);
+    try {
+      await fetch("/api/collab/doc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: activeGroup._id, content: docContent }),
+      });
+    } finally { setSavingDoc(false); }
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim() || !newTaskDate) return;
-    const added: GroupTask = {
-      id: Math.random().toString(),
-      title: newTaskTitle,
-      assignee: newTaskAssignee || "Belum Ditentukan",
-      dueDate: newTaskDate,
-      completed: false
-    };
-    const next = [...tasks, added];
-    setTasks(next);
-    broadcast("task:update", { tasks: next });
-    setNewTaskTitle("");
-    setNewTaskAssignee("");
-    setNewTaskDate("");
-    setShowTaskForm(false);
+    if (!newTaskTitle.trim() || !activeGroup) return;
+    try {
+      const res = await fetch("/api/collab/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId: activeGroup._id,
+          title: newTaskTitle,
+          assignee: newTaskAssignee || "Belum Ditentukan",
+          dueDate: newTaskDate,
+        }),
+      });
+      if (res.ok) {
+        const added = await res.json();
+        const next = [...tasks, added];
+        setTasks(next);
+        broadcast("task:update", { tasks: next, senderId: myId });
+        setNewTaskTitle(""); setNewTaskAssignee(""); setNewTaskDate("");
+        setShowTaskForm(false);
+      }
+    } catch {}
   };
 
-  const toggleTask = (id: string) => {
-    const next = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+  const handleToggleTask = async (task: GroupTask) => {
+    if (!activeGroup) return;
+    const updated = { ...task, completed: !task.completed };
+    const next = tasks.map(t => t._id === task._id ? updated : t);
     setTasks(next);
-    broadcast("task:update", { tasks: next });
+    try {
+      await fetch(`/api/collab/tasks?id=${task._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: updated.completed }),
+      });
+      broadcast("task:update", { tasks: next, senderId: myId });
+    } catch {}
   };
 
+  const handleDeleteTask = async (task: GroupTask) => {
+    if (!activeGroup) return;
+    const next = tasks.filter(t => t._id !== task._id);
+    setTasks(next);
+    try {
+      await fetch(`/api/collab/tasks?id=${task._id}`, { method: "DELETE" });
+      broadcast("task:update", { tasks: next, senderId: myId });
+    } catch {}
+  };
+
+  const handleVote = async (optionId: string) => {
+    if (!poll || !activeGroup || myVotedOptionId) return;
+    setMyVotedOptionId(optionId);
+    setPoll(prev => prev ? {
+      ...prev,
+      options: prev.options.map(o => o._id === optionId ? { ...o, voterIds: [...o.voterIds, myId!] } : o)
+    } : prev);
+    try {
+      await fetch(`/api/collab/poll?pollId=${poll._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ optionId }),
+      });
+    } catch {}
+  };
+
+  const copyCode = () => {
+    if (!activeGroup) return;
+    navigator.clipboard.writeText(activeGroup.joinCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const refreshGroups = () => {
+    setActiveGroup(null);
+    setLoadingGroups(true);
+    fetch("/api/collab/groups")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { setGroups(Array.isArray(d) ? d : []); })
+      .finally(() => setLoadingGroups(false));
+  };
+
+  // ---- No session ----
+  if (!session?.user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] text-center">
+        <div className="space-y-3">
+          <Users size={40} className="mx-auto text-muted-foreground opacity-40" />
+          <p className="text-sm font-semibold text-foreground">Masuk untuk menggunakan fitur Kolaborasi.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Loading groups ----
+  if (loadingGroups) {
+    return (
+      <div className="space-y-4">
+        {[0, 1, 2].map(i => <div key={i} className="skeleton h-20 w-full rounded-3xl" />)}
+      </div>
+    );
+  }
+
+  // ---- No group — show create/join screen ----
+  if (!activeGroup) {
+    return (
+      <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-xl mx-auto pt-8">
+        <motion.div variants={itemVariants} className="text-center space-y-2">
+          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto">
+            <Users size={32} className="text-primary" />
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Kolaborasi Kelompok</h1>
+          <p className="text-sm text-muted-foreground">Buat grup baru atau bergabung dengan kode undangan.</p>
+        </motion.div>
+
+        {groupError && (
+          <motion.p variants={itemVariants} className="text-xs font-semibold text-destructive text-center bg-destructive/10 px-4 py-2 rounded-xl">
+            {groupError}
+          </motion.p>
+        )}
+
+        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => { setShowGroupForm("create"); setGroupError(""); }}
+            className={`p-6 rounded-3xl border-2 text-center space-y-3 transition-all hover-lift ${showGroupForm === "create" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+              <Plus size={24} className="text-primary" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm">Buat Grup</p>
+              <p className="text-xs text-muted-foreground mt-1">Mulai ruang kerja baru</p>
+            </div>
+          </button>
+          <button
+            onClick={() => { setShowGroupForm("join"); setGroupError(""); }}
+            className={`p-6 rounded-3xl border-2 text-center space-y-3 transition-all hover-lift ${showGroupForm === "join" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto">
+              <LogIn size={24} className="text-emerald-500" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm">Gabung Grup</p>
+              <p className="text-xs text-muted-foreground mt-1">Masukkan kode undangan</p>
+            </div>
+          </button>
+        </motion.div>
+
+        {showGroupForm === "create" && (
+          <motion.form
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            onSubmit={handleCreateGroup}
+            className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+          >
+            <h2 className="font-bold text-foreground">Nama Grup Baru</h2>
+            <input
+              required value={groupName} onChange={e => setGroupName(e.target.value)}
+              placeholder="Misal: Kelompok Skripsi Bab 3"
+              className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+            />
+            <button
+              type="submit" disabled={groupLoading}
+              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-colors disabled:opacity-60"
+            >
+              {groupLoading ? "Membuat..." : "Buat Grup"}
+            </button>
+          </motion.form>
+        )}
+
+        {showGroupForm === "join" && (
+          <motion.form
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            onSubmit={handleJoinGroup}
+            className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+          >
+            <h2 className="font-bold text-foreground">Kode Undangan</h2>
+            <input
+              required value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="Misal: ABC123"
+              className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-mono tracking-widest uppercase"
+              maxLength={10}
+            />
+            <button
+              type="submit" disabled={groupLoading}
+              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-colors disabled:opacity-60"
+            >
+              {groupLoading ? "Bergabung..." : "Gabung Grup"}
+            </button>
+          </motion.form>
+        )}
+      </motion.div>
+    );
+  }
+
+  // ---- Active group view ----
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
-      
+
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <Users size={24} className="text-primary" />
-          Kolaborasi Kelompok
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Kerjakan tugas kelompok bersama secara real-time. Bagikan tugas, kerjakan bareng, dan voting keputusan.
-        </p>
-        {realtimeEnabled ? (
-          <span className="mt-3 inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Realtime aktif
-          </span>
-        ) : (
-          <span className="mt-3 inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 bg-amber-400/10 text-amber-600 dark:text-amber-400 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            Mode lokal — realtime nonaktif (Pusher belum dikonfigurasi)
-          </span>
-        )}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+              <Users size={24} className="text-primary" />
+              {activeGroup.name}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {activeGroup.members.length} anggota · Kode:{" "}
+              <button onClick={copyCode} className="font-mono font-bold text-primary hover:text-primary/80 inline-flex items-center gap-1 transition-colors">
+                <Hash size={12} />
+                {activeGroup.joinCode}
+                {copied ? <Check size={12} /> : <Copy size={12} />}
+              </button>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {groups.length > 1 && (
+              <select
+                value={activeGroup._id}
+                onChange={e => setActiveGroup(groups.find(g => g._id === e.target.value) || null)}
+                className="px-3 py-2 rounded-xl bg-muted border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
+              >
+                {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
+              </select>
+            )}
+            <button
+              onClick={refreshGroups}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl border border-border hover:bg-muted transition-colors"
+            >
+              + Grup Lain
+            </button>
+            {realtimeEnabled ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Realtime
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-amber-400/10 text-amber-600 dark:text-amber-400 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                Lokal
+              </span>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left 2 Cols: Shared Document Editor */}
         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
           <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col min-h-[500px]">
-            
+
             {/* Editor Top Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Dokumen Bersama</span>
-                <h2 className="font-extrabold text-foreground">Makalah_Metodologi_Kelompok_3.docx</h2>
+                <h2 className="font-extrabold text-foreground">Dokumen Kelompok — {activeGroup.name}</h2>
               </div>
-              
-              {/* Online indicator list */}
+
+              {/* Member avatars */}
               <div className="flex items-center -space-x-2">
-                {[
-                  { name: session?.user?.name || "Saya", color: "from-primary to-indigo-600" },
-                  { name: "Ahmad Zaelani", color: "from-emerald-400 to-teal-500" },
-                  { name: "Siti Rahmawati", color: "from-amber-400 to-orange-500" },
-                ].map((member, idx) => (
-                  <div 
-                    key={idx} 
-                    title={member.name}
-                    className={`w-9 h-9 rounded-full bg-gradient-to-tr ${member.color} border-2 border-card flex items-center justify-center font-bold text-xs text-white cursor-pointer select-none ring-2 ring-transparent hover:ring-primary/50 hover:z-10 transition-all`}
-                  >
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                ))}
+                {activeGroup.members.slice(0, 4).map((m, idx) => {
+                  const colors = ["from-primary to-indigo-600", "from-emerald-400 to-teal-500", "from-amber-400 to-orange-500", "from-pink-400 to-rose-500"];
+                  return (
+                    <div key={idx} title={m.name} className={`w-9 h-9 rounded-full bg-gradient-to-tr ${colors[idx % colors.length]} border-2 border-card flex items-center justify-center font-bold text-xs text-white cursor-pointer select-none`}>
+                      {(m.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Multiplayer Alert */}
+            {/* Typing indicator */}
             <div className="mt-4 h-8 flex items-center">
               {typingUser ? (
                 <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 bg-primary/10 text-primary rounded-lg w-fit">
@@ -248,82 +524,75 @@ export default function CollabPage() {
                   <span>{typingUser} sedang mengetik...</span>
                 </motion.div>
               ) : (
-                <div className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 text-muted-foreground">
-                  <Save size={14} /> Tersimpan otomatis
-                </div>
+                <button onClick={handleSaveDoc} className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors">
+                  {savingDoc ? <Sparkles size={14} className="animate-spin" /> : <Save size={14} />}
+                  {savingDoc ? "Menyimpan..." : "Simpan dokumen"}
+                </button>
               )}
             </div>
 
-            {/* Text Editor TextArea */}
+            {/* Text Editor */}
             <div className="relative flex-1 mt-2">
               <textarea
                 value={docContent}
                 onChange={(e) => handleDocChange(e.target.value)}
                 className="w-full h-full p-5 rounded-2xl bg-muted/40 border border-border text-sm font-mono resize-none leading-relaxed text-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                placeholder="Mulai ketik isi makalah di sini..."
+                placeholder="Mulai ketik isi makalah bersama di sini..."
               />
             </div>
           </div>
         </motion.div>
 
-        {/* Right 1 Col: Team Task List & Voting */}
+        {/* Right 1 Col: Tasks & Poll */}
         <motion.div variants={itemVariants} className="lg:col-span-1 space-y-6">
-          
-          {/* Voting Box */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
-            <div>
-              <h2 className="font-bold text-foreground flex items-center gap-2">
-                <MessageSquare size={18} className="text-primary" />
-                Voting Judul Kelompok
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">Voting ditutup besok jam 12:00 siang.</p>
-            </div>
 
-            <div className="space-y-3">
-              {[
-                { id: "topic1" as const, label: "Analisis Inklusi Keuangan & Dampak Inflasi", count: votes.topic1 },
-                { id: "topic2" as const, label: "Peran BI dalam Stabilisasi Nilai Tukar", count: votes.topic2 }
-              ].map((topic) => {
-                const total = votes.topic1 + votes.topic2;
-                const percent = total > 0 ? (topic.count / total) * 100 : 0;
-                const isSelected = myVote === topic.id;
-                
-                return (
-                  <button 
-                    key={topic.id}
-                    onClick={() => handleVote(topic.id)}
-                    disabled={myVote !== null}
-                    className={`w-full text-left p-4 rounded-2xl border transition-all space-y-3 relative overflow-hidden group ${
-                      isSelected 
-                        ? "bg-primary/10 border-primary shadow-sm" 
-                        : "bg-muted/40 border-border hover:border-primary/50"
-                    } ${myVote && !isSelected ? "opacity-60" : ""}`}
-                  >
-                    <div className="flex justify-between items-start gap-3 relative z-10">
-                      <span className="font-bold text-sm text-foreground leading-snug">{topic.label}</span>
-                      <span className="font-black text-primary text-sm shrink-0">{topic.count} Suara</span>
-                    </div>
-                    {/* Visual percentage meter */}
-                    <div className="h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden relative z-10">
-                      <div className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style={{ width: `${percent}%` }} />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            
-            {myVote && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center flex items-center justify-center gap-1.5">
-                <CheckCircle2 size={14} /> Pilihan tersimpan.
-              </p>
-            )}
-          </div>
+          {/* Poll (if exists) */}
+          {poll && (
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
+              <div>
+                <h2 className="font-bold text-foreground flex items-center gap-2">
+                  <MessageSquare size={18} className="text-primary" />
+                  Voting
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">{poll.question}</p>
+              </div>
 
-          {/* Group Task Delegation Board */}
+              <div className="space-y-3">
+                {poll.options.map((opt) => {
+                  const total = poll.options.reduce((a, o) => a + o.voterIds.length, 0);
+                  const pct = total > 0 ? (opt.voterIds.length / total) * 100 : 0;
+                  const voted = myVotedOptionId === opt._id;
+                  return (
+                    <button
+                      key={opt._id}
+                      onClick={() => handleVote(opt._id)}
+                      disabled={!!myVotedOptionId}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all space-y-3 relative overflow-hidden ${voted ? "bg-primary/10 border-primary shadow-sm" : "bg-muted/40 border-border hover:border-primary/50"} ${myVotedOptionId && !voted ? "opacity-60" : ""}`}
+                    >
+                      <div className="flex justify-between items-start gap-3">
+                        <span className="font-bold text-sm text-foreground leading-snug">{opt.label}</span>
+                        <span className="font-black text-primary text-sm shrink-0">{opt.voterIds.length} Suara</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style={{ width: `${pct}%` }} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {myVotedOptionId && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center flex items-center justify-center gap-1.5">
+                  <CheckCircle2 size={14} /> Pilihan tersimpan.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Task List */}
           <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-foreground">Pembagian Tugas</h2>
-              <button 
+              <button
                 onClick={() => setShowTaskForm(!showTaskForm)}
                 className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
               >
@@ -331,27 +600,21 @@ export default function CollabPage() {
               </button>
             </div>
 
-            {/* Task Form */}
             {showTaskForm && (
               <form onSubmit={handleAddTask} className="p-4 bg-muted/50 border border-border rounded-2xl space-y-3">
                 <input
-                  required
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  required value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                   placeholder="Misal: Bikin PPT..."
                 />
                 <div className="grid grid-cols-2 gap-3">
                   <input
-                    value={newTaskAssignee}
-                    onChange={(e) => setNewTaskAssignee(e.target.value)}
+                    value={newTaskAssignee} onChange={e => setNewTaskAssignee(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                     placeholder="Nama PIC"
                   />
                   <input
-                    required
-                    value={newTaskDate}
-                    onChange={(e) => setNewTaskDate(e.target.value)}
+                    value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                     placeholder="Tenggat (18 Juni)"
                   />
@@ -363,39 +626,44 @@ export default function CollabPage() {
               </form>
             )}
 
-            {/* Task list render */}
-            <div className="space-y-3">
-              {tasks.map((task) => (
-                <div key={task.id} className="flex items-start gap-3 p-3 rounded-2xl border border-border hover:border-primary/30 transition-colors">
-                  <button 
-                    onClick={() => toggleTask(task.id)}
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                      task.completed 
-                        ? "bg-emerald-500 border-emerald-500 text-white" 
-                        : "border-muted-foreground/30 hover:border-primary"
-                    }`}
-                  >
-                    {task.completed && <CheckCircle2 size={14} className="text-white absolute" />}
-                  </button>
-
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <span className={`text-sm block font-bold leading-snug ${
-                      task.completed ? "line-through text-muted-foreground" : "text-foreground"
-                    }`}>
-                      {task.title}
-                    </span>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground font-medium">{task.assignee}</span>
-                      <span className="font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-md">
-                        {task.dueDate}
+            {loadingTasks ? (
+              <div className="space-y-3">{[0,1,2].map(i => <div key={i} className="skeleton h-16 w-full rounded-2xl" />)}</div>
+            ) : tasks.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground text-xs font-medium">
+                Belum ada tugas. Tambahkan tugas pertama untuk kelompok ini.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <div key={task._id} className="flex items-start gap-3 p-3 rounded-2xl border border-border hover:border-primary/30 transition-colors group">
+                    <button
+                      onClick={() => handleToggleTask(task)}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${task.completed ? "bg-emerald-500 border-emerald-500 text-white" : "border-muted-foreground/30 hover:border-primary"}`}
+                    >
+                      {task.completed && <CheckCircle2 size={14} />}
+                    </button>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <span className={`text-sm block font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                        {task.title}
                       </span>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground font-medium">{task.assignee}</span>
+                        {task.dueDate && <span className="font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-md">{task.dueDate}</span>}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleDeleteTask(task)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded-lg hover:bg-destructive/10"
+                      title="Hapus tugas"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-
+                ))}
+              </div>
+            )}
           </div>
+
         </motion.div>
       </div>
     </motion.div>
