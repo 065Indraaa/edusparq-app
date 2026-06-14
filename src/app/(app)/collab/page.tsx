@@ -791,7 +791,7 @@ export default function CollabPage() {
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-foreground flex items-center gap-2">
                 <FileText size={18} className="text-primary" />
-                Dokumen Google
+                Dokumen Bersama
               </h2>
               <button
                 onClick={() => { setShowDocForm(!showDocForm); setDocLinkError(""); }}
@@ -815,7 +815,7 @@ export default function CollabPage() {
                 <input
                   required value={newDocUrl} onChange={e => setNewDocUrl(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                  placeholder="https://docs.google.com/..."
+                  placeholder="Tempel link Google Docs / Sheets / Slides"
                 />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" className="flex-1 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl">Simpan</button>
@@ -827,7 +827,7 @@ export default function CollabPage() {
             {loadingTasks ? (
               <div className="space-y-2">{[0,1].map(i => <div key={i} className="skeleton h-12 w-full rounded-xl" />)}</div>
             ) : docLinks.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">Belum ada dokumen. Tempel tautan Google Docs di atas.</p>
+              <p className="text-xs text-muted-foreground text-center py-4">Belum ada dokumen. Tempel link Google Docs, Spreadsheet, atau Slides di atas untuk dikerjakan bareng.</p>
             ) : (
               <div className="space-y-2">
                 {docLinks.map((d) => (
@@ -835,7 +835,7 @@ export default function CollabPage() {
                     <FileText size={16} className="text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground truncate">{d.judul}</p>
-                      <p className="text-xs text-muted-foreground">{d.createdByNama}</p>
+                      <p className="text-xs text-muted-foreground truncate">{(d.googleDocUrl?.includes("spreadsheets") ? "Spreadsheet" : d.googleDocUrl?.includes("presentation") ? "Slides" : d.googleDocUrl?.includes("document") ? "Docs" : "Tautan")} · {d.createdByNama}</p>
                     </div>
                     <a
                       href={d.googleDocUrl} target="_blank" rel="noopener noreferrer"
