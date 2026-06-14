@@ -4,19 +4,11 @@ import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { Quiz } from "@/lib/db/models/Quiz";
-import Groq from "groq-sdk";
-import { AI_MODEL, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT, AI_MAX_TOKENS } from "@/lib/ai";
+import { aiComplete, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai-prompts";
 
 export const runtime = "nodejs";
 
-let groqClient: Groq | null = null;
-const getGroqClient = () => {
-  if (!groqClient) {
-    if (!process.env.GROQ_API_KEY) throw new Error("GROQ_API_KEY belum diisi");
-    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  }
-  return groqClient;
-};
 
 // GET /api/quiz/generate?documentId= — list quizzes for a doc (or all user quizzes)
 export async function GET(req: NextRequest) {
@@ -91,40 +83,31 @@ export async function POST(req: NextRequest) {
   const rawContext = chunks.map((c) => c.content).join("\n\n");
   const context = rawContext.slice(0, RAG_CONTEXT_CHARS);
 
-  const prompt = `Kamu adalah asisten belajar akademik untuk mahasiswa Indonesia. Berdasarkan materi di bawah, buat ${questionCount} soal pilihan ganda dalam Bahasa Indonesia.
-
-Kembalikan HANYA objek JSON mentah (tanpa kode markdown, tanpa penjelasan tambahan, langsung mulai dari karakter "{"), dengan format:
+  const jsonContract = `Buat ${questionCount} soal pilihan ganda dalam Bahasa Indonesia berdasarkan materi mahasiswa. Kembalikan HANYA objek JSON mentah (tanpa kode markdown, langsung mulai dari "{"):
 {
   "questions": [
     {
       "question": "teks pertanyaan",
       "options": ["A. pilihan satu", "B. pilihan dua", "C. pilihan tiga", "D. pilihan empat"],
       "correctIndex": 0,
-      "explanation": "penjelasan singkat mengapa jawaban ini benar berdasarkan materi"
+      "explanation": "penjelasan singkat kenapa jawaban ini benar berdasarkan materi"
     }
   ]
 }
-
-Pastikan:
-- Setiap soal memiliki tepat 4 pilihan jawaban
-- "correctIndex" adalah indeks (0–3) dari pilihan yang benar
-- Soal bervariasi tingkat kesulitannya
-- Soal didasarkan HANYA pada materi yang diberikan
-- Gunakan Bahasa Indonesia yang jelas dan akademik
-
----
-MATERI:
-${context}`;
+Aturan: tepat 4 pilihan tiap soal; "correctIndex" 0-3; variasikan tingkat kesulitan (C1-C6 Bloom); distraktor harus masuk akal; soal HANYA dari materi yang diberikan.`;
+  const system = buildSystemPrompt("examiner", { sourceBlock: context }, jsonContract);
 
   let rawText: string;
   try {
-    const completion = await getGroqClient().chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
+    const { text } = await aiComplete({
+      task: "quiz",
+      system,
+      user: `Buat ${questionCount} soal pilihan ganda sekarang berdasarkan materi di atas.`,
       temperature: 0.6,
-      max_tokens: AI_MAX_TOKENS.quiz,
+      maxTokens: 4096,
+      json: true,
     });
-    rawText = completion.choices[0].message.content ?? "";
+    rawText = text;
   } catch {
     return NextResponse.json(
       { error: "Gagal menghubungi AI. Coba lagi sebentar." },

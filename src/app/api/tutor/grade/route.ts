@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { AnswerEvaluation } from "@/lib/db/models/AnswerEvaluation";
-import { AI_MODEL, getGroqClient, parseLooseJSON } from "@/lib/ai";
+import { aiComplete, parseLooseJSON } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai-prompts";
 
 export const runtime = "nodejs";
 
@@ -49,41 +50,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const prompt = `Kamu adalah dosen penguji yang adil dan teliti di perguruan tinggi Indonesia${
-    courseName ? ` untuk mata kuliah "${courseName}"` : ""
-  }. Nilai AKURASI jawaban mahasiswa terhadap soal berikut secara objektif.
-
-SOAL:
-${question}
-
-JAWABAN MAHASISWA:
-${userAnswer}
-
-Kembalikan HANYA objek JSON mentah (tanpa markdown, langsung mulai dari "{"), format:
+  const jsonContract = `Nilai AKURASI & kelengkapan jawaban mahasiswa secara objektif berbasis rubrik. Kembalikan HANYA objek JSON mentah (tanpa markdown, langsung mulai dari "{"):
 {
   "score": 85,
-  "verdict": "ringkas, mis. Sangat Baik / Baik / Cukup / Perlu Perbaikan",
-  "feedback": "penilaian singkat 2-4 kalimat, jelaskan kenapa skor segitu",
+  "verdict": "Sangat Baik / Baik / Cukup / Perlu Perbaikan",
+  "feedback": "2-4 kalimat menjelaskan kenapa skor segitu",
   "strengths": ["poin yang sudah benar/kuat"],
   "missing": ["poin yang salah, kurang, atau perlu ditambahkan"],
   "saran": "satu saran konkret untuk memperbaiki jawaban",
   "idealAnswer": "ringkasan jawaban ideal/kunci, maksimal 3 kalimat"
 }
-
-Aturan:
-- "score" wajib bilangan bulat 0-100 yang mencerminkan akurasi & kelengkapan.
-- Jujur dan akademik. Jika jawaban kosong/ngawur, beri skor rendah dan jelaskan.
-- Gunakan Bahasa Indonesia yang jelas.`;
+Aturan: "score" wajib bilangan bulat 0-100. Jika jawaban kosong/ngawur, beri skor rendah dan jelaskan jujur.`;
+  const system = buildSystemPrompt(
+    "grader",
+    courseName ? { courses: [courseName] } : undefined,
+    jsonContract
+  );
+  const userMsg = `SOAL:\n${question}\n\nJAWABAN MAHASISWA:\n${userAnswer}`;
 
   let raw: string;
   try {
-    const completion = await getGroqClient().chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
+    const { text } = await aiComplete({
+      task: "grade",
+      system,
+      user: userMsg,
       temperature: 0.3,
-      max_tokens: 1200,
+      maxTokens: 2048,
+      json: true,
     });
-    raw = completion.choices[0]?.message?.content ?? "";
+    raw = text;
   } catch {
     return NextResponse.json(
       { error: "Gagal menghubungi AI. Coba lagi sebentar." },
