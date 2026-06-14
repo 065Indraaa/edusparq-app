@@ -5,6 +5,7 @@ import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { Flashcard } from "@/lib/db/models/Flashcard";
 import Groq from "groq-sdk";
+import { AI_MODEL } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   const rawContext = chunks.map((c) => c.content).join("\n\n");
-  const context = rawContext.slice(0, 12000);
+  const context = rawContext.slice(0, 24000);
 
   const prompt = `Kamu adalah asisten belajar akademik. Berdasarkan materi di bawah, buat ${cardCount} flashcard dalam Bahasa Indonesia.
 
@@ -96,7 +97,7 @@ ${context}`;
   let rawText: string;
   try {
     const completion = await getGroqClient().chat.completions.create({
-      model: "llama3-70b-8192",
+      model: AI_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.6,
       max_tokens: 2048,

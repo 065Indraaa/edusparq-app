@@ -5,6 +5,7 @@ import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { StudyNote } from "@/lib/db/models/StudyNote";
 import Groq from "groq-sdk";
+import { AI_MODEL } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -78,7 +79,7 @@ export async function POST(
   }
 
   const rawContext = chunks.map((c) => c.content).join("\n\n");
-  const context = rawContext.slice(0, 12000);
+  const context = rawContext.slice(0, 24000);
 
   const prompt = `Kamu adalah asisten belajar akademik untuk mahasiswa Indonesia. Buatlah catatan belajar terstruktur dari materi berikut dalam Bahasa Indonesia. Gunakan format Markdown dengan bagian-bagian berikut:
 
@@ -103,7 +104,7 @@ ${context}`;
   let content: string;
   try {
     const completion = await getGroqClient().chat.completions.create({
-      model: "llama3-70b-8192",
+      model: AI_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
       max_tokens: 2048,

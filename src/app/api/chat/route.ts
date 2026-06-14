@@ -5,6 +5,7 @@ import { ChatMessage } from "@/lib/db/models/ChatMessage";
 import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag";
 import { checkRateLimit } from "@/lib/rate-limit";
 import Groq from "groq-sdk";
+import { AI_MODEL } from "@/lib/ai";
 
 let groqClient: Groq | null = null;
 const getGroqClient = () => {
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
       try {
         // Call Groq API with streaming
         const stream = await getGroqClient().chat.completions.create({
-          model: "llama3-70b-8192",
+          model: AI_MODEL,
           messages: [
             { role: "system", content: systemPrompt },
             ...historyMessages,
