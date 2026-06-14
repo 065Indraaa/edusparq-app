@@ -188,52 +188,60 @@ export default function JadwalPage() {
             <div key={i} className="bg-card border border-border rounded-2xl p-4 skeleton h-20" />
           ))}
         </div>
-      ) : items.length === 0 ? (
-        <div className="rounded-[1.75rem] border border-dashed border-border bg-muted/25 text-center py-12 px-4 text-sm text-muted-foreground">
-          <Clock3 size={24} className="mx-auto mb-3 text-primary" />
-          Belum ada jadwal. Klik <span className="font-bold text-foreground">Tambah</span> untuk memasukkan kelas pertamamu.
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
-          {HARI.slice(1).map((nama, idx) => {
-            const d = idx + 1;
-            const dayItems = byDay(d);
-            if (dayItems.length === 0) return null;
-            const isToday = d === today;
-            return (
-              <div key={nama} className={`rounded-[1.5rem] border p-4 space-y-3 shadow-sm ${isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-extrabold ${isToday ? "text-primary" : "text-foreground"}`}>{nama}</span>
-                  {isToday && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">Hari ini</span>
+        <>
+          {items.length === 0 && (
+            <div className="rounded-[1.5rem] border border-dashed border-border bg-muted/25 text-center py-5 px-4 text-sm text-muted-foreground">
+              <Clock3 size={20} className="mx-auto mb-2 text-primary" />
+              Belum ada jadwal. Klik <span className="font-bold text-foreground">Tambah</span> untuk memasukkan kelas pertamamu — papan mingguan di bawah akan otomatis terisi.
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 items-start">
+            {HARI.slice(1).map((nama, idx) => {
+              const d = idx + 1;
+              const dayItems = byDay(d);
+              const isToday = d === today;
+              return (
+                <div key={nama} className={`rounded-[1.5rem] border p-4 space-y-3 shadow-sm ${isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-sm font-extrabold ${isToday ? "text-primary" : "text-foreground"}`}>{nama}</span>
+                    {isToday ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">Hari ini</span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-muted-foreground">{dayItems.length} kelas</span>
+                    )}
+                  </div>
+                  {dayItems.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border bg-muted/20 py-6 text-center text-[11px] text-muted-foreground">Belum ada kelas</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {dayItems.map((it) => (
+                        <div key={it._id} className={`flex items-start sm:items-center gap-3 p-3 rounded-2xl border transition-all hover:shadow-sm ${isToday ? "border-primary/20 bg-background/70" : "border-border bg-muted/30"}`}>
+                          <div className="text-center shrink-0 w-14">
+                            <span className="block text-sm font-black text-foreground leading-tight">{it.jamMulai}</span>
+                            <span className="block text-[10px] text-muted-foreground">{it.jamSelesai}</span>
+                          </div>
+                          <div className="hidden sm:block w-px self-stretch bg-border" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-foreground leading-snug truncate">{it.courseName}</p>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5">
+                              {it.ruang && <span className="inline-flex items-center gap-1"><MapPin size={11} />{it.ruang}</span>}
+                              {it.dosen && <span className="inline-flex items-center gap-1"><UserIcon size={11} />{it.dosen}</span>}
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => remove(it._id)} aria-label="Hapus jadwal"
+                            className="text-muted-foreground hover:text-destructive p-2 rounded-lg hover:bg-destructive/10 transition-colors shrink-0">
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  {dayItems.map((it) => (
-                    <div key={it._id} className={`flex items-start sm:items-center gap-3 p-3 rounded-2xl border transition-all hover:shadow-sm ${isToday ? "border-primary/20 bg-background/70" : "border-border bg-muted/30"}`}>
-                      <div className="text-center shrink-0 w-14">
-                        <span className="block text-sm font-black text-foreground leading-tight">{it.jamMulai}</span>
-                        <span className="block text-[10px] text-muted-foreground">{it.jamSelesai}</span>
-                      </div>
-                      <div className="hidden sm:block w-px self-stretch bg-border" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-foreground leading-snug truncate">{it.courseName}</p>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5">
-                          {it.ruang && <span className="inline-flex items-center gap-1"><MapPin size={11} />{it.ruang}</span>}
-                          {it.dosen && <span className="inline-flex items-center gap-1"><UserIcon size={11} />{it.dosen}</span>}
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => remove(it._id)} aria-label="Hapus jadwal"
-                        className="text-muted-foreground hover:text-destructive p-2 rounded-lg hover:bg-destructive/10 transition-colors shrink-0">
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </motion.div>
   );
