@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SidebarNav, BottomNav } from "@/components/app-nav";
+import { SidebarNav, BottomNav } from "@/components/app-nav"; import { OnboardingGate } from "@/components/onboarding-gate";
 import { auth, signOut } from "@/lib/auth";
 import {
   Bell,
@@ -109,7 +109,7 @@ export default async function AppLayout({
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto w-full px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col min-h-screen bg-slate-50/50 dark:bg-transparent transition-colors duration-300">
-        <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col">
+ <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col"> <OnboardingGate />
           {children}
         </div>
       </main>

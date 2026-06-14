@@ -9,6 +9,8 @@ const UserSchema = new Schema({
   fakultas: { type: String, default: "" },
   prodi: { type: String, default: "" },
   semester: { type: Number, default: 1 },
+  onboardingDismissed: { type: Boolean, default: false },
+  seenCoachmarks: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
 });
 
