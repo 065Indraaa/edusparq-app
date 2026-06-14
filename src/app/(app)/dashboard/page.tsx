@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 import { AcademicCalendarWidget } from "@/components/academic-calendar-widget";
 import { RecommendationsWidget } from "@/components/recommendations-widget";
 import {
-  Sparkles,
   CalendarDays,
   BookOpen,
   ChevronRight,
@@ -212,10 +211,10 @@ export default function DashboardPage() {
 
 
   const quickFeatures = [
-    { name: "Tutor Socratic", desc: "Pahami konsep yang rumit melalui bimbingan kritis.", icon: Bot, href: "/tutor" },
-    { name: "Asisten Menulis", desc: "Susun kerangka, parafrasekan, dan kelola sitasi akademik.", icon: PenTool, href: "/writing" },
-    { name: "Persiapan Ujian", desc: "Prediksi soal UTS/UAS serta latihan kartu ingatan.", icon: GraduationCap, href: "/exams" },
-    { name: "Kolaborasi", desc: "Ruang kerja kelompok dan penugasan secara visual.", icon: Users, href: "/collab" },
+    { name: "Tutor", desc: "Bahas konsep sulit berdasarkan mata kuliah yang sedang kamu ambil.", icon: Bot, href: "/tutor" },
+    { name: "Menulis", desc: "Susun dokumen akademik, perbaiki paragraf, dan kelola sitasi.", icon: PenTool, href: "/writing" },
+    { name: "Latihan Ujian", desc: "Buat soal latihan, jawab esai, lalu lihat penilaiannya.", icon: GraduationCap, href: "/exams" },
+    { name: "Kelompok", desc: "Catat dokumen bersama, ulasan anggota, dan progres tugas kelompok.", icon: Users, href: "/collab" },
   ];
 
   // Framer motion variants
@@ -240,54 +239,60 @@ export default function DashboardPage() {
       className="space-y-8 flex-1 flex flex-col justify-between"
     >
       
-      {/* Welcome Banner */}
-      <motion.section variants={item} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/12 via-card to-card p-6 md:p-10 shadow-sm">
-        <div className="pointer-events-none absolute -top-16 -right-10 w-80 h-80 bg-primary/15 rounded-full blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/4 w-72 h-72 bg-amber-400/10 rounded-full blur-3xl" />
-        <div className="relative z-10 grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-center">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-              <Sparkles size={14} />
-              <span>Teman belajar mahasiswa Indonesia</span>
+      {/* Beranda kerja */}
+      <motion.section variants={item} className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 md:p-8 shadow-sm">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-foreground/20" />
+        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-10 items-stretch">
+          <div className="flex flex-col justify-between gap-7">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground border border-border uppercase tracking-[0.18em]">
+                <Clock size={13} /> Beranda Kuliah
+              </div>
+              <div>
+                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-[1.03]">
+                  {timeGreeting}, {firstName}.
+                </h1>
+                <p className="text-muted-foreground text-sm md:text-base leading-relaxed mt-4 max-w-xl">
+                  {userSemester ? `${userSemester}. ` : ""}Mulai dari yang paling dekat: kelas hari ini, tenggat tugas, lalu materi yang perlu dibaca ulang. Beranda ini disusun sebagai meja kerja, bukan papan iklan.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground leading-[1.05]">
-                {timeGreeting},<br />
-                <span className="text-gradient">{firstName}.</span>
-              </h1>
-              <p className="text-muted-foreground text-sm md:text-base leading-relaxed mt-4 max-w-xl">
-                {userSemester ? `${userSemester} \u00b7 ` : ""}Kelola tugas, materi, dan persiapan ujian dalam satu tempat. Unggah materi, tanya Tutor AI, dan pantau tenggat biar kuliahmu lebih tenang.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Link href="/tutor" className="inline-flex items-center gap-2 px-5 min-h-[46px] rounded-2xl bg-primary text-primary-foreground font-bold text-sm shadow-sm hover:shadow-md hover:bg-primary/90 hover-lift">
-                <Bot size={17} /> Mulai belajar
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Link href={deadlines.length > 0 ? "/deadlines" : "/workspace"} className="group rounded-2xl border border-border bg-background/70 p-4 min-h-[112px] hover:border-foreground/30 transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Prioritas terdekat</span>
+                <p className="mt-3 text-sm font-bold text-foreground leading-snug">
+                  {deadlines.length > 0 ? deadlines[0].title : "Unggah materi pertama"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                  {deadlines.length > 0 ? `${deadlines[0].course} · ${deadlines[0].date}` : "Materi yang terunggah akan menjadi dasar Tutor, ringkasan, dan latihan ujian."}
+                </p>
               </Link>
-              <Link href="/deadlines" className="inline-flex items-center gap-2 px-5 min-h-[46px] rounded-2xl border border-border bg-card font-semibold text-sm hover:border-primary/40 hover:text-primary hover-lift">
-                <CalendarDays size={17} /> Lihat tugas
+              <Link href={todayClasses.length > 0 ? "/jadwal" : "/profile"} className="group rounded-2xl border border-border bg-background/70 p-4 min-h-[112px] hover:border-foreground/30 transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Agenda hari ini</span>
+                <p className="mt-3 text-sm font-bold text-foreground leading-snug">
+                  {todayClasses.length > 0 ? `${todayClasses.length} kelas terjadwal` : "Belum ada jadwal"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                  {todayClasses.length > 0 ? todayClasses.map((c) => c.courseName).filter(Boolean).slice(0, 2).join(" · ") : "Lengkapi jadwal agar Beranda bisa memberi konteks harian yang nyata."}
+                </p>
               </Link>
             </div>
           </div>
 
-          {/* Stat tiles */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {stats.map((stat, idx) => {
-              const meta = [
-                { Icon: GraduationCap, tint: "text-primary bg-primary/10" },
-                { Icon: BookOpen, tint: "text-amber-600 dark:text-amber-400 bg-amber-400/15" },
-                { Icon: CalendarDays, tint: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" },
-                { Icon: Sparkles, tint: "text-primary bg-primary/10" },
-              ][idx] || { Icon: Sparkles, tint: "text-primary bg-primary/10" };
-              const Icon = meta.Icon;
+              const meta = [GraduationCap, BookOpen, CalendarDays, PenTool][idx] || BookOpen;
+              const Icon = meta;
               return (
-                <div key={idx} className="group relative rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-4 shadow-sm hover-lift overflow-hidden">
-                  <div className={`w-9 h-9 rounded-xl grid place-items-center mb-3 transition-transform group-hover:scale-110 ${meta.tint}`}>
+                <div key={idx} className="group relative rounded-2xl border border-border bg-background/70 p-4 shadow-sm hover-lift overflow-hidden">
+                  <div className="w-9 h-9 rounded-xl grid place-items-center mb-3 border border-border bg-card text-foreground transition-transform group-hover:scale-105">
                     <Icon size={18} strokeWidth={2.4} />
                   </div>
                   {loading ? (
                     <span className="skeleton h-8 w-16 rounded-md block" />
                   ) : (
-                    <span className="text-3xl font-extrabold text-foreground block leading-none tracking-tight">{stat.value}</span>
+                    <span className="text-3xl font-black text-foreground block leading-none tracking-tight">{stat.value}</span>
                   )}
                   <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block mt-1.5">{stat.label}</span>
                 </div>
@@ -329,31 +334,42 @@ export default function DashboardPage() {
         {/* Left column (Timeline & Subject Progress) */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Semester Progress Timeline */}
-          <motion.div variants={item} className="bg-card rounded-3xl border border-border p-6 md:p-8 space-y-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold tracking-tight text-foreground flex items-center">
-                <CalendarDays size={18} className="mr-2 text-primary" />
-                {userSemester ? `Lini Masa ${userSemester}` : "Lini Masa Semester Ini"}
-              </h2>
-              <span className="text-xs text-primary font-semibold bg-primary/10 px-2.5 py-1 rounded-full">Ganjil 2026/2027</span>
+          {/* Ringkasan belajar */}
+          <motion.div variants={item} className="bg-card rounded-3xl border border-border p-6 md:p-8 space-y-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-bold tracking-tight text-foreground flex items-center">
+                  <CalendarDays size={18} className="mr-2 text-primary" />
+                  Keadaan Belajar
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Ringkasan ini memakai data yang sudah kamu isi: mata kuliah, materi, jadwal, dan tenggat.
+                </p>
+              </div>
+              {userSemester && <span className="text-xs text-muted-foreground font-semibold bg-muted px-2.5 py-1 rounded-full">{userSemester}</span>}
             </div>
-            
-            {/* Visual Timeline Bar */}
-            <div className="space-y-3">
-              <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                <span>Minggu 1</span>
-                <span className="text-primary font-bold">Minggu 8 (UTS)</span>
-                <span>Minggu 16</span>
+
+            <div className="grid sm:grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-border bg-background/70 p-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Bahan belajar</span>
+                <p className="mt-2 text-2xl font-black text-foreground">{stats[3]?.value || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">dokumen tersimpan</p>
               </div>
-              <div className="h-3 w-full bg-muted rounded-full overflow-hidden relative">
-                <div className="absolute top-0 left-0 h-full w-1/2 bg-primary rounded-full" />
-                <div className="absolute left-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-background rounded-full border-[3px] border-primary shadow-sm transform -translate-x-1/2" />
+              <div className="rounded-2xl border border-border bg-background/70 p-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Mata kuliah</span>
+                <p className="mt-2 text-2xl font-black text-foreground">{stats[2]?.value || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">ruang belajar aktif</p>
               </div>
-              <div className="text-xs text-muted-foreground leading-relaxed pt-2 flex items-start bg-muted/30 p-3 rounded-xl">
-                <Info size={16} className="mr-2 mt-0.5 text-primary shrink-0" />
-                 <span>{`Anda memiliki ${stats[2]?.value || 0} mata kuliah aktif dan ${stats[3]?.value || 0} dokumen tersimpan. Gunakan Tutor AI untuk memaksimalkan persiapan ujian.`}</span>
+              <div className="rounded-2xl border border-border bg-background/70 p-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Tenggat</span>
+                <p className="mt-2 text-2xl font-black text-foreground">{deadlines.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">yang perlu dipantau</p>
               </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground leading-relaxed flex items-start bg-muted/30 p-3 rounded-xl">
+              <Info size={16} className="mr-2 mt-0.5 text-foreground shrink-0" />
+              <span>{deadlines.length > 0 ? `Mulai dari tenggat terdekat: ${deadlines[0].title}. Setelah itu buka materi terkait dan buat latihan singkat.` : "Belum ada tenggat yang tercatat. Tambahkan tugas pertama agar Beranda bisa menyusun urutan kerja yang lebih nyata."}</span>
             </div>
           </motion.div>
 
@@ -455,29 +471,29 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Contextual Smart Alert System */}
-          <motion.div variants={item} className="rounded-3xl border border-primary/20 bg-primary/5 p-6 space-y-4 relative overflow-hidden shadow-sm">
+          {/* Saran kontekstual */}
+          <motion.div variants={item} className="rounded-3xl border border-border bg-card p-6 space-y-4 relative overflow-hidden shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold tracking-wide text-primary flex items-center">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse mr-2" />
-                Smart Assist
+              <span className="text-xs font-bold tracking-wide text-foreground flex items-center">
+                <span className="w-2 h-2 rounded-full bg-foreground/70 mr-2" />
+                Saran Belajar
               </span>
             </div>
             
             <div className="space-y-3">
               <p className="text-sm text-foreground leading-relaxed font-medium">
                 {deadlines.length > 0
-                  ? `Tenggat "${deadlines[0].title}" dari ${deadlines[0].course} pada ${deadlines[0].date}. Perlu bantuan untuk mempersiapkan materi?`
-                  : "Tambahkan tenggat tugas dan unggah materi kuliah untuk mendapatkan rekomendasi belajar yang personal."}
+                  ? `Tenggat "${deadlines[0].title}" dari ${deadlines[0].course} jatuh pada ${deadlines[0].date}. Buka materi terkait, buat ringkasan pendek, lalu kerjakan satu latihan.`
+                  : "Tambahkan tenggat tugas dan unggah materi kuliah agar Beranda bisa menyusun saran belajar yang lebih tepat."}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Link href="/writing" className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm min-h-[44px]">
                   <PenTool size={14} />
-                  Bantu menulis
+                  Buka Dokumen
                 </Link>
                 <Link href="/tutor" className="px-3.5 py-2 bg-background hover:bg-muted text-foreground font-semibold rounded-xl text-xs border border-border transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm min-h-[44px]">
                   <Bot size={14} />
-                  Tutor Socratic
+                  Buka Tutor
                 </Link>
               </div>
             </div>

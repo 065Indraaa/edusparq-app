@@ -30,6 +30,7 @@ export type NavItem = {
   name: string;
   href: string;
   icon: LucideIcon;
+  desc?: string;
 };
 
 export type NavGroup = {
@@ -46,38 +47,38 @@ export type NavGroup = {
 export const navGroups: NavGroup[] = [
   {
     label: "Utama",
-    items: [{ name: "Beranda", href: "/dashboard", icon: LayoutDashboard }],
+    items: [{ name: "Beranda", desc: "Ringkasan kegiatan kuliah hari ini", href: "/dashboard", icon: LayoutDashboard }],
   },
   {
     label: "Belajar",
     items: [
-      { name: "Materi", href: "/workspace", icon: FolderOpen },
-      { name: "Tutor AI", href: "/tutor", icon: Bot },
-      { name: "Menulis", href: "/writing", icon: PenTool },
-      { name: "Riset", href: "/research", icon: Search },
-      { name: "Katalog", href: "/katalog", icon: Library },
-      { name: "Latihan Ujian", href: "/exams", icon: GraduationCap },
-      { name: "Dosen Virtual", href: "/dosen", icon: ClipboardCheck },
-      { name: "Catatan", href: "/catatan", icon: NotebookPen },
+      { name: "Materi", desc: "Unggah dan kelola bahan kuliah", href: "/workspace", icon: FolderOpen },
+      { name: "Tutor", desc: "Bahas konsep per mata kuliah", href: "/tutor", icon: Bot },
+      { name: "Menulis", desc: "Draft, sitasi, dan dokumen akademik", href: "/writing", icon: PenTool },
+      { name: "Riset", desc: "Cari sudut pandang penelitian", href: "/research", icon: Search },
+      { name: "Katalog", desc: "Temukan referensi terbuka", href: "/katalog", icon: Library },
+      { name: "Latihan Ujian", desc: "Soal latihan dan evaluasi jawaban", href: "/exams", icon: GraduationCap },
+      { name: "Dosen Virtual", desc: "Nilai jawaban esai dengan rubrik", href: "/dosen", icon: ClipboardCheck },
+      { name: "Catatan", desc: "Rapikan coretan kuliah", href: "/catatan", icon: NotebookPen },
     ],
   },
   {
     label: "Produktivitas",
     items: [
-      { name: "Jadwal", href: "/jadwal", icon: CalendarRange },
-      { name: "Tugas & Tenggat", href: "/deadlines", icon: CalendarDays },
-      { name: "Kelompok", href: "/collab", icon: Users },
+      { name: "Jadwal", desc: "Susun jadwal kuliah mingguan", href: "/jadwal", icon: CalendarRange },
+      { name: "Tugas & Tenggat", desc: "Pantau tugas dan tanggal penting", href: "/deadlines", icon: CalendarDays },
+      { name: "Kelompok", desc: "Atur kerja kelompok", href: "/collab", icon: Users },
     ],
   },
   {
     label: "Organisasi",
-    items: [{ name: "HIMA", href: "/hima", icon: Building2 }],
+    items: [{ name: "HIMA", desc: "Kelola program kerja organisasi", href: "/hima", icon: Building2 }],
   },
   {
     label: "Akun",
     items: [
-      { name: "Analitik", href: "/analytics", icon: BarChart3 },
-      { name: "Profil", href: "/profile", icon: UserCircle },
+      { name: "Analitik", desc: "Lihat pola belajar dan progres", href: "/analytics", icon: BarChart3 },
+      { name: "Profil", desc: "Data kampus dan pengaturan akun", href: "/profile", icon: UserCircle },
     ],
   },
 ];
@@ -122,7 +123,7 @@ export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
                   key={item.name}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`nav-command group relative flex items-center gap-3 px-2.5 py-2.5 text-sm font-bold rounded-2xl min-h-[46px] overflow-hidden ${
+                  className={`nav-command group relative flex items-start gap-3 px-2.5 py-2.5 text-sm font-bold rounded-2xl min-h-[58px] overflow-hidden ${
                     active ? "is-active text-primary" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -140,7 +141,10 @@ export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
                   }`}>
                     <Icon size={17} strokeWidth={active ? 2.8 : 2.2} />
                   </span>
-                  <span className="relative truncate tracking-tight">{item.name}</span>
+                  <span className="relative min-w-0 flex-1 leading-tight">
+                    <span className="block truncate tracking-tight">{item.name}</span>
+                    {item.desc && <span className="mt-0.5 block truncate text-[10px] font-medium tracking-normal text-muted-foreground group-hover:text-foreground/70">{item.desc}</span>}
+                  </span>
                   {active && <span className="relative ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]" />}
                 </Link>
               );
@@ -243,14 +247,15 @@ export function BottomNav() {
                             href={item.href}
                             onClick={() => setMenuOpen(false)}
                             aria-current={active ? "page" : undefined}
-                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-colors min-h-[76px] ${
+                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-colors min-h-[96px] ${
                               active
                                 ? "border-primary/30 bg-primary/10 text-primary"
                                 : "border-border bg-muted/30 text-foreground hover:bg-muted"
                             }`}
                           >
                             <Icon size={20} className={active ? "text-primary" : "text-muted-foreground"} />
-                            <span className="text-[11px] font-semibold leading-tight">{item.name}</span>
+                            <span className="text-[11px] font-bold leading-tight">{item.name}</span>
+                            {item.desc && <span className="text-[9px] leading-tight text-muted-foreground line-clamp-2">{item.desc}</span>}
                           </Link>
                         );
                       })}
