@@ -58,8 +58,9 @@ const STEPS: StepDef[] = [
 /**
  * Welcome / onboarding modal. Mounted in the app layout so it can appear on the
  * first authenticated page load. Visibility is derived from REAL data via
- * /api/user/onboarding (no stale flags), and suppressed for the session once the
- * user has seen it (localStorage) or dismissed it (server).
+ * /api/user/onboarding (no stale flags). While the campus profile is still empty
+ * the modal reappears every session so new users never miss it; once the profile
+ * is filled it is suppressed per-session (sessionStorage) or on dismiss (server).
  */
 export function OnboardingGate() {
   const { status } = useSession();
@@ -68,18 +69,22 @@ export function OnboardingGate() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (typeof window !== "undefined" && window.localStorage.getItem(SEEN_KEY)) {
-      return;
-    }
     let active = true;
     fetch("/api/user/onboarding")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!active || !data) return;
-        if (!data.selesai && !data.dismissed) {
-          setSteps(data.steps);
-          setOpen(true);
-        }
+        if (data.selesai) return;
+        // Critical = profil kampus (universitas/prodi) belum diisi. Selama masih
+        // kosong, panduan tetap tampil tiap sesi walau pernah ditutup biar
+        // pengguna baru gak kelewat. Kalau profil sudah ada, hormati dismiss.
+        const profilDone = Boolean(data.steps?.profilDone);
+        const suppressed =
+          typeof window !== "undefined" &&
+          Boolean(window.sessionStorage.getItem(SEEN_KEY));
+        if (profilDone && (data.dismissed || suppressed)) return;
+        setSteps(data.steps);
+        setOpen(true);
       })
       .catch(() => {});
     return () => {
@@ -88,7 +93,7 @@ export function OnboardingGate() {
   }, [status]);
 
   const markSeen = () => {
-    if (typeof window !== "undefined") window.localStorage.setItem(SEEN_KEY, "1");
+    if (typeof window !== "undefined") window.sessionStorage.setItem(SEEN_KEY, "1");
   };
 
   const handleSkip = () => {
