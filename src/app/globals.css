@@ -99,6 +99,17 @@ button:not(:disabled):active, [role="button"]:active {
   transform: scale(0.97);
 }
 
+::selection {
+  background: hsl(var(--primary) / 0.18);
+  color: hsl(var(--foreground));
+}
+
+/* Display typeface (Plus Jakarta Sans, Indonesian foundry) for headings */
+h1, h2, h3, h4, h5, .font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
 /* Glassmorphism Utilities */
 @layer utilities {
   .glass-panel {
