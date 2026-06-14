@@ -4,13 +4,14 @@ import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
-  CalendarRange,
   Plus,
   Trash2,
   MapPin,
   User as UserIcon,
   RefreshCw,
   X,
+  Clock3,
+  LayoutGrid,
 } from "lucide-react";
 import { CourseSelect } from "@/components/course-select";
 
@@ -105,39 +106,40 @@ export default function JadwalPage() {
   const byDay = (d: number) => items.filter((i) => i.hari === d);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-4xl">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
-              <CalendarRange size={20} />
-            </span>
-            Jadwal Kuliah
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Atur jadwal mingguanmu — biar tahu kelas hari ini jam berapa dan di ruang mana.</p>
-        </div>
-        <button
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-6xl">
+      <section className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
+        <div className="absolute -left-10 -bottom-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
+              <LayoutGrid size={14} /> Weekly Planner
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Jadwal Kuliah</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">Atur jam kelas, ruang, dan dosen supaya dashboard bisa ngasih konteks hari ini.</p>
+          </div>
+          <button
           type="button"
           onClick={() => setShowForm((s) => !s)}
-          className="inline-flex items-center gap-2 px-4 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 min-h-[44px] w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all shrink-0 shadow-sm"
         >
           {showForm ? <X size={16} /> : <Plus size={16} />}
           {showForm ? "Tutup" : "Tambah"}
-        </button>
-      </div>
+          </button>
+        </div>
+      </section>
 
       {showForm && (
         <motion.form
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           onSubmit={submit}
-          className="bg-card border border-border rounded-3xl p-5 space-y-3 shadow-sm overflow-hidden"
+          className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-5 space-y-4 shadow-sm overflow-hidden"
         >
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Mata kuliah</label>
             <CourseSelect value={form.courseName} onChange={(v) => setForm({ ...form, courseName: v })} />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground">Hari</label>
               <select
@@ -173,7 +175,7 @@ export default function JadwalPage() {
           </div>
           {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
           <button type="submit" disabled={saving}
-            className="inline-flex items-center gap-2 px-5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all disabled:opacity-60">
+            className="inline-flex items-center justify-center gap-2 px-5 min-h-[44px] w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all disabled:opacity-60">
             {saving ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
             Simpan jadwal
           </button>
@@ -187,7 +189,8 @@ export default function JadwalPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-12 text-sm text-muted-foreground">
+        <div className="rounded-[1.75rem] border border-dashed border-border bg-muted/25 text-center py-12 px-4 text-sm text-muted-foreground">
+          <Clock3 size={24} className="mx-auto mb-3 text-primary" />
           Belum ada jadwal. Klik <span className="font-bold text-foreground">Tambah</span> untuk memasukkan kelas pertamamu.
         </div>
       ) : (
@@ -207,12 +210,12 @@ export default function JadwalPage() {
                 </div>
                 <div className="space-y-2">
                   {dayItems.map((it) => (
-                    <div key={it._id} className={`flex items-center gap-3 p-4 rounded-2xl border shadow-sm ${isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                    <div key={it._id} className={`flex items-start sm:items-center gap-3 p-4 rounded-2xl border shadow-sm transition-all hover:shadow-md ${isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
                       <div className="text-center shrink-0 w-14">
                         <span className="block text-sm font-black text-foreground leading-tight">{it.jamMulai}</span>
                         <span className="block text-[10px] text-muted-foreground">{it.jamSelesai}</span>
                       </div>
-                      <div className="w-px self-stretch bg-border" />
+                      <div className="hidden sm:block w-px self-stretch bg-border" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-foreground leading-snug truncate">{it.courseName}</p>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5">

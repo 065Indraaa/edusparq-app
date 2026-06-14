@@ -92,15 +92,19 @@ export function AcademicCalendarWidget() {
   if (!universitas) return null;
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 md:p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-          <CalendarCheck size={18} className="text-primary" /> Kalender Akademik
-        </h2>
+    <section className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-card via-card to-primary/5 p-5 md:p-6 shadow-sm">
+      <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+            <CalendarCheck size={18} className="text-primary" /> Kalender Akademik
+          </h2>
+          <p className="text-[11px] text-muted-foreground mt-1">Agenda kampusmu, dari UTS sampai KRS.</p>
+        </div>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-colors shrink-0"
         >
           {open ? <X size={14} /> : <Plus size={14} />}
           {open ? "Tutup" : "Tambah"}
@@ -108,8 +112,8 @@ export function AcademicCalendarWidget() {
       </div>
 
       {open && (
-        <form onSubmit={submit} className="space-y-2 mb-4 p-3 rounded-2xl bg-muted/40 border border-border">
-          <div className="grid grid-cols-3 gap-2">
+        <form onSubmit={submit} className="relative space-y-2 mb-4 p-3 rounded-2xl bg-background/70 border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <select
               value={form.jenis}
               onChange={(e) => setForm({ ...form, jenis: e.target.value })}
@@ -123,10 +127,10 @@ export function AcademicCalendarWidget() {
               value={form.judul}
               onChange={(e) => setForm({ ...form, judul: e.target.value })}
               placeholder="Judul agenda"
-              className="col-span-2 px-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+              className="sm:col-span-2 px-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input type="date" value={form.mulai} onChange={(e) => setForm({ ...form, mulai: e.target.value })}
               className="px-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary" />
             <input type="date" value={form.selesai} onChange={(e) => setForm({ ...form, selesai: e.target.value })}
@@ -142,11 +146,11 @@ export function AcademicCalendarWidget() {
       )}
 
       {events.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">Belum ada agenda akademik untuk kampusmu. Tambahkan UTS/UAS/KRS biar jadi rujukan bersama.</p>
+        <div className="rounded-2xl border border-dashed border-border bg-background/60 px-4 py-5 text-xs text-muted-foreground">Belum ada agenda akademik untuk kampusmu. Tambahkan UTS/UAS/KRS biar jadi rujukan bersama.</div>
       ) : (
         <div className="space-y-2">
           {events.map((e, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-border">
+            <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-background/70 border border-border hover:border-primary/20 transition-colors">
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-primary/10 text-primary shrink-0">{e.jenis || "Agenda"}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground truncate">{e.judul}</p>

@@ -11,6 +11,8 @@ import {
   AlertCircle,
   Lightbulb,
   History,
+  ShieldCheck,
+  Target,
 } from "lucide-react";
 import { CourseSelect } from "@/components/course-select";
 
@@ -92,8 +94,8 @@ export default function DosenVirtualPage() {
   const ResultCard = ({ ev }: { ev: Evaluation }) => {
     const tone = scoreTone(ev.score);
     return (
-      <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
-        <div className="flex items-center gap-4">
+      <div className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className={`grid place-items-center w-20 h-20 rounded-full border-4 ${tone.ring} ${tone.bg} shrink-0`}>
             <span className={`text-2xl font-black ${tone.text}`}>{ev.score}</span>
           </div>
@@ -147,20 +149,35 @@ export default function DosenVirtualPage() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
-          <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
-            <GraduationCap size={20} />
-          </span>
-          Dosen Virtual
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1.5">
-          Tempel soal tugas dan jawabanmu — AI menilai akurasinya seperti dosen penguji: skor 0–100, poin yang tepat, yang kurang, plus kunci jawaban.
-        </p>
-      </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-6xl">
+      <section className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
+        <div className="absolute right-0 top-0 h-40 w-40 translate-x-12 -translate-y-16 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative grid lg:grid-cols-[1.4fr_0.8fr] gap-6 items-end">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
+              <GraduationCap size={14} /> Evaluasi Jawaban
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Dosen Virtual</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
+              Uji jawabanmu dengan skor 0–100, daftar kekuatan, bagian yang bolong, dan contoh jawaban ideal.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-background/70 border border-border p-3">
+              <ShieldCheck size={16} className="text-primary mb-2" />
+              <p className="text-xs font-bold text-foreground">Rubrik jelas</p>
+              <p className="text-[11px] text-muted-foreground">Bukan cuma nilai.</p>
+            </div>
+            <div className="rounded-2xl bg-background/70 border border-border p-3">
+              <Target size={16} className="text-primary mb-2" />
+              <p className="text-xs font-bold text-foreground">Langsung revisi</p>
+              <p className="text-[11px] text-muted-foreground">Tahu mana yang kurang.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <form onSubmit={submit} className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm">
+      <form onSubmit={submit} className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">Mata kuliah (opsional)</label>
           <CourseSelect value={courseName} onChange={setCourseName} placeholder="Pilih mata kuliah" />
@@ -193,7 +210,7 @@ export default function DosenVirtualPage() {
         <button
           type="submit"
           disabled={grading}
-          className="inline-flex items-center gap-2 px-6 min-h-[48px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 px-6 min-h-[48px] w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all disabled:opacity-60 shadow-sm"
         >
           {grading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
           {grading ? "Menilai…" : "Nilai jawaban"}
@@ -203,14 +220,14 @@ export default function DosenVirtualPage() {
       {result && <ResultCard ev={result} />}
 
       {history.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 rounded-[1.75rem] border border-border bg-card p-4 sm:p-5 shadow-sm">
           <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
             <History size={16} className="text-primary" /> Riwayat penilaian
           </h2>
           {history.map((h) => {
             const tone = scoreTone(h.score);
             return (
-              <div key={h._id} className="bg-card border border-border rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+              <div key={h._id} className="rounded-2xl p-3 sm:p-4 flex items-start gap-3 bg-muted/30 border border-border/70 hover:bg-muted/50 transition-colors">
                 <div className={`grid place-items-center w-12 h-12 rounded-xl border-2 ${tone.ring} ${tone.bg} shrink-0`}>
                   <span className={`text-sm font-black ${tone.text}`}>{h.score}</span>
                 </div>

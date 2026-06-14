@@ -14,6 +14,8 @@ import {
   Copy,
   Loader2,
   FileText,
+  Filter,
+  Quote,
 } from "lucide-react";
 
 interface CatalogItem {
@@ -155,11 +157,11 @@ export default function KatalogPage() {
     onRemove?: () => void;
     copyKey: string;
   }) => (
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-2.5">
+    <div className="group bg-card/90 border border-border rounded-3xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-primary/20 transition-all space-y-3 overflow-hidden">
       <div className="flex items-start gap-2">
         <FileText size={16} className="text-primary shrink-0 mt-0.5" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-bold text-foreground leading-snug">{it.title}</h3>
+          <h3 className="text-sm sm:text-[15px] font-bold text-foreground leading-snug group-hover:text-primary transition-colors">{it.title}</h3>
           {it.authors.length > 0 && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{it.authors.join(", ")}</p>
           )}
@@ -170,7 +172,7 @@ export default function KatalogPage() {
           <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{it.typeLabel}</span>
         )}
         {it.year && <span className="text-muted-foreground">{it.year}</span>}
-        {it.journal && <span className="text-muted-foreground truncate max-w-[55%]">· {it.journal}</span>}
+        {it.journal && <span className="text-muted-foreground min-w-0 max-w-full sm:max-w-[55%] truncate">· {it.journal}</span>}
       </div>
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {onSave && (
@@ -220,26 +222,39 @@ export default function KatalogPage() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
-          <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
-            <Library size={20} />
-          </span>
-          Katalog Riset
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1.5">
-          Cari jurnal, skripsi, tesis & disertasi dari katalog akademik (Crossref), simpan ke pustakamu, lalu salin sitasinya.
-        </p>
-      </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-6xl">
+      <section className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
+        <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
+              <Library size={14} /> Crossref Library
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Katalog Riset</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
+              Cari referensi akademik, simpan ke pustaka pribadi, lalu salin sitasi bersih untuk tugas, makalah, atau skripsi.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
+            <div className="rounded-2xl bg-background/70 border border-border p-3">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Tersimpan</p>
+              <p className="text-2xl font-black text-foreground">{library.length}</p>
+            </div>
+            <div className="rounded-2xl bg-background/70 border border-border p-3">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Hasil</p>
+              <p className="text-2xl font-black text-foreground">{results.length}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/40 border border-border p-1">
         <button
           type="button"
           onClick={() => setTab("cari")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-            tab === "cari" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            tab === "cari" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <Search size={15} /> Cari
@@ -247,8 +262,8 @@ export default function KatalogPage() {
         <button
           type="button"
           onClick={() => setTab("pustaka")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-            tab === "pustaka" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            tab === "pustaka" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <BookMarked size={15} /> Pustaka Saya ({library.length})
@@ -263,7 +278,7 @@ export default function KatalogPage() {
 
       {tab === "cari" ? (
         <div className="space-y-5">
-          <form onSubmit={runSearch} className="space-y-3">
+          <form onSubmit={runSearch} className="rounded-[1.75rem] border border-border bg-card p-4 sm:p-5 shadow-sm space-y-4">
             <div className="relative">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <input
@@ -273,13 +288,13 @@ export default function KatalogPage() {
                 className="w-full pl-11 pr-4 min-h-[48px] rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               {TYPES.map((t) => (
                 <button
                   key={t.value}
                   type="button"
                   onClick={() => setType(t.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                     type === t.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -287,14 +302,14 @@ export default function KatalogPage() {
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="grid grid-cols-[1fr_auto_1fr] sm:flex sm:items-center gap-2">
                 <input
                   type="number"
                   placeholder="Dari thn"
                   value={from}
                   onChange={(e) => setFrom(e.target.value)}
-                  className="w-24 px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+                  className="w-full sm:w-28 px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
                 />
                 <span className="text-muted-foreground text-xs">—</span>
                 <input
@@ -302,13 +317,13 @@ export default function KatalogPage() {
                   placeholder="Sampai"
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
-                  className="w-24 px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+                  className="w-full sm:w-28 px-3 py-2.5 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 px-5 min-h-[44px] w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all disabled:opacity-60 shadow-sm"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                 Cari
@@ -341,11 +356,13 @@ export default function KatalogPage() {
               })}
             </div>
           ) : searched ? (
-            <div className="text-center py-12 text-sm text-muted-foreground">
+            <div className="rounded-[1.75rem] border border-dashed border-border bg-muted/25 text-center py-12 px-4 text-sm text-muted-foreground">
+              <Filter size={22} className="mx-auto mb-3 text-primary" />
               Tidak ada hasil. Coba kata kunci lain atau ubah filter tipe/tahun.
             </div>
           ) : (
-            <div className="text-center py-12 text-sm text-muted-foreground">
+            <div className="rounded-[1.75rem] border border-dashed border-border bg-muted/25 text-center py-12 px-4 text-sm text-muted-foreground">
+              <Quote size={22} className="mx-auto mb-3 text-primary" />
               Mulai cari literatur untuk tugas, makalah, atau skripsimu.
             </div>
           )}
@@ -357,7 +374,8 @@ export default function KatalogPage() {
               <Card key={it.refId} it={it} saved onRemove={() => remove(it.refId)} copyKey={`l-${it.refId}`} />
             ))
           ) : (
-            <div className="text-center py-12 text-sm text-muted-foreground">
+            <div className="rounded-[1.75rem] border border-dashed border-border bg-muted/25 text-center py-12 px-4 text-sm text-muted-foreground">
+              <BookMarked size={22} className="mx-auto mb-3 text-primary" />
               Pustaka masih kosong. Simpan referensi dari tab Cari untuk mengumpulkannya di sini.
             </div>
           )}

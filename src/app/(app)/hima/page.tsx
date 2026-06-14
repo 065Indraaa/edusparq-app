@@ -150,10 +150,10 @@ function Badge({ status, map }: { status: string; map: Record<string, { label: s
 }
 
 function inputCls() {
-  return "w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors";
+  return "w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all";
 }
 function btnPrimary(extra = "") {
-  return `py-3 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-colors disabled:opacity-60 ${extra}`;
+  return `inline-flex items-center justify-center gap-2 py-3 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all disabled:opacity-60 shadow-sm ${extra}`;
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────
@@ -398,12 +398,12 @@ export default function HimaPage() {
     };
 
     return (
-      <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-xl mx-auto pt-8">
-        <motion.div variants={itemVariants} className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto">
+      <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-3xl mx-auto pt-4">
+        <motion.div variants={itemVariants} className="relative overflow-hidden text-center space-y-3 rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8 shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
             <Building2 size={32} className="text-primary" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Sistem Informasi HIMA</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Sistem Informasi HIMA</h1>
           <p className="text-sm text-muted-foreground">Buat organisasi baru atau bergabung dengan kode undangan.</p>
         </motion.div>
 
@@ -413,10 +413,10 @@ export default function HimaPage() {
           </motion.p>
         )}
 
-        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={() => { setShowForm("create"); setFormError(""); }}
-            className={`p-6 rounded-3xl border-2 text-center space-y-3 transition-all hover-lift ${showForm === "create" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
+            className={`p-5 sm:p-6 rounded-[1.75rem] border text-center space-y-3 transition-all hover:shadow-md ${showForm === "create" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
           >
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
               <Plus size={24} className="text-primary" />
@@ -428,7 +428,7 @@ export default function HimaPage() {
           </button>
           <button
             onClick={() => { setShowForm("join"); setFormError(""); }}
-            className={`p-6 rounded-3xl border-2 text-center space-y-3 transition-all hover-lift ${showForm === "join" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
+            className={`p-5 sm:p-6 rounded-[1.75rem] border text-center space-y-3 transition-all hover:shadow-md ${showForm === "join" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
           >
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto">
               <UserPlus size={24} className="text-emerald-500" />
@@ -444,7 +444,7 @@ export default function HimaPage() {
           <motion.form
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             onSubmit={handleCreate}
-            className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+            className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
           >
             <h2 className="font-bold text-foreground">Detail Organisasi Baru</h2>
             <input required value={createNama} onChange={(e) => setCreateNama(e.target.value)} placeholder="Nama HIMA / organisasi *" className={inputCls()} />
@@ -464,7 +464,7 @@ export default function HimaPage() {
           <motion.form
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             onSubmit={handleJoin}
-            className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+            className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
           >
             <h2 className="font-bold text-foreground">Kode Undangan</h2>
             <input
@@ -674,16 +674,18 @@ export default function HimaPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-7xl">
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-              <Building2 size={24} className="text-primary" />
-              {activeOrg.nama}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+        <div className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
+          <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
+                <Crown size={14} /> HIMA Workspace
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground truncate">{activeOrg.nama}</h1>
+              <p className="text-sm text-muted-foreground mt-2">
               {activeOrg.prodi && <span>{activeOrg.prodi} · </span>}
               {activeOrg.universitas && <span>{activeOrg.universitas} · </span>}
               Kode:{" "}
@@ -697,7 +699,7 @@ export default function HimaPage() {
               </button>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             {orgs.length > 1 && (
               <select
                 value={activeOrg._id}
@@ -706,7 +708,7 @@ export default function HimaPage() {
                   setActiveOrg(org);
                   setActiveTab("dashboard");
                 }}
-                className="px-3 py-2 rounded-xl bg-muted border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-background/80 border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
               >
                 {orgs.map((o) => (
                   <option key={o._id} value={o._id}>{o.nama}</option>
@@ -715,24 +717,25 @@ export default function HimaPage() {
             )}
             <button
               onClick={() => setActiveOrg(null)}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl border border-border hover:bg-muted transition-colors"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl border border-border bg-background/70 hover:bg-muted transition-colors"
             >
               + Organisasi Lain
             </button>
+            </div>
           </div>
         </div>
       </motion.div>
 
       {/* Tab bar */}
       <motion.div variants={itemVariants}>
-        <div className="flex gap-1 flex-wrap border-b border-border pb-1">
+        <div className="flex gap-1 overflow-x-auto no-scrollbar rounded-2xl border border-border bg-muted/40 p-1">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => switchTab(tab.key)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === tab.key
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-card text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
@@ -754,7 +757,7 @@ export default function HimaPage() {
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               {/* Org info card */}
-              <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 shadow-sm space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Building2 size={24} className="text-primary" />
@@ -780,7 +783,7 @@ export default function HimaPage() {
                     )}
                   </div>
                 )}
-                <div className="flex items-center justify-between p-3 bg-primary/5 rounded-2xl border border-primary/20">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-primary/5 rounded-2xl border border-primary/20">
                   <span className="text-xs font-semibold text-muted-foreground">Kode undangan anggota</span>
                   <button
                     onClick={copyJoinCode}
@@ -794,7 +797,7 @@ export default function HimaPage() {
               </div>
 
               {/* Members */}
-              <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 shadow-sm space-y-4">
                 <h2 className="font-bold text-foreground flex items-center gap-2">
                   <Users size={18} className="text-primary" />
                   Anggota ({members.length})
@@ -823,7 +826,7 @@ export default function HimaPage() {
 
               {/* Sections */}
               {sections.length > 0 && (
-                <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 shadow-sm space-y-4">
                   <h2 className="font-bold text-foreground">Divisi / Seksi</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {sections.map((s) => (
@@ -841,11 +844,11 @@ export default function HimaPage() {
           {/* ─────────── PROGRAM KERJA TAB ─────────── */}
           {activeTab === "progja" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="font-bold text-foreground text-lg">Program Kerja</h2>
                 <button
                   onClick={() => setShowProgjaForm((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors w-full sm:w-auto"
                 >
                   {showProgjaForm ? <X size={14} /> : <Plus size={14} />}
                   {showProgjaForm ? "Batal" : "Tambah Proker"}
@@ -856,16 +859,16 @@ export default function HimaPage() {
                 <motion.form
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   onSubmit={handleAddProgja}
-                  className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+                  className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
                 >
                   <input required value={pjNama} onChange={(e) => setPjNama(e.target.value)} placeholder="Nama program kerja *" className={inputCls()} />
                   <textarea value={pjDeskripsi} onChange={(e) => setPjDeskripsi(e.target.value)} placeholder="Deskripsi" rows={2} className={inputCls() + " resize-none"} />
                   <textarea value={pjTujuan} onChange={(e) => setPjTujuan(e.target.value)} placeholder="Tujuan" rows={2} className={inputCls() + " resize-none"} />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={pjMulai} onChange={(e) => setPjMulai(e.target.value)} placeholder="Tanggal mulai" className={inputCls()} />
                     <input value={pjSelesai} onChange={(e) => setPjSelesai(e.target.value)} placeholder="Tanggal selesai" className={inputCls()} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={pjAnggaran} onChange={(e) => setPjAnggaran(e.target.value)} placeholder="Anggaran (Rp)" type="number" className={inputCls()} />
                     <input value={pjPic} onChange={(e) => setPjPic(e.target.value)} placeholder="PIC / Penanggung jawab" className={inputCls()} />
                   </div>
@@ -928,11 +931,11 @@ export default function HimaPage() {
           {/* ─────────── MENTORING TAB ─────────── */}
           {activeTab === "mentoring" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="font-bold text-foreground text-lg">Sesi Mentoring</h2>
                 <button
                   onClick={() => setShowMentoringForm((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors w-full sm:w-auto"
                 >
                   {showMentoringForm ? <X size={14} /> : <Plus size={14} />}
                   {showMentoringForm ? "Batal" : "Tambah Sesi"}
@@ -943,9 +946,9 @@ export default function HimaPage() {
                 <motion.form
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   onSubmit={handleAddMentoring}
-                  className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+                  className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
                 >
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={mMentorNama} onChange={(e) => setMMentorNama(e.target.value)} placeholder="Nama mentor" className={inputCls()} />
                     <input value={mMenteeNama} onChange={(e) => setMMenteeNama(e.target.value)} placeholder="Nama mentee" className={inputCls()} />
                   </div>
@@ -1011,12 +1014,12 @@ export default function HimaPage() {
                       value={alumniSearch}
                       onChange={(e) => setAlumniSearch(e.target.value)}
                       placeholder="Cari alumni..."
-                      className="pl-8 pr-4 py-2 rounded-xl bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors w-40"
+                      className="pl-8 pr-4 py-2 rounded-xl bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors w-full sm:w-40"
                     />
                   </div>
                   <button
                     onClick={() => setShowAlumniForm((v) => !v)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors w-full sm:w-auto"
                   >
                     {showAlumniForm ? <X size={14} /> : <Plus size={14} />}
                     {showAlumniForm ? "Batal" : "Tambah"}
@@ -1028,18 +1031,18 @@ export default function HimaPage() {
                 <motion.form
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   onSubmit={handleAddAlumni}
-                  className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+                  className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
                 >
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input required value={aNama} onChange={(e) => setANama(e.target.value)} placeholder="Nama lengkap *" className={inputCls()} />
                     <input value={aTahun} onChange={(e) => setATahun(e.target.value)} placeholder="Tahun lulus" className={inputCls()} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={aPerusahaan} onChange={(e) => setAPerusahaan(e.target.value)} placeholder="Perusahaan / institusi" className={inputCls()} />
                     <input value={aPosisi} onChange={(e) => setAPosisi(e.target.value)} placeholder="Posisi / jabatan" className={inputCls()} />
                   </div>
                   <input value={aPekerjaan} onChange={(e) => setAPekerjaan(e.target.value)} placeholder="Bidang pekerjaan" className={inputCls()} />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={aKontak} onChange={(e) => setAKontak(e.target.value)} placeholder="Kontak (WA / email)" className={inputCls()} />
                     <input value={aLinkedin} onChange={(e) => setALinkedin(e.target.value)} placeholder="LinkedIn URL" className={inputCls()} />
                   </div>
@@ -1098,11 +1101,11 @@ export default function HimaPage() {
           {/* ─────────── ADVOKASI TAB ─────────── */}
           {activeTab === "advokasi" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="font-bold text-foreground text-lg">Advokasi Mahasiswa</h2>
                 <button
                   onClick={() => setShowAdvocacyForm((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors w-full sm:w-auto"
                 >
                   {showAdvocacyForm ? <X size={14} /> : <Plus size={14} />}
                   {showAdvocacyForm ? "Batal" : "Buat Tiket"}
@@ -1113,9 +1116,9 @@ export default function HimaPage() {
                 <motion.form
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   onSubmit={handleAddAdvocacy}
-                  className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+                  className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
                 >
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={advKategori} onChange={(e) => setAdvKategori(e.target.value)} placeholder="Kategori (misal: Akademik)" className={inputCls()} />
                     <input required value={advJudul} onChange={(e) => setAdvJudul(e.target.value)} placeholder="Judul masalah *" className={inputCls()} />
                   </div>
@@ -1178,11 +1181,11 @@ export default function HimaPage() {
           {/* ─────────── DOKUMEN TAB ─────────── */}
           {activeTab === "dokumen" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="font-bold text-foreground text-lg">Arsip Dokumen</h2>
                 <button
                   onClick={() => setShowDocForm((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-xl transition-colors w-full sm:w-auto"
                 >
                   {showDocForm ? <X size={14} /> : <Plus size={14} />}
                   {showDocForm ? "Batal" : "Tambah Dokumen"}
@@ -1193,10 +1196,10 @@ export default function HimaPage() {
                 <motion.form
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   onSubmit={handleAddDoc}
-                  className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+                  className="bg-card border border-border rounded-[1.75rem] p-4 sm:p-6 space-y-4 shadow-sm"
                 >
                   <input required value={docJudul} onChange={(e) => setDocJudul(e.target.value)} placeholder="Judul dokumen *" className={inputCls()} />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input value={docPeriode} onChange={(e) => setDocPeriode(e.target.value)} placeholder="Periode (misal: 2024/2025)" className={inputCls()} />
                     <input value={docJenis} onChange={(e) => setDocJenis(e.target.value)} placeholder="Jenis (misal: LPJ, AD/ART)" className={inputCls()} />
                   </div>
@@ -1216,7 +1219,7 @@ export default function HimaPage() {
               ) : (
                 <div className="space-y-3">
                   {docList.map((d) => (
-                    <div key={d._id} className="bg-card border border-border rounded-3xl p-5 shadow-sm group flex items-center gap-4">
+                    <div key={d._id} className="bg-card border border-border rounded-3xl p-5 shadow-sm group flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                         <FileText size={18} className="text-primary" />
                       </div>

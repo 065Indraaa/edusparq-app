@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, CalendarClock } from "lucide-react";
 
 interface NotifItem {
   id: string;
@@ -66,7 +66,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+        className="relative rounded-2xl border border-transparent hover:border-border hover:bg-muted/70 text-muted-foreground hover:text-foreground transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Notifikasi tenggat"
       >
         <Bell size={18} />
@@ -78,9 +78,9 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] max-h-96 overflow-y-auto rounded-2xl border border-border bg-card shadow-xl z-50 no-scrollbar">
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-            <span className="text-sm font-bold text-foreground">Pengingat Tenggat</span>
+        <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] max-h-[28rem] overflow-y-auto rounded-[1.5rem] border border-border bg-card shadow-2xl z-50 no-scrollbar">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3 bg-muted/25">
+            <span className="text-sm font-bold text-foreground inline-flex items-center gap-2"><CalendarClock size={15} className="text-primary" /> Pengingat Tenggat</span>
             <Link href="/deadlines" onClick={() => setOpen(false)} className="text-[11px] font-semibold text-primary hover:underline">
               Lihat semua
             </Link>
@@ -90,16 +90,16 @@ export function NotificationBell() {
               Tidak ada tenggat dalam waktu dekat. Santai dulu. 🎉
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="p-2 space-y-1">
               {items.map((n) => (
                 <Link
                   key={n.id}
                   href="/deadlines"
                   onClick={() => setOpen(false)}
-                  className="block px-4 py-3 hover:bg-muted/50 transition-colors"
+                  className="block px-3 py-3 rounded-2xl hover:bg-muted/60 transition-colors border border-transparent hover:border-border"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-foreground truncate">{n.title}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold text-foreground min-w-0 line-clamp-2">{n.title}</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${tone(n.severity)}`}>
                       {label(n)}
                     </span>

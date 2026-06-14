@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Lightbulb, RefreshCw, Sparkles } from "lucide-react";
+import { ArrowUpRight, Lightbulb, RefreshCw, Sparkles } from "lucide-react";
 
 interface Rec {
   topik: string;
@@ -69,16 +69,20 @@ export function RecommendationsWidget() {
   if (loading) return null;
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 md:p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-          <Lightbulb size={18} className="text-primary" /> Rekomendasi Belajar AI
-        </h2>
+    <section className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-card via-card to-primary/5 p-5 md:p-6 shadow-sm">
+      <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Lightbulb size={18} className="text-primary" /> Rekomendasi Belajar AI
+          </h2>
+          <p className="text-[11px] text-muted-foreground mt-1">Dibuat dari mata kuliah dan materi yang sudah dianalisis.</p>
+        </div>
         <button
           type="button"
           onClick={generate}
           disabled={generating}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-60 shrink-0"
         >
           {generating ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
           {recs.length > 0 ? "Perbarui" : "Buat"}
@@ -88,13 +92,13 @@ export function RecommendationsWidget() {
       {error && <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">{error}</p>}
 
       {recs.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">
+        <div className="rounded-2xl border border-dashed border-border bg-background/60 px-4 py-5 text-xs text-muted-foreground">
           Belum ada rekomendasi. Tekan &ldquo;Buat&rdquo; untuk menghasilkan topik belajar dari mata kuliah dan materimu.
-        </p>
+        </div>
       ) : (
         <div className="space-y-2">
           {recs.map((r, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 rounded-2xl bg-muted/30 border border-border">
+            <div key={i} className="group flex items-start gap-3 p-3 rounded-2xl bg-background/70 border border-border hover:border-primary/20 hover:bg-background transition-all">
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md shrink-0 ${
                   PRIORITY_STYLE[r.prioritas] || PRIORITY_STYLE.sedang
@@ -103,8 +107,8 @@ export function RecommendationsWidget() {
                 {r.prioritas || "sedang"}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">{r.topik}</p>
-                <p className="text-[11px] text-muted-foreground">{r.alasan}</p>
+                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">{r.topik}<ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity text-primary" /></p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{r.alasan}</p>
               </div>
             </div>
           ))}
