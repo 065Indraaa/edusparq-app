@@ -15,6 +15,7 @@ import {
   Search,
   UserCircle,
   Building2,
+  Library,
 } from "lucide-react";
 
 export type NavItem = {
@@ -46,6 +47,7 @@ export const navGroups: NavGroup[] = [
       { name: "Tutor AI", href: "/tutor", icon: Bot },
       { name: "Menulis", href: "/writing", icon: PenTool },
       { name: "Riset", href: "/research", icon: Search },
+      { name: "Katalog", href: "/katalog", icon: Library },
       { name: "Latihan Ujian", href: "/exams", icon: GraduationCap },
     ],
   },
