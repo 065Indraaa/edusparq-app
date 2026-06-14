@@ -91,6 +91,14 @@
   }
 }
 
+/* Global tactile interactivity: smooth hover + subtle press on all controls */
+button, a, [role="button"], select {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease, transform 0.12s ease, opacity 0.15s ease;
+}
+button:not(:disabled):active, [role="button"]:active {
+  transform: scale(0.97);
+}
+
 /* Glassmorphism Utilities */
 @layer utilities {
   .glass-panel {

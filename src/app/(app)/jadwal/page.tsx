@@ -106,7 +106,7 @@ export default function JadwalPage() {
   const byDay = (d: number) => items.filter((i) => i.hari === d);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-6xl">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-7xl">
       <section className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
         <div className="absolute -left-10 -bottom-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
         <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">

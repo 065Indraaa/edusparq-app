@@ -124,7 +124,7 @@ export default function ProfilePage() {
     }));
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-5xl">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-7xl">
       {/* Header */}
       <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
         <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
