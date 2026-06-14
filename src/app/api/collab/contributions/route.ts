@@ -47,8 +47,8 @@ export async function GET(req: NextRequest) {
     }
   );
 
-  const sumBobot = result.reduce((sum, r) => sum + r.totalBobot, 0);
-  const withPersen = result.map((r) => ({
+  const sumBobot = result.reduce((sum: number, r: { totalBobot: number }) => sum + r.totalBobot, 0);
+  const withPersen = result.map((r: { userId: string; nama: string; selesai: number; totalBobot: number }) => ({
     ...r,
     persen: sumBobot > 0 ? Math.round((r.totalBobot / sumBobot) * 100) : 0,
   }));
