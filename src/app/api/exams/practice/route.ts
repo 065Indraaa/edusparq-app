@@ -149,7 +149,7 @@ Aturan: soal MC tepat 4 pilihan, correctIndex 0-3, distraktor masuk akal; soal e
         idealAnswer: String(q.idealAnswer || "").trim(),
       };
     })
-    .filter((q) => q && q.question);
+    .filter((q): q is NonNullable<typeof q> => Boolean(q && q.question));
 
   if (questions.length === 0)
     return NextResponse.json(
