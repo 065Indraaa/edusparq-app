@@ -110,11 +110,11 @@ export type AiTask =
  */
 const TASK_PROVIDER: Record<AiTask, AiProvider> = {
   chat: "groq", // streaming ditangani terpisah di /api/chat
-  summarize: "gemini",
+  summarize: "moonshot",
   flashcards: "groq",
   quiz: "moonshot", // butuh soal berkualitas + distraktor masuk akal
-  analyze: "gemini",
-  recommend: "gemini",
+  analyze: "moonshot",
+  recommend: "moonshot",
   grade: "moonshot", // penilaian akurat berbasis rubrik
   draft: "groq",
 };
@@ -122,11 +122,11 @@ const TASK_PROVIDER: Record<AiTask, AiProvider> = {
 /** Budget token output tambahan untuk tugas baru. */
 export const TASK_MAX_TOKENS: Record<AiTask, number> = {
   chat: AI_MAX_TOKENS.chat,
-  summarize: AI_MAX_TOKENS.summarize,
+  summarize: 2048,
   flashcards: AI_MAX_TOKENS.flashcards,
   quiz: AI_MAX_TOKENS.quiz,
-  analyze: AI_MAX_TOKENS.analyze,
-  recommend: AI_MAX_TOKENS.recommend,
+  analyze: 2048,
+  recommend: 1536,
   grade: AI_MAX_TOKENS.grade,
   draft: 4096,
 };

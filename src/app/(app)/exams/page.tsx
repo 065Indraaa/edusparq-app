@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Wand2 } from "lucide-react";
+import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Wand2, ClipboardList } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { CourseSelect } from "@/components/course-select";
+import ExamPractice from "./ExamPractice";
 
 interface Flashcard {
   _id: string;
@@ -25,7 +26,7 @@ const itemVariants = {
 
 export default function ExamsPage() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<"predict" | "flashcard">("predict");
+  const [activeTab, setActiveTab] = useState<"predict" | "practice" | "flashcard">("practice");
 
   // Real courses, used to prefill the prediction course field and flashcard form.
   const [courses, setCourses] = useState<string[]>([]);
@@ -242,10 +243,11 @@ export default function ExamsPage() {
       </motion.div>
 
       {/* Tabs */}
-      <motion.div variants={itemVariants} className="flex bg-muted p-1 rounded-2xl gap-1 max-w-xs">
+      <motion.div variants={itemVariants} className="flex bg-muted p-1 rounded-2xl gap-1 max-w-md">
         {[
           { id: "predict", label: "Prediksi Soal", icon: Sparkles },
           { id: "flashcard", label: "Flashcard", icon: LayoutGrid },
+          { id: "practice", label: "Latihan Soal", icon: ClipboardList },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -497,6 +499,10 @@ export default function ExamsPage() {
                 )}
               </AnimatePresence>
             </div>
+          )}
+
+          {activeTab === "practice" && (
+            <ExamPractice courses={courses} documents={documents} />
           )}
         </motion.div>
 
