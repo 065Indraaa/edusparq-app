@@ -238,15 +238,19 @@ export default function ExamPractice({
                     onChange={(e) => setEssays((s) => ({ ...s, [i]: e.target.value }))}
                     placeholder="Tulis jawaban esaimu di sini..."
                     className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none disabled:opacity-70" />
-                  {result?.perEssay[i] && (
-                    <div className="rounded-2xl bg-muted/50 border border-border p-3 space-y-2 text-xs">
-                      <p className="font-bold text-primary">Nilai esai: {result.perEssay[i].score}/100</p>
-                      {result.perEssay[i].feedback && <p className="text-muted-foreground leading-relaxed">{result.perEssay[i].feedback}</p>}
-                      {result.perEssay[i].missing.length > 0 && (
-                        <p className="text-muted-foreground"><strong>Perlu ditambah:</strong> {result.perEssay[i].missing.join("; ")}</p>
-                      )}
-                    </div>
-                  )}
+                  {(() => {
+                    const er = result?.perEssay[i];
+                    if (!er) return null;
+                    return (
+                      <div className="rounded-2xl bg-muted/50 border border-border p-3 space-y-2 text-xs">
+                        <p className="font-bold text-primary">Nilai esai: {er.score}/100</p>
+                        {er.feedback && <p className="text-muted-foreground leading-relaxed">{er.feedback}</p>}
+                        {er.missing.length > 0 && (
+                          <p className="text-muted-foreground"><strong>Perlu ditambah:</strong> {er.missing.join("; ")}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
