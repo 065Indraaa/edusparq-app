@@ -241,34 +241,58 @@ export default function DashboardPage() {
     >
       
       {/* Welcome Banner */}
-      <motion.section variants={item} className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-10 shadow-sm">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl -z-10" />
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-          <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+      <motion.section variants={item} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/12 via-card to-card p-6 md:p-10 shadow-sm">
+        <div className="pointer-events-none absolute -top-16 -right-10 w-80 h-80 bg-primary/15 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/4 w-72 h-72 bg-amber-400/10 rounded-full blur-3xl" />
+        <div className="relative z-10 grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-center">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               <Sparkles size={14} />
               <span>Teman belajar mahasiswa Indonesia</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-              {timeGreeting}, {firstName}.
-            </h1>
-            <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-              EduSparq bantu kamu kelola tugas, materi, dan persiapan ujian dalam satu tempat. Unggah materi kuliah, tanya Tutor AI, dan pantau tenggat biar kuliahmu lebih tenang.
-            </p>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground leading-[1.05]">
+                {timeGreeting},<br />
+                <span className="text-gradient">{firstName}.</span>
+              </h1>
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed mt-4 max-w-xl">
+                {userSemester ? `${userSemester} \u00b7 ` : ""}Kelola tugas, materi, dan persiapan ujian dalam satu tempat. Unggah materi, tanya Tutor AI, dan pantau tenggat biar kuliahmu lebih tenang.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Link href="/tutor" className="inline-flex items-center gap-2 px-5 min-h-[46px] rounded-2xl bg-primary text-primary-foreground font-bold text-sm shadow-sm hover:shadow-md hover:bg-primary/90 hover-lift">
+                <Bot size={17} /> Mulai belajar
+              </Link>
+              <Link href="/deadlines" className="inline-flex items-center gap-2 px-5 min-h-[46px] rounded-2xl border border-border bg-card font-semibold text-sm hover:border-primary/40 hover:text-primary hover-lift">
+                <CalendarDays size={17} /> Lihat tugas
+              </Link>
+            </div>
           </div>
 
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 p-5 rounded-2xl bg-muted/50 border border-border backdrop-blur-sm shrink-0 min-w-[280px]">
-            {stats.map((stat, idx) => (
-              <div key={idx} className="flex flex-col">
-                <span className="text-muted-foreground text-[11px] uppercase font-bold tracking-wider mb-1">{stat.label}</span>
-                {loading ? (
-                  <span className="skeleton h-7 w-14 rounded-md" />
-                ) : (
-                  <span className="text-2xl font-black text-foreground">{stat.value}</span>
-                )}
-              </div>
-            ))}
+          {/* Stat tiles */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {stats.map((stat, idx) => {
+              const meta = [
+                { Icon: GraduationCap, tint: "text-primary bg-primary/10" },
+                { Icon: BookOpen, tint: "text-amber-600 dark:text-amber-400 bg-amber-400/15" },
+                { Icon: CalendarDays, tint: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" },
+                { Icon: Sparkles, tint: "text-primary bg-primary/10" },
+              ][idx] || { Icon: Sparkles, tint: "text-primary bg-primary/10" };
+              const Icon = meta.Icon;
+              return (
+                <div key={idx} className="group relative rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-4 shadow-sm hover-lift overflow-hidden">
+                  <div className={`w-9 h-9 rounded-xl grid place-items-center mb-3 transition-transform group-hover:scale-110 ${meta.tint}`}>
+                    <Icon size={18} strokeWidth={2.4} />
+                  </div>
+                  {loading ? (
+                    <span className="skeleton h-8 w-16 rounded-md block" />
+                  ) : (
+                    <span className="text-3xl font-extrabold text-foreground block leading-none tracking-tight">{stat.value}</span>
+                  )}
+                  <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block mt-1.5">{stat.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </motion.section>
