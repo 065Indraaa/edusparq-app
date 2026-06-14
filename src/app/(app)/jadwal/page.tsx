@@ -194,14 +194,14 @@ export default function JadwalPage() {
           Belum ada jadwal. Klik <span className="font-bold text-foreground">Tambah</span> untuk memasukkan kelas pertamamu.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
           {HARI.slice(1).map((nama, idx) => {
             const d = idx + 1;
             const dayItems = byDay(d);
             if (dayItems.length === 0) return null;
             const isToday = d === today;
             return (
-              <div key={nama} className="space-y-2">
+              <div key={nama} className={`rounded-[1.5rem] border p-4 space-y-3 shadow-sm ${isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
                 <div className="flex items-center gap-2">
                   <span className={`text-sm font-extrabold ${isToday ? "text-primary" : "text-foreground"}`}>{nama}</span>
                   {isToday && (
@@ -210,7 +210,7 @@ export default function JadwalPage() {
                 </div>
                 <div className="space-y-2">
                   {dayItems.map((it) => (
-                    <div key={it._id} className={`flex items-start sm:items-center gap-3 p-4 rounded-2xl border shadow-sm transition-all hover:shadow-md ${isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                    <div key={it._id} className={`flex items-start sm:items-center gap-3 p-3 rounded-2xl border transition-all hover:shadow-sm ${isToday ? "border-primary/20 bg-background/70" : "border-border bg-muted/30"}`}>
                       <div className="text-center shrink-0 w-14">
                         <span className="block text-sm font-black text-foreground leading-tight">{it.jamMulai}</span>
                         <span className="block text-[10px] text-muted-foreground">{it.jamSelesai}</span>

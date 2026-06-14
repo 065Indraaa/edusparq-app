@@ -247,13 +247,13 @@ export default function DashboardPage() {
           <div className="space-y-4 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
               <Sparkles size={14} />
-              <span>Mode Semester Aktif</span>
+              <span>Teman belajar mahasiswa Indonesia</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
               {timeGreeting}, {firstName}.
             </h1>
             <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-              Selamat datang kembali di ruang kerja akademik Anda.{userSemester ? ` Saat ini Anda berada pada semester aktif.` : " Mari selesaikan tenggat minggu ini secara efisien."}
+              EduSparq bantu kamu kelola tugas, materi, dan persiapan ujian dalam satu tempat. Unggah materi kuliah, tanya Tutor AI, dan pantau tenggat biar kuliahmu lebih tenang.
             </p>
           </div>
 
@@ -272,10 +272,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </motion.section>
-
-      <AcademicCalendarWidget />
-
-      <RecommendationsWidget />
 
       {todayClasses.length > 0 && (
         <motion.section variants={item} className="rounded-3xl border border-primary/20 bg-primary/5 p-5 md:p-6 shadow-sm">
@@ -386,6 +382,10 @@ export default function DashboardPage() {
 
         {/* Right column (Deadlines & Intelligent Notification Feed) */}
         <div className="space-y-8">
+          <RecommendationsWidget />
+
+          <AcademicCalendarWidget />
+
           
           {/* Upcoming Deadlines */}
           <motion.div variants={item} className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm flex flex-col">

@@ -341,7 +341,7 @@ export default function KatalogPage() {
               ))}
             </div>
           ) : results.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {results.map((it) => {
                 const refId = it.doi || it.id;
                 return (
@@ -368,7 +368,7 @@ export default function KatalogPage() {
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {library.length > 0 ? (
             library.map((it) => (
               <Card key={it.refId} it={it} saved onRemove={() => remove(it.refId)} copyKey={`l-${it.refId}`} />
