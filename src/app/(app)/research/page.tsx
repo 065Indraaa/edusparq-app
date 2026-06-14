@@ -51,7 +51,7 @@ export default function ResearchPage() {
       const userProdi = profile?.user?.prodi || "";
       setProdi(userProdi);
       const courseNames: string[] = Array.isArray(courses)
-        ? courses.map((c: { name?: string }) => c?.name).filter(Boolean)
+        ? courses.map((c: { name?: string }) => c?.name).filter((n): n is string => Boolean(n))
         : [];
       if (courseNames.length > 0) {
         const derived = courseNames
