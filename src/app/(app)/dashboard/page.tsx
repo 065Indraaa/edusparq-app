@@ -60,12 +60,9 @@ export default function DashboardPage() {
     { label: "Dokumen", value: "0" },
   ];
 
-  // Sample/fallback deadlines — kept rich for demo.
-  const fallbackDeadlines: DeadlineView[] = [
-    { title: "Kuis Bab 8: Kebijakan Moneter", course: "Ekonomi Makro Internasional", date: "Besok, 23:59 WIB", daysLeft: 1 },
-    { title: "Draft Bab 3: Metodologi Penelitian", course: "Metodologi Penelitian Ekonomi", date: "15 Juni 2026, 17:00 WIB", daysLeft: 2 },
-    { title: "Analisis Kasus Duopoli Cournot", course: "Teori Permainan", date: "17 Juni 2026, 09:00 WIB", daysLeft: 4 },
-  ];
+  // No fabricated deadlines. When logged in we only ever show the user's real
+  // tenggat (or an empty state) — keep this empty so nothing mock leaks in.
+  const fallbackDeadlines: DeadlineView[] = [];
 
   const [stats, setStats] = useState(fallbackStats);
   const [deadlines, setDeadlines] = useState<DeadlineView[]>(fallbackDeadlines);
@@ -347,7 +344,12 @@ export default function DashboardPage() {
                       <span className="skeleton block h-3 w-32 rounded" />
                     </div>
                   ))
-                : deadlines.map((dl, idx) => (
+                : deadlines.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-muted/30 border border-dashed border-border text-center">
+                    <p className="text-xs text-muted-foreground">Belum ada tenggat. Tambahkan di halaman Tugas &amp; Tenggat.</p>
+                  </div>
+                ) : (
+                  deadlines.map((dl, idx) => (
                 <div key={idx} className="p-4 rounded-2xl bg-muted/30 border border-transparent hover:border-border transition-all flex items-start justify-between gap-3 group">
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">{dl.course}</span>
@@ -364,7 +366,7 @@ export default function DashboardPage() {
                     {dueLabel(dl.daysLeft)}
                   </span>
                 </div>
-              ))}
+              )))}
             </div>
           </motion.div>
 
