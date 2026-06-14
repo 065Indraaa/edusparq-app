@@ -279,7 +279,7 @@ async function runProvider(
       process.env.MOONSHOT_API_KEY!,
       PROVIDER_MODELS.moonshot,
       turns,
-      opts
+      { ...opts, temperature: 1 }
     );
   }
   // gemini
