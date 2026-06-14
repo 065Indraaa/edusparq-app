@@ -171,7 +171,7 @@ export function BottomNav() {
               aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[52px] rounded-2xl transition-all ${
                 active ? "bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_hsl(var(--primary))]" : "text-muted-foreground hover:text-primary active:text-primary"
-              }`
+              }`}
             >
               <span className={`flex items-center justify-center transition-transform ${active ? "scale-110" : "scale-100"}`}>
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />
