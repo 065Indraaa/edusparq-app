@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { AcademicCalendarWidget } from "@/components/academic-calendar-widget";
+import { RecommendationsWidget } from "@/components/recommendations-widget";
 import {
   Sparkles,
   CalendarDays,
@@ -273,6 +274,8 @@ export default function DashboardPage() {
       </motion.section>
 
       <AcademicCalendarWidget />
+
+      <RecommendationsWidget />
 
       {todayClasses.length > 0 && (
         <motion.section variants={item} className="rounded-3xl border border-primary/20 bg-primary/5 p-5 md:p-6 shadow-sm">
