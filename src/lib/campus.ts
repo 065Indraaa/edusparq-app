@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db/mongodb";
 import { UniversityCache } from "@/lib/db/models/UniversityCache";
+import { searchUniversities as searchUniversitiesPddikti } from "@/lib/pddikti";
 
 /**
  * Indonesia University Data API integration (https://use.api.co.id).
@@ -75,7 +76,30 @@ export async function searchUniversities(
     // ignore cache errors — fall through to live fetch / empty
   }
 
-  if (!configured) return { configured: false, results: [] };
+  if (!configured) {
+    // No api.co.id key — fall back to PDDIKTI (keyless) so the picker still
+    // returns real universities for every user.
+    const pt = await searchUniversitiesPddikti(rawQuery);
+    const fallback: UniversityResult[] = pt.map((u) => ({
+      name: u.nama,
+      shortName: u.namaSingkat,
+      province: "",
+      regency: "",
+      type: "",
+    }));
+    if (fallback.length > 0) {
+      try {
+        await UniversityCache.findOneAndUpdate(
+          { query },
+          { $set: { results: fallback, cachedAt: new Date() } },
+          { upsert: true }
+        );
+      } catch {
+        // ignore cache write errors
+      }
+    }
+    return { configured: false, results: fallback };
+  }
 
   // 2. Live fetch.
   try {

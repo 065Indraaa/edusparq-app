@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import { UserCircle, Save, RefreshCw, GraduationCap, Building2, BookOpen, Hash, CheckCircle2 } from "lucide-react";
 import { UniversityPicker } from "@/components/university-picker";
 import { GoogleConnectCard } from "@/components/google-connect-card";
+import { ProdiPicker } from "@/components/prodi-picker";
+import { PddiktiAutofill, PddiktiFill } from "@/components/pddikti-autofill";
 
 interface ProfileForm {
   name: string;
@@ -109,8 +111,15 @@ export default function ProfilePage() {
 
   const fields: { key: keyof ProfileForm; label: string; placeholder: string; icon: React.ElementType }[] = [
     { key: "fakultas", label: "Fakultas", placeholder: "Contoh: Fakultas Ekonomi dan Bisnis", icon: GraduationCap },
-    { key: "prodi", label: "Program Studi", placeholder: "Contoh: Akuntansi", icon: BookOpen },
   ];
+
+  const applyPddikti = (data: PddiktiFill) =>
+    setForm((f) => ({
+      ...f,
+      universitas: data.universitas || f.universitas,
+      prodi: data.prodi || f.prodi,
+      semester: String(data.semester || Number(f.semester) || 1),
+    }));
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 max-w-3xl">
@@ -156,6 +165,8 @@ export default function ProfilePage() {
 
       {/* Form */}
       <motion.form variants={itemVariants} onSubmit={handleSave} className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
+        <PddiktiAutofill onFill={applyPddikti} />
+
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">Nama lengkap</label>
           <input
@@ -192,6 +203,18 @@ export default function ProfilePage() {
             />
           </div>
         ))}
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+            <BookOpen size={13} className="text-primary" /> Program Studi
+          </label>
+          <ProdiPicker
+            value={form.prodi}
+            onChange={(v) => setForm((f) => ({ ...f, prodi: v }))}
+            universitas={form.universitas}
+            disabled={loading}
+          />
+        </div>
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
