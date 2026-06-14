@@ -509,7 +509,7 @@ export default function CollabPage() {
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
