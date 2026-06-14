@@ -1,33 +1,12 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SidebarNav, BottomNav, type NavItem } from "@/components/app-nav";
+import { SidebarNav, BottomNav } from "@/components/app-nav";
 import { auth, signOut } from "@/lib/auth";
 import {
-  LayoutDashboard,
-  FolderOpen,
-  CalendarDays,
-  Bot,
-  PenTool,
-  Users,
-  GraduationCap,
-  BarChart3,
   Bell,
   Sparkles,
   LogOut,
-  Search,
 } from "lucide-react";
-
-const navigation: NavItem[] = [
-  { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Materi", href: "/workspace", icon: FolderOpen },
-  { name: "Tenggat", href: "/deadlines", icon: CalendarDays },
-  { name: "Tutor AI", href: "/tutor", icon: Bot },
-  { name: "Menulis", href: "/writing", icon: PenTool },
-  { name: "Riset", href: "/research", icon: Search },
-  { name: "Kelompok", href: "/collab", icon: Users },
-  { name: "Ujian", href: "/exams", icon: GraduationCap },
-  { name: "Analitik", href: "/analytics", icon: BarChart3 },
-];
 
 export default async function AppLayout({
   children,
@@ -80,7 +59,7 @@ export default async function AppLayout({
           <ThemeToggle />
         </div>
 
-        <SidebarNav items={navigation} />
+        <SidebarNav />
 
         <div className="p-3 border-t border-border bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center gap-3 px-1">
@@ -136,7 +115,7 @@ export default async function AppLayout({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <BottomNav items={navigation.slice(0, 5)} />
+      <BottomNav />
     </div>
   );
 }

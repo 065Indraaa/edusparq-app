@@ -3,6 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderOpen,
+  CalendarDays,
+  Bot,
+  PenTool,
+  Users,
+  GraduationCap,
+  BarChart3,
+  Search,
+} from "lucide-react";
 
 export type NavItem = {
   name: string;
@@ -10,13 +21,29 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
+// Defined here (a Client Component module) so the lucide icon components never
+// cross the Server -> Client boundary as props. Passing functions/forwardRef
+// objects across that boundary throws:
+//   "Functions cannot be passed directly to Client Components".
+export const navigation: NavItem[] = [
+  { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Materi", href: "/workspace", icon: FolderOpen },
+  { name: "Tenggat", href: "/deadlines", icon: CalendarDays },
+  { name: "Tutor AI", href: "/tutor", icon: Bot },
+  { name: "Menulis", href: "/writing", icon: PenTool },
+  { name: "Riset", href: "/research", icon: Search },
+  { name: "Kelompok", href: "/collab", icon: Users },
+  { name: "Ujian", href: "/exams", icon: GraduationCap },
+  { name: "Analitik", href: "/analytics", icon: BarChart3 },
+];
+
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /** Desktop sidebar navigation with active-route highlight. */
-export function SidebarNav({ items }: { items: NavItem[] }) {
+export function SidebarNav({ items = navigation }: { items?: NavItem[] }) {
   const pathname = usePathname();
 
   return (
@@ -58,7 +85,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
 }
 
 /** Mobile bottom navigation with active-route highlight. */
-export function BottomNav({ items }: { items: NavItem[] }) {
+export function BottomNav({ items = navigation.slice(0, 5) }: { items?: NavItem[] }) {
   const pathname = usePathname();
 
   return (
