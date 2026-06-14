@@ -16,6 +16,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   mode: string;
+  courseName?: string;
   createdAt?: string;
   isStreaming?: boolean;
   meta?: ChatMeta;
@@ -45,9 +46,18 @@ const MODES = [
   },
 ];
 
+const ACTION_CHIPS = [
+  { label: "Jelaskan konsep", prompt: "Jelaskan konsep berikut dengan bahasa sederhana dan contoh nyata: " },
+  { label: "Beri contoh soal", prompt: "Buatkan satu contoh soal beserta pembahasan langkah demi langkah tentang: " },
+  { label: "Beri analogi", prompt: "Berikan analogi sehari-hari yang mudah dipahami untuk konsep: " },
+  { label: "Ringkas materi", prompt: "Ringkas poin-poin terpenting dari materi: " },
+];
+
 export default function TutorPage() {
   const { data: session } = useSession();
   const [mode, setMode] = useState("helper");
+  const [courses, setCourses] = useState<string[]>([]);
+  const [course, setCourse] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +66,9 @@ export default function TutorPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentMode = MODES.find((m) => m.id === mode) || MODES[1];
+  const visibleMessages = course
+    ? messages.filter((m) => (m.courseName || "") === course)
+    : messages;
 
   // Load chat history from DB
   useEffect(() => {
@@ -68,6 +81,21 @@ export default function TutorPage() {
       .finally(() => setIsFetchingHistory(false));
   }, [session]);
 
+  // Load the student's real courses for the focus selector.
+  useEffect(() => {
+    if (!session?.user) return;
+    fetch("/api/courses")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) =>
+        setCourses(
+          (Array.isArray(data) ? data : [])
+            .map((c: { name?: string }) => c?.name || "")
+            .filter(Boolean)
+        )
+      )
+      .catch(() => {});
+  }, [session]);
+
   // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,7 +105,7 @@ export default function TutorPage() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMsg: ChatMessage = { role: "user", content: input, mode };
+    const userMsg: ChatMessage = { role: "user", content: input, mode, courseName: course };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
@@ -87,6 +115,7 @@ export default function TutorPage() {
       role: "assistant",
       content: "",
       mode,
+      courseName: course,
       isStreaming: true,
     };
     setMessages((prev) => [...prev, streamingMsg]);
@@ -95,7 +124,7 @@ export default function TutorPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg.content, mode }),
+        body: JSON.stringify({ message: userMsg.content, mode, courseName: course }),
       });
 
       if (!res.body) throw new Error("No response body");
@@ -186,7 +215,7 @@ export default function TutorPage() {
             </p>
           </div>
 
-          {messages.length > 0 && (
+          {visibleMessages.length > 0 && (
             <button
               onClick={handleClearHistory}
               className="flex items-center gap-1.5 px-3 min-h-[44px] rounded-2xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors border border-transparent hover:border-destructive/20"
@@ -222,6 +251,33 @@ export default function TutorPage() {
 
         {/* Mode description */}
         <p className="text-xs text-muted-foreground mt-2.5 ml-1">{currentMode.desc}</p>
+
+        {/* Course focus + quick action chips */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <span className="text-xs font-semibold text-muted-foreground">Fokus matkul:</span>
+          <select
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
+            className="px-3 min-h-[36px] rounded-xl bg-card border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
+          >
+            <option value="">Semua</option>
+            {courses.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          {ACTION_CHIPS.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => { setInput(c.prompt); inputRef.current?.focus(); }}
+              className="px-2.5 min-h-[32px] rounded-lg bg-muted border border-border text-[11px] font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
 
         {/* Socratic mode persistent indicator */}
         <AnimatePresence>
@@ -259,7 +315,7 @@ export default function TutorPage() {
             <div className="flex items-center justify-center h-full">
               <RefreshCw size={20} className="text-muted-foreground animate-spin" />
             </div>
-          ) : messages.length === 0 ? (
+          ) : visibleMessages.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -277,7 +333,7 @@ export default function TutorPage() {
             </motion.div>
           ) : (
             <AnimatePresence initial={false}>
-              {messages.map((msg, idx) => (
+              {visibleMessages.map((msg, idx) => (
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, y: 8 }}

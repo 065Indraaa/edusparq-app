@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { message, mode = "helper" } = await req.json();
+  const { message, mode = "helper", courseName = "" } = await req.json();
   if (!message?.trim()) return NextResponse.json({ error: "Message required" }, { status: 400 });
   if (message.length > 4000) {
     return NextResponse.json(
@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
     role: "user",
     content: message,
     mode,
+    courseName: typeof courseName === "string" ? courseName : "",
   });
 
   // Recent history for context (last 10 messages, newest first).
@@ -88,7 +89,10 @@ export async function POST(req: NextRequest) {
 
   // Persona akademik profesional + grounding ke materi mahasiswa (RAG).
   const sourceBlock = chunks.length > 0 ? buildContextBlock(chunks) : undefined;
-  const systemPrompt = buildSystemPrompt(personaFromMode(mode), { sourceBlock });
+  const systemPrompt = buildSystemPrompt(personaFromMode(mode), {
+    sourceBlock,
+    courses: courseName ? [String(courseName)] : undefined,
+  });
 
   const encoder = new TextEncoder();
   let fullResponse = "";
@@ -131,6 +135,7 @@ export async function POST(req: NextRequest) {
           role: "assistant",
           content: fullResponse,
           mode,
+          courseName: typeof courseName === "string" ? courseName : "",
         });
       } catch {}
 

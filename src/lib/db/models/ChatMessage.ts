@@ -5,6 +5,7 @@ const ChatMessageSchema = new Schema({
   role: { type: String, enum: ["user", "assistant"], required: true },
   content: { type: String, required: true },
   mode: { type: String, enum: ["socratic", "helper", "research"], default: "helper" },
+  courseName: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 });
 
