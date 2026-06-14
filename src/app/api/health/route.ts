@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const report: Record<string, unknown> = {
     ok: true,
+    build: "2026-06-15-ai-router-1",
     timestamp: new Date().toISOString(),
     runtime: "nodejs",
     node: typeof process !== "undefined" ? process.version : "unknown",
@@ -29,6 +30,8 @@ export async function GET() {
       GOOGLE_CLIENT_ID: present(process.env.GOOGLE_CLIENT_ID),
       GOOGLE_CLIENT_SECRET: present(process.env.GOOGLE_CLIENT_SECRET),
       GROQ_API_KEY: present(process.env.GROQ_API_KEY),
+      MOONSHOT_API_KEY: present(process.env.MOONSHOT_API_KEY),
+      GEMINI_API_KEY: present(process.env.GEMINI_API_KEY),
     },
     database: { attempted: false, connected: false, error: null as string | null },
   };
