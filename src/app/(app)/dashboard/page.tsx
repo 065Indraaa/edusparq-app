@@ -13,7 +13,8 @@ import {
   Users,
   PenTool,
   Bot,
-  GraduationCap
+  GraduationCap,
+  Clock
 } from "lucide-react";
 
 type ApiDeadline = {
@@ -69,6 +70,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [classProgress, setClassProgress] = useState<CourseProgress[]>([]);
   const [userSemester, setUserSemester] = useState<string>("");
+  const [todayClasses, setTodayClasses] = useState<{ courseName: string; jamMulai: string; jamSelesai: string; ruang: string }[]>([]);
 
   // Adaptive greeting — computed after mount to avoid hydration mismatch.
   const [timeGreeting, setTimeGreeting] = useState("Halo");
@@ -175,6 +177,33 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user]);
 
+  // Today's class schedule for the "Kelas Hari Ini" widget.
+  useEffect(() => {
+    if (!session?.user) return;
+    let cancelled = false;
+    fetch("/api/schedule")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d || !Array.isArray(d.items)) return;
+        const js = new Date().getDay();
+        const today = js === 0 ? 7 : js;
+        setTodayClasses(
+          d.items
+            .filter((i: { hari?: number }) => i.hari === today)
+            .map((i: { courseName?: string; jamMulai?: string; jamSelesai?: string; ruang?: string }) => ({
+              courseName: i.courseName || "",
+              jamMulai: i.jamMulai || "",
+              jamSelesai: i.jamSelesai || "",
+              ruang: i.ruang || "",
+            }))
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user]);
+
   // Render a "days left" badge label from daysLeft.
   const dueLabel = (daysLeft: number) =>
     daysLeft < 0 ? "Terlambat" : daysLeft === 0 ? "Hari ini" : `H-${daysLeft}`;
@@ -241,6 +270,32 @@ export default function DashboardPage() {
           </div>
         </div>
       </motion.section>
+
+      {todayClasses.length > 0 && (
+        <motion.section variants={item} className="rounded-3xl border border-primary/20 bg-primary/5 p-5 md:p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Clock size={18} className="text-primary" /> Kelas Hari Ini
+            </h2>
+            <Link href="/jadwal" className="text-xs font-semibold text-primary hover:underline">Lihat jadwal</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {todayClasses.map((c, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border">
+                <div className="text-center shrink-0 w-14">
+                  <span className="block text-sm font-black text-foreground leading-tight">{c.jamMulai}</span>
+                  <span className="block text-[10px] text-muted-foreground">{c.jamSelesai}</span>
+                </div>
+                <div className="w-px self-stretch bg-border" />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{c.courseName}</p>
+                  {c.ruang && <p className="text-[11px] text-muted-foreground">{c.ruang}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* Main Grid: Left Timeline/Progress & Right Side panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

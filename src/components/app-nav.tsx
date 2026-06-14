@@ -22,6 +22,7 @@ import {
   ClipboardCheck,
   Menu,
   X,
+  CalendarRange,
 } from "lucide-react";
 
 export type NavItem = {
@@ -61,6 +62,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "Produktivitas",
     items: [
+      { name: "Jadwal", href: "/jadwal", icon: CalendarRange },
       { name: "Tugas & Tenggat", href: "/deadlines", icon: CalendarDays },
       { name: "Kelompok", href: "/collab", icon: Users },
     ],
