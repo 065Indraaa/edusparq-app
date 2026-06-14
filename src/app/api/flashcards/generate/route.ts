@@ -4,19 +4,11 @@ import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { Flashcard } from "@/lib/db/models/Flashcard";
-import Groq from "groq-sdk";
-import { AI_MODEL, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT, AI_MAX_TOKENS } from "@/lib/ai";
+import { aiComplete, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai-prompts";
 
 export const runtime = "nodejs";
 
-let groqClient: Groq | null = null;
-const getGroqClient = () => {
-  if (!groqClient) {
-    if (!process.env.GROQ_API_KEY) throw new Error("GROQ_API_KEY belum diisi");
-    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  }
-  return groqClient;
-};
 
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"] as const;
 
@@ -75,34 +67,22 @@ export async function POST(req: NextRequest) {
   const rawContext = chunks.map((c) => c.content).join("\n\n");
   const context = rawContext.slice(0, RAG_CONTEXT_CHARS);
 
-  const prompt = `Kamu adalah asisten belajar akademik. Berdasarkan materi di bawah, buat ${cardCount} flashcard dalam Bahasa Indonesia.
-
-Kembalikan HANYA array JSON mentah (tanpa kode markdown, tanpa penjelasan tambahan, langsung mulai dari karakter "["), dengan format:
+  const instruction = `Buat ${cardCount} flashcard dalam Bahasa Indonesia berdasarkan materi mahasiswa. Kembalikan HANYA array JSON mentah (tanpa kode markdown, langsung mulai dari "["):
 [
-  {
-    "front": "pertanyaan atau konsep yang diuji",
-    "back": "jawaban atau penjelasan singkat",
-    "difficulty": "easy"
-  }
+  { "front": "pertanyaan atau konsep yang diuji", "back": "jawaban atau penjelasan singkat", "difficulty": "easy" }
 ]
-
-Nilai "difficulty" hanya boleh: "easy", "medium", atau "hard".
-Tentukan tingkat kesulitan berdasarkan kompleksitas konsep.
-Dasarkan HANYA pada materi yang diberikan. Jangan menambahkan informasi di luar materi.
-
----
-MATERI:
-${context}`;
+Aturan: "difficulty" hanya "easy" | "medium" | "hard" sesuai kompleksitas konsep; dasarkan HANYA pada materi yang diberikan, jangan menambah info di luar materi.`;
+  const system = buildSystemPrompt("examiner", { sourceBlock: context }, instruction);
 
   let rawText: string;
   try {
-    const completion = await getGroqClient().chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
+    const { text } = await aiComplete({
+      task: "flashcards",
+      system,
+      user: `Buat ${cardCount} flashcard sekarang berdasarkan materi di atas.`,
       temperature: 0.6,
-      max_tokens: AI_MAX_TOKENS.flashcards,
     });
-    rawText = completion.choices[0].message.content ?? "";
+    rawText = text;
   } catch {
     return NextResponse.json(
       { error: "Gagal menghubungi AI. Coba lagi sebentar." },

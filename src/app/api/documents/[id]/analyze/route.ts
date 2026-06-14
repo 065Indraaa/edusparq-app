@@ -4,7 +4,8 @@ import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { MaterialAnalysis } from "@/lib/db/models/MaterialAnalysis";
-import { AI_MODEL, getGroqClient, parseLooseJSON, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT, AI_MAX_TOKENS } from "@/lib/ai";
+import { aiComplete, parseLooseJSON, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai-prompts";
 
 export const runtime = "nodejs";
 
@@ -69,31 +70,27 @@ export async function POST(
     context = appended;
   }
 
-  const prompt = `Kamu adalah analis materi pembelajaran. Tugasmu adalah mengekstrak informasi penting dari materi berikut. Gunakan HANYA informasi yang ada dalam materi; jangan menambahkan informasi dari luar.
-
-MATERI:
-${context}
-
-Hasilkan HANYA objek JSON berikut tanpa penjelasan atau teks tambahan apapun:
+  const jsonContract = `Ekstrak informasi penting dari materi mahasiswa. Gunakan HANYA informasi yang ada dalam materi; jangan menambah dari luar. Kembalikan HANYA objek JSON mentah:
 {
   "keywords": ["kata kunci 1", "kata kunci 2"],
   "concepts": [{"nama": "nama konsep", "definisi": "definisi singkat konsep"}],
   "relations": [{"dari": "konsep A", "ke": "konsep B", "hubungan": "hubungan antara keduanya"}],
   "contentTypes": ["jenis konten 1", "jenis konten 2"]
 }`;
+  const system = buildSystemPrompt("research", { sourceBlock: context }, jsonContract);
 
   let rawResponse: string | null = null;
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
+    const { text } = await aiComplete({
+      task: "analyze",
+      system,
+      user: "Ekstrak informasi penting dari materi di atas sekarang.",
       temperature: 0.3,
-      max_tokens: AI_MAX_TOKENS.analyze,
+      json: true,
     });
-    rawResponse = completion.choices[0].message.content;
+    rawResponse = text;
   } catch (err) {
-    console.error("[analyze/POST] Groq error:", err);
+    console.error("[analyze/POST] AI error:", err);
     return NextResponse.json(
       { error: "Gagal menghubungi layanan AI. Silakan coba lagi nanti." },
       { status: 502 }

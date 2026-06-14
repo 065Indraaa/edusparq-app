@@ -4,19 +4,11 @@ import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { StudyNote } from "@/lib/db/models/StudyNote";
-import Groq from "groq-sdk";
-import { AI_MODEL, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT, AI_MAX_TOKENS } from "@/lib/ai";
+import { aiComplete, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai-prompts";
 
 export const runtime = "nodejs";
 
-let groqClient: Groq | null = null;
-const getGroqClient = () => {
-  if (!groqClient) {
-    if (!process.env.GROQ_API_KEY) throw new Error("GROQ_API_KEY belum diisi");
-    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  }
-  return groqClient;
-};
 
 // GET /api/documents/[id]/summarize — return latest saved StudyNote for this doc
 export async function GET(
@@ -81,35 +73,32 @@ export async function POST(
   const rawContext = chunks.map((c) => c.content).join("\n\n");
   const context = rawContext.slice(0, RAG_CONTEXT_CHARS);
 
-  const prompt = `Kamu adalah asisten belajar akademik untuk mahasiswa Indonesia. Buatlah catatan belajar terstruktur dari materi berikut dalam Bahasa Indonesia. Gunakan format Markdown dengan bagian-bagian berikut:
+  const instruction = `Buat catatan belajar terstruktur dari materi mahasiswa dalam Bahasa Indonesia, format Markdown dengan bagian persis berikut:
 
 ## Ringkasan
 Ringkasan singkat isi materi (3-5 kalimat).
 
 ## Poin Penting
-Daftar poin-poin penting dari materi (gunakan bullet list).
+Bullet list poin-poin penting dari materi.
 
 ## Istilah Kunci
-Daftar istilah atau konsep kunci beserta definisi singkatnya.
+Daftar istilah/konsep kunci beserta definisi singkat.
 
 ## Pertanyaan Latihan
-5 pertanyaan latihan untuk menguji pemahaman materi.
+5 pertanyaan latihan untuk menguji pemahaman.
 
-PENTING: Dasarkan HANYA pada materi yang diberikan di bawah ini. Jangan menambahkan informasi yang tidak ada dalam materi.
-
----
-MATERI:
-${context}`;
+Dasarkan HANYA pada materi yang diberikan; jangan menambah informasi di luar materi.`;
+  const system = buildSystemPrompt("helper", { sourceBlock: context }, instruction);
 
   let content: string;
   try {
-    const completion = await getGroqClient().chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
+    const { text } = await aiComplete({
+      task: "summarize",
+      system,
+      user: "Buatkan catatan belajar terstruktur dari materi di atas sekarang.",
       temperature: 0.5,
-      max_tokens: AI_MAX_TOKENS.summarize,
     });
-    content = completion.choices[0].message.content ?? "";
+    content = text;
   } catch {
     return NextResponse.json(
       { error: "Gagal menghubungi AI. Coba lagi sebentar." },

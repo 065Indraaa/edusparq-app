@@ -4,7 +4,8 @@ import { connectDB } from "@/lib/db/mongodb";
 import { Course } from "@/lib/db/models/Course";
 import { MaterialAnalysis } from "@/lib/db/models/MaterialAnalysis";
 import { LearningRecommendation } from "@/lib/db/models/LearningRecommendation";
-import { AI_MODEL, getGroqClient, parseLooseJSON, AI_MAX_TOKENS } from "@/lib/ai";
+import { aiComplete, parseLooseJSON } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai-prompts";
 
 export const runtime = "nodejs";
 
@@ -64,34 +65,29 @@ export async function POST(req: NextRequest) {
     .slice(0, 60)
     .join(", ");
 
-  const prompt = `Kamu adalah konsultan belajar. Berdasarkan informasi berikut, buat rekomendasi topik studi yang relevan untuk mahasiswa.
-
-Mata kuliah yang sedang diambil: ${courseNames}
-Kata kunci dari materi yang sudah dipelajari: ${allKeywords || "belum ada data materi"}
-
-Hasilkan HANYA array JSON berikut tanpa penjelasan atau teks tambahan apapun (5-8 rekomendasi):
+  const instruction = `Buat 5-8 rekomendasi topik studi yang relevan untuk mahasiswa ini. Kembalikan HANYA array JSON mentah (tanpa teks tambahan, langsung mulai dari "["):
 [
-  {
-    "topik": "nama topik yang perlu dipelajari",
-    "alasan": "alasan singkat mengapa topik ini penting untuk mahasiswa ini",
-    "prioritas": "tinggi"
-  }
+  { "topik": "nama topik yang perlu dipelajari", "alasan": "alasan singkat kenapa penting untuk mahasiswa ini", "prioritas": "tinggi" }
 ]
-
-Nilai "prioritas" harus salah satu dari: "tinggi", "sedang", atau "rendah". Semua teks dalam Bahasa Indonesia.`;
+Nilai "prioritas" harus "tinggi" | "sedang" | "rendah". Semua teks dalam Bahasa Indonesia.`;
+  const system = buildSystemPrompt(
+    "research",
+    { courses: courses.map((c) => c.name) },
+    instruction
+  );
+  const userMsg = `Mata kuliah yang sedang diambil: ${courseNames}\nKata kunci dari materi yang sudah dipelajari: ${allKeywords || "belum ada data materi"}`;
 
   let rawResponse: string | null = null;
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
+    const { text } = await aiComplete({
+      task: "recommend",
+      system,
+      user: userMsg,
       temperature: 0.5,
-      max_tokens: AI_MAX_TOKENS.recommend,
     });
-    rawResponse = completion.choices[0].message.content;
+    rawResponse = text;
   } catch (err) {
-    console.error("[recommendations/POST] Groq error:", err);
+    console.error("[recommendations/POST] AI error:", err);
     return NextResponse.json(
       { error: "Gagal menghubungi layanan AI. Silakan coba lagi nanti." },
       { status: 502 }
