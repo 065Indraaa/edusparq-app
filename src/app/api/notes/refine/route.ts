@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { CatatanRapi } from "@/lib/db/models/CatatanRapi";
-import { AI_MODEL, getGroqClient, AI_MAX_TOKENS } from "@/lib/ai";
+import { aiComplete } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -92,13 +92,13 @@ export async function POST(req: NextRequest) {
 
   let content: string;
   try {
-    const completion = await getGroqClient().chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: "user", content: buildPrompt(formatType, raw.slice(0, 8000), courseName) }],
+    const { text } = await aiComplete({
+      task: "summarize",
+      user: buildPrompt(formatType, raw.slice(0, 8000), courseName),
       temperature: 0.5,
-      max_tokens: AI_MAX_TOKENS.summarize,
+      maxTokens: 2048,
     });
-    content = (completion.choices[0]?.message?.content ?? "").trim();
+    content = (text ?? "").trim();
   } catch {
     return NextResponse.json({ error: "Gagal menghubungi AI. Coba lagi sebentar." }, { status: 502 });
   }
