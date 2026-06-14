@@ -3,6 +3,11 @@ import { connectDB } from "@/lib/db/mongodb";
 import { User } from "@/lib/db/models/User";
 import bcrypt from "bcryptjs";
 
+// MongoDB + bcrypt require the full Node.js runtime (raw TCP/TLS, crypto).
+// Pin it explicitly so the host never runs this on an edge runtime.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { name, email, password } = await req.json();

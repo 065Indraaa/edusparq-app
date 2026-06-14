@@ -1,0 +1,56 @@
+# Render Blueprint — deploy EduSparq (Next.js SSR + MongoDB Atlas)
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Cara pakai: push repo ini ke GitHub, lalu di Render pilih
+# "New +" -> "Blueprint" -> pilih repo. Render membaca file ini otomatis.
+# Isi nilai env yang ditandai `sync: false` lewat dashboard (rahasia).
+
+services:
+  - type: web
+    name: edusparq
+    runtime: node
+    plan: free                      # free tier (ada cold start setelah idle)
+    region: singapore               # paling dekat ke Indonesia (latensi rendah)
+    buildCommand: npm install && npm run build
+    startCommand: npm run start     # next start; otomatis membaca PORT dari Render
+    healthCheckPath: /api/health    # endpoint diagnosis yang sudah ada
+    autoDeploy: true                # redeploy otomatis tiap push ke branch utama
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      # --- Rahasia: isi di dashboard Render (Environment) ---
+      - key: MONGODB_URI
+        sync: false
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: NEXTAUTH_URL           # isi dengan URL Render setelah deploy pertama
+        sync: false
+      - key: AUTH_TRUST_HOST
+        value: "true"
+      - key: GROQ_API_KEY
+        sync: false
+      # --- Opsional (boleh dikosongkan kalau belum dipakai) ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_PUSHER_KEY
+        sync: false
+      - key: NEXT_PUBLIC_PUSHER_CLUSTER
+        sync: false
+      - key: PUSHER_APP_ID
+        sync: false
+      - key: PUSHER_KEY
+        sync: false
+      - key: PUSHER_SECRET
+        sync: false
+      - key: PUSHER_CLUSTER
+        sync: false
