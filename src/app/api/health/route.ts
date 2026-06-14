@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const report: Record<string, unknown> = {
     ok: true,
-    build: "2026-06-15-fresh-ui-shell-15",
+    build: "2026-06-15-monokrom-indonesia-16",
     timestamp: new Date().toISOString(),
     runtime: "nodejs",
     node: typeof process !== "undefined" ? process.version : "unknown",

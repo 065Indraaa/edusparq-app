@@ -28,7 +28,7 @@ export default async function AppLayout({
           </div>
           <div className="leading-tight">
             <span className="font-black text-base tracking-tight text-foreground block">EduSparq</span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">Campus OS</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Ruang Belajar</span>
           </div>
         </Link>
         <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export default async function AppLayout({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt={user.name || "Pengguna"} className="w-9 h-9 rounded-full border border-border object-cover" />
           ) : (
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-teal-400 flex items-center justify-center font-bold text-xs shadow-sm text-white border border-border select-none">
+            <div className="w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center font-bold text-xs shadow-sm border border-border select-none">
               {initials}
             </div>
           )}
@@ -54,7 +54,7 @@ export default async function AppLayout({
             </div>
             <div className="min-w-0 leading-tight">
               <span className="font-black text-xl tracking-tight text-foreground truncate block">EduSparq</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.24em] text-primary/80">Campus OS</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground">Ruang Belajar</span>
             </div>
           </Link>
           <div className="flex items-center gap-1">
@@ -68,8 +68,8 @@ export default async function AppLayout({
         <div className="px-3 pb-3">
           <div className="sidebar-insight-card p-4 mb-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">Next move</span>
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.8)]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Langkah Berikutnya</span>
+              <span className="h-2 w-2 rounded-full bg-foreground/70 shadow-[0_0_18px_hsl(var(--foreground)/0.22)]" />
             </div>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-foreground/80">
               Fokus hari ini: unggah materi, tanya Tutor, lalu buat latihan ujian.
@@ -80,7 +80,7 @@ export default async function AppLayout({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.image} alt={user.name || ""} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-teal-400 flex items-center justify-center font-bold text-sm shadow-sm text-white select-none shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-bold text-sm shadow-sm select-none shrink-0">
                 {initials}
               </div>
             )}

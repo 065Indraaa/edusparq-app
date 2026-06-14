@@ -4,73 +4,73 @@
 
 @layer base {
   :root {
-    --background: 45 25% 98%;   /* Soft Ivory Cream #FDFBF7 */
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 99%;
+    --foreground: 0 0% 4%;
 
-    --card: 45 25% 98%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
  
-    --popover: 45 25% 98%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 4%;
  
-    --primary: 19 73% 27%;    /* Deep Soga Brown / Terracotta #7A3212 — kebijaksanaan & stabilitas akademik */
+    --primary: 0 0% 4%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 30% 94%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 8%;
  
-    --muted: 40 28% 94%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 42%;
  
-    --accent: 40 30% 94%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 8%;
  
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 0% 12%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 36 24% 89%;
-    --input: 36 24% 88%;
-    --ring: 19 73% 27%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 4%;
 
     --radius: 0.75rem;
 
-    --success: 142.1 76.2% 36.3%;
-    --warning: 43 96% 56%;   /* Amber #FBBF24 — perhatian, tenggat mendesak, pencapaian */
-    --info: 172 66% 50%;     /* Teal #2DD4BF — pertumbuhan & energi kreatif */
+    --success: 0 0% 12%;
+    --warning: 0 0% 18%;
+    --info: 0 0% 24%;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
  
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
  
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
  
-    --primary: 24 75% 58%;   /* Glowing Copper/Bronze batik soga */
-    --primary-foreground: 211 60% 12%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 4%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
  
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 68%;
  
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
  
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 0% 82%;
+    --destructive-foreground: 0 0% 4%;
  
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 24 75% 58%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 98%;
 
-    --success: 142.1 70% 45%;
-    --warning: 43 96% 56%;
-    --info: 172 66% 50%;
+    --success: 0 0% 82%;
+    --warning: 0 0% 78%;
+    --info: 0 0% 72%;
   }
 }
  
@@ -118,7 +118,7 @@ h1, h2, h3, h4, h5, .font-display {
   transition: box-shadow 0.28s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
 }
 [class*="bg-card"][class*="shadow-sm"]:hover {
-  box-shadow: 0 12px 28px -14px rgba(122, 50, 18, 0.20);
+  box-shadow: 0 12px 28px -14px hsl(var(--foreground) / 0.16);
 }
 /* Inputs & selects: smooth, soft focus glow */
 input, textarea, select {
@@ -141,23 +141,23 @@ input, textarea, select {
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-amber-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground;
   }
 
   .text-gradient-emerald {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-emerald-700 dark:from-emerald-400 dark:to-emerald-600;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground;
   }
 }
   .bg-batik-grid {
     background-color: hsl(var(--background));
-    background-image: radial-gradient(rgba(122, 50, 18, 0.04) 1px, transparent 1px),
-                      radial-gradient(rgba(122, 50, 18, 0.04) 1px, transparent 1px);
+    background-image: radial-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+                      radial-gradient(hsl(var(--foreground) / 0.025) 1px, transparent 1px);
     background-size: 24px 24px;
     background-position: 0 0, 12px 12px;
   }
   .dark .bg-batik-grid {
-    background-image: radial-gradient(rgba(244, 117, 43, 0.03) 1px, transparent 1px),
-                      radial-gradient(rgba(244, 117, 43, 0.03) 1px, transparent 1px);
+    background-image: radial-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+                      radial-gradient(hsl(var(--foreground) / 0.025) 1px, transparent 1px);
     background-size: 24px 24px;
     background-position: 0 0, 12px 12px;
   }
@@ -245,7 +245,7 @@ input, textarea, select {
 }
 .hover-lift:hover {
   transform: translateY(-3px);
-  box-shadow: 0 14px 30px -10px rgba(122, 50, 18, 0.22);
+  box-shadow: 0 14px 30px -10px hsl(var(--foreground) / 0.18);
 }
 
 /* Subtle dotted grid background for hero / empty states */
@@ -317,13 +317,13 @@ input, textarea, select {
 .prose-editor strong { font-weight: 700; }
 .prose-editor a { color: hsl(var(--primary)); text-decoration: underline; }
 
-/* ===== EduSparq Fresh UI System — Campus OS visual layer ===== */
+/* ===== EduSparq Monokrom UI System — lapisan visual ruang belajar ===== */
 .app-shell {
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(circle at 16% 12%, hsl(var(--primary) / 0.13), transparent 28rem),
-    radial-gradient(circle at 86% 4%, rgba(20, 184, 166, 0.14), transparent 24rem),
+    radial-gradient(circle at 16% 12%, hsl(var(--foreground) / 0.055), transparent 28rem),
+    radial-gradient(circle at 86% 4%, hsl(var(--foreground) / 0.035), transparent 24rem),
     linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted) / 0.55));
 }
 .edus-ambient {
@@ -354,15 +354,15 @@ input, textarea, select {
   height: 28rem;
   right: -10rem;
   bottom: 6rem;
-  background: radial-gradient(circle, rgba(20, 184, 166, 0.18), transparent 62%);
+  background: radial-gradient(circle, hsl(var(--foreground) / 0.08), transparent 62%);
   animation-delay: -3s;
 }
 .edus-main {
   position: relative;
   background:
     linear-gradient(180deg, hsl(var(--background) / 0.22), hsl(var(--background) / 0.72)),
-    radial-gradient(rgba(122, 50, 18, 0.055) 1px, transparent 1px),
-    radial-gradient(rgba(20, 184, 166, 0.045) 1px, transparent 1px);
+    radial-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+    radial-gradient(hsl(var(--foreground) / 0.025) 1px, transparent 1px);
   background-size: auto, 28px 28px, 56px 56px;
   background-position: 0 0, 0 0, 14px 18px;
 }
@@ -404,8 +404,8 @@ input, textarea, select {
 .brand-orb {
   color: hsl(var(--primary-foreground));
   background:
-    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.65), transparent 22%),
-    linear-gradient(135deg, hsl(var(--primary)), #d97706 52%, #14b8a6);
+    radial-gradient(circle at 30% 20%, hsl(var(--background) / 0.6), transparent 22%),
+    linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground)));
   box-shadow: 0 18px 38px -22px hsl(var(--primary)), inset 0 1px 0 rgba(255,255,255,0.42);
 }
 .nav-group-card {
@@ -462,4 +462,28 @@ input, textarea, select {
 }
 .dark .brand-orb {
   box-shadow: 0 18px 42px -22px hsl(var(--primary) / 0.9), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+
+/* Monokrom ketat: netralkan utility warna eksplisit dari halaman lama. */
+[class*="bg-gradient"] {
+  background-image: linear-gradient(135deg, hsl(var(--foreground) / 0.065), hsl(var(--card) / 0.96)) !important;
+}
+.dark [class*="bg-gradient"] {
+  background-image: linear-gradient(135deg, hsl(var(--foreground) / 0.10), hsl(var(--card) / 0.96)) !important;
+}
+[class*="text-amber"], [class*="text-emerald"], [class*="text-teal"], [class*="text-orange"], [class*="text-cyan"], [class*="text-sky"], [class*="text-yellow"],
+[class*="text-green"], [class*="text-blue"], [class*="text-purple"], [class*="text-pink"] {
+  color: hsl(var(--foreground) / 0.72) !important;
+}
+[class*="bg-amber"], [class*="bg-emerald"], [class*="bg-teal"], [class*="bg-orange"], [class*="bg-cyan"], [class*="bg-sky"], [class*="bg-yellow"],
+[class*="bg-green"], [class*="bg-blue"], [class*="bg-purple"], [class*="bg-pink"] {
+  background-color: hsl(var(--muted) / 0.82) !important;
+}
+[class*="border-amber"], [class*="border-emerald"], [class*="border-teal"], [class*="border-orange"], [class*="border-cyan"], [class*="border-sky"], [class*="border-yellow"],
+[class*="border-green"], [class*="border-blue"], [class*="border-purple"], [class*="border-pink"] {
+  border-color: hsl(var(--border)) !important;
+}
+[class*="shadow-primary"], [class*="shadow-emerald"], [class*="shadow-teal"], [class*="shadow-amber"] {
+  box-shadow: 0 18px 42px -28px hsl(var(--foreground) / 0.35) !important;
 }
