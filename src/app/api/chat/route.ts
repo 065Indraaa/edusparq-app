@@ -79,11 +79,13 @@ export async function POST(req: NextRequest) {
     mode,
   });
 
-  // Get recent history for context (last 10 messages)
+  // Recent history for context (last 10 messages, newest first).
   const history = await ChatMessage.find({ userId: session.user.id })
     .sort({ createdAt: -1 })
     .limit(10);
 
+  // `history` already includes the just-saved user message as its most recent
+  // item, so we do NOT append it again below (double-send would waste tokens).
   const historyMessages = history.reverse().map((m) => ({
     role: m.role as "user" | "assistant",
     content: m.content,
@@ -123,7 +125,6 @@ export async function POST(req: NextRequest) {
           messages: [
             { role: "system", content: systemPrompt },
             ...historyMessages,
-            { role: "user", content: message },
           ],
           stream: true,
           temperature: 0.75,

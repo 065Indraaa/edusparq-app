@@ -5,7 +5,7 @@ import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { Flashcard } from "@/lib/db/models/Flashcard";
 import Groq from "groq-sdk";
-import { AI_MODEL } from "@/lib/ai";
+import { AI_MODEL, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT, AI_MAX_TOKENS } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     userId: session.user.id,
   })
     .sort({ chunkIndex: 1 })
-    .limit(40)
+    .limit(RAG_CHUNK_LIMIT)
     .lean();
 
   if (chunks.length === 0) {
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   const rawContext = chunks.map((c) => c.content).join("\n\n");
-  const context = rawContext.slice(0, 24000);
+  const context = rawContext.slice(0, RAG_CONTEXT_CHARS);
 
   const prompt = `Kamu adalah asisten belajar akademik. Berdasarkan materi di bawah, buat ${cardCount} flashcard dalam Bahasa Indonesia.
 
@@ -100,7 +100,7 @@ ${context}`;
       model: AI_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.6,
-      max_tokens: 2048,
+      max_tokens: AI_MAX_TOKENS.flashcards,
     });
     rawText = completion.choices[0].message.content ?? "";
   } catch {

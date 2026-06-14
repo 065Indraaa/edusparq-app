@@ -4,7 +4,7 @@ import { connectDB } from "@/lib/db/mongodb";
 import { Course } from "@/lib/db/models/Course";
 import { MaterialAnalysis } from "@/lib/db/models/MaterialAnalysis";
 import { LearningRecommendation } from "@/lib/db/models/LearningRecommendation";
-import { AI_MODEL, getGroqClient, parseLooseJSON } from "@/lib/ai";
+import { AI_MODEL, getGroqClient, parseLooseJSON, AI_MAX_TOKENS } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -87,6 +87,7 @@ Nilai "prioritas" harus salah satu dari: "tinggi", "sedang", atau "rendah". Semu
       model: AI_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
+      max_tokens: AI_MAX_TOKENS.recommend,
     });
     rawResponse = completion.choices[0].message.content;
   } catch (err) {

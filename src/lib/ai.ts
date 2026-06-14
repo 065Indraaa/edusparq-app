@@ -11,6 +11,28 @@ import Groq from "groq-sdk";
  */
 export const AI_MODEL = "llama-3.3-70b-versatile";
 
+/**
+ * Centralized token budget. Tuning these in ONE place keeps Groq usage lean
+ * without hurting answer quality:
+ *  - RAG_CONTEXT_CHARS: cap on retrieved context fed to the model (~4 chars/token,
+ *    so 12k chars ≈ 3k input tokens — plenty to ground summaries/quiz/flashcards on
+ *    a typical lecture doc, vs the old 24k that doubled input cost for little gain).
+ *  - RAG_CHUNK_LIMIT: how many chunks to pull from Mongo before slicing (24 × ~500
+ *    chars ≈ the context cap, so we don't fetch chunks we'd only throw away).
+ *  - AI_MAX_TOKENS: per-task output ceilings so no call runs away on output tokens.
+ */
+export const RAG_CONTEXT_CHARS = 12000;
+export const RAG_CHUNK_LIMIT = 24;
+export const AI_MAX_TOKENS = {
+  chat: 1024,
+  summarize: 1536,
+  flashcards: 2048,
+  quiz: 3072,
+  analyze: 1536,
+  recommend: 1024,
+  grade: 1200,
+} as const;
+
 let groqClient: Groq | null = null;
 
 /** Lazy Groq client singleton. Throws a clear error if the key is missing. */

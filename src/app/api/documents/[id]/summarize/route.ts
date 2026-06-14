@@ -5,7 +5,7 @@ import { Document } from "@/lib/db/models/Document";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { StudyNote } from "@/lib/db/models/StudyNote";
 import Groq from "groq-sdk";
-import { AI_MODEL } from "@/lib/ai";
+import { AI_MODEL, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT, AI_MAX_TOKENS } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -65,7 +65,7 @@ export async function POST(
     userId: session.user.id,
   })
     .sort({ chunkIndex: 1 })
-    .limit(40)
+    .limit(RAG_CHUNK_LIMIT)
     .lean();
 
   if (chunks.length === 0) {
@@ -79,7 +79,7 @@ export async function POST(
   }
 
   const rawContext = chunks.map((c) => c.content).join("\n\n");
-  const context = rawContext.slice(0, 24000);
+  const context = rawContext.slice(0, RAG_CONTEXT_CHARS);
 
   const prompt = `Kamu adalah asisten belajar akademik untuk mahasiswa Indonesia. Buatlah catatan belajar terstruktur dari materi berikut dalam Bahasa Indonesia. Gunakan format Markdown dengan bagian-bagian berikut:
 
@@ -107,7 +107,7 @@ ${context}`;
       model: AI_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
-      max_tokens: 2048,
+      max_tokens: AI_MAX_TOKENS.summarize,
     });
     content = completion.choices[0].message.content ?? "";
   } catch {
