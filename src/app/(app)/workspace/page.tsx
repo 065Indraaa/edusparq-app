@@ -101,6 +101,7 @@ export default function WorkspacePage() {
   const [selectedSemester, setSelectedSemester] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [courseRefresh, setCourseRefresh] = useState(0);
+  const [autofillingCourses, setAutofillingCourses] = useState(false);
   const [files, setFiles] = useState<DocumentFile[]>([]);
   const [usingSampleData, setUsingSampleData] = useState<boolean>(true);
   const [notice, setNotice] = useState<string>("");
@@ -630,6 +631,28 @@ export default function WorkspacePage() {
               defaultSemester={Number((selectedSemester || "").replace(/\D/g, "")) || undefined}
               onAdded={() => setCourseRefresh((x) => x + 1)}
             />
+
+            <button
+              type="button"
+              disabled={autofillingCourses}
+              onClick={async () => {
+                setAutofillingCourses(true);
+                try {
+                  const res = await fetch("/api/courses/autofill", { method: "POST" });
+                  const data = await res.json();
+                  setNotice(data?.message || "");
+                  if (data?.created > 0) setCourseRefresh((x) => x + 1);
+                } catch {
+                  setNotice("Gagal mengisi mata kuliah otomatis.");
+                } finally {
+                  setAutofillingCourses(false);
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/15 transition-colors min-h-[42px] disabled:opacity-60"
+            >
+              {autofillingCourses ? <RefreshIcon size={14} className="animate-spin" /> : <SparklesIcon size={14} />}
+              Isi otomatis dari kurikulum prodi
+            </button>
 
           </div>
         </motion.div>

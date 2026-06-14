@@ -13,7 +13,9 @@ interface MhsResult {
 }
 
 export interface PddiktiFill {
+  nama: string;
   universitas: string;
+  fakultas: string;
   prodi: string;
   semester: number;
 }
@@ -70,7 +72,9 @@ export function PddiktiAutofill({ onFill }: { onFill: (data: PddiktiFill) => voi
         return;
       }
       onFill({
+        nama: detail.nama || m.nama || "",
         universitas: detail.namaPt || m.namaPt || "",
+        fakultas: data?.fakultas || "",
         prodi: detail.prodi || m.namaProdi || "",
         semester: Number(data?.semesterEstimate) || 1,
       });

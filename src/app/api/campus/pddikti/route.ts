@@ -6,6 +6,7 @@ import {
   searchMahasiswa,
   getMahasiswaDetail,
   estimateSemester,
+  inferFakultas,
 } from "@/lib/pddikti";
 
 export const runtime = "nodejs";
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         detail,
         semesterEstimate: estimateSemester(detail.tanggalMasuk),
+        fakultas: inferFakultas(detail.prodi),
       });
     }
     return NextResponse.json({ error: "Unknown kind" }, { status: 400 });

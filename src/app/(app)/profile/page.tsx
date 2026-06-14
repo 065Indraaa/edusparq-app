@@ -116,6 +116,9 @@ export default function ProfilePage() {
   const applyPddikti = (data: PddiktiFill) =>
     setForm((f) => ({
       ...f,
+      name: data.nama || f.name,
+      universitas: data.universitas || f.universitas,
+      fakultas: data.fakultas || f.fakultas,
       universitas: data.universitas || f.universitas,
       prodi: data.prodi || f.prodi,
       semester: String(data.semester || Number(f.semester) || 1),

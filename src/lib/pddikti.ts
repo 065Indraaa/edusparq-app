@@ -224,3 +224,40 @@ export function estimateSemester(tanggalMasuk: string): number {
   const sem = Math.floor(months / 6) + 1;
   return Math.min(Math.max(sem, 1), 14);
 }
+
+/**
+ * Best-effort fakultas inference from a study-program name. PDDIKTI does NOT
+ * expose the faculty for a student/prodi, so we map the prodi to the most common
+ * Indonesian faculty by keyword. This is a sensible default the user can edit —
+ * never presented as official data. Returns "" when no confident match.
+ */
+export function inferFakultas(prodi: string): string {
+  const p = (prodi || "").toLowerCase();
+  if (!p) return "";
+  const has = (...keys: string[]) => keys.some((k) => p.includes(k));
+
+  if (has("kedokteran gigi")) return "Fakultas Kedokteran Gigi";
+  if (has("kedokteran", "dokter")) return "Fakultas Kedokteran";
+  if (has("keperawatan", "kebidanan", "farmasi", "gizi", "kesehatan masyarakat", "kesehatan", "kebidan"))
+    return "Fakultas Ilmu Kesehatan";
+  if (has("hukum")) return "Fakultas Hukum";
+  if (has("psikologi")) return "Fakultas Psikologi";
+  if (has("akuntansi", "manajemen", "ekonomi", "bisnis", "perbankan", "keuangan"))
+    return "Fakultas Ekonomi dan Bisnis";
+  if (has("informatika", "ilmu komputer", "sistem informasi", "teknologi informasi", "sains data", "data science", "komputer"))
+    return "Fakultas Ilmu Komputer";
+  if (has("teknik", "arsitektur", "sipil", "mesin", "elektro", "industri", "perkapalan", "geodesi", "pertambangan", "metalurgi"))
+    return "Fakultas Teknik";
+  if (has("pendidikan", "keguruan", "pgsd", "paud", "tadris"))
+    return "Fakultas Keguruan dan Ilmu Pendidikan";
+  if (has("komunikasi", "hubungan internasional", "administrasi", "sosiologi", "politik", "pemerintahan", "kesejahteraan sosial", "kriminologi"))
+    return "Fakultas Ilmu Sosial dan Ilmu Politik";
+  if (has("sastra", "bahasa", "linguistik", "sejarah", "budaya", "inggris", "jepang", "arab"))
+    return "Fakultas Ilmu Budaya";
+  if (has("pertanian", "agroteknologi", "agribisnis", "kehutanan", "peternakan", "perikanan", "akuakultur", "pangan"))
+    return "Fakultas Pertanian";
+  if (has("matematika", "fisika", "kimia", "biologi", "statistika", "geofisika", "aktuaria"))
+    return "Fakultas Matematika dan Ilmu Pengetahuan Alam";
+  if (has("hubungan masyarakat", "jurnalistik")) return "Fakultas Ilmu Komunikasi";
+  return "";
+}
