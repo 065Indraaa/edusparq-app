@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Users, Sparkles, Plus, CheckCircle2, MessageSquare, Save, LogIn, Hash, Copy, Check, Trash2 } from "lucide-react";
+import { Users, Sparkles, Plus, CheckCircle2, MessageSquare, Save, LogIn, Hash, Copy, Check, Trash2, FileText, ExternalLink, BarChart3 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import PusherClient from "pusher-js";
 
@@ -26,12 +26,30 @@ interface GroupTask {
   assignee: string;
   dueDate: string;
   completed: boolean;
+  assigneeUserId?: string;
+  bobotKontribusi?: number;
 }
 
 interface Poll {
   _id: string;
   question: string;
   options: { _id: string; label: string; voterIds: string[] }[];
+}
+
+interface ContributionItem {
+  userId: string;
+  nama: string;
+  selesai: number;
+  totalBobot: number;
+  persen: number;
+}
+
+interface DocLink {
+  _id: string;
+  judul: string;
+  googleDocUrl: string;
+  createdByNama: string;
+  createdAt: string;
 }
 
 function detectRealtime(): { enabled: boolean; key: string; cluster: string } {
@@ -82,6 +100,18 @@ export default function CollabPage() {
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
 
+  // Contributions
+  const [contributions, setContributions] = useState<ContributionItem[]>([]);
+  // Dokumen Google
+  const [docLinks, setDocLinks] = useState<DocLink[]>([]);
+  const [newDocJudul, setNewDocJudul] = useState("");
+  const [newDocUrl, setNewDocUrl] = useState("");
+  const [showDocForm, setShowDocForm] = useState(false);
+  const [docLinkError, setDocLinkError] = useState("");
+  // Task assignment extension
+  const [newTaskBobot, setNewTaskBobot] = useState(1);
+  const [newTaskAssigneeUserId, setNewTaskAssigneeUserId] = useState("");
+
   // Shared doc
   const [docContent, setDocContent] = useState("");
   const [savingDoc, setSavingDoc] = useState(false);
@@ -115,7 +145,7 @@ export default function CollabPage() {
 
   // Load tasks + doc + poll when group changes
   useEffect(() => {
-    if (!activeGroup) { setTasks([]); setDocContent(""); setPoll(null); return; }
+    if (!activeGroup) { setTasks([]); setDocContent(""); setPoll(null); setContributions([]); setDocLinks([]); return; }
     const gid = activeGroup._id;
     let active = true;
     setLoadingTasks(true);
@@ -124,11 +154,15 @@ export default function CollabPage() {
       fetch(`/api/collab/tasks?groupId=${gid}`).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`/api/collab/doc?groupId=${gid}`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`/api/collab/poll?groupId=${gid}`).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([tasksData, docData, pollData]) => {
+      fetch(`/api/collab/contributions?groupId=${gid}`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/collab/docs?groupId=${gid}`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([tasksData, docData, pollData, contribData, docLinksData]) => {
       if (!active) return;
       setTasks(Array.isArray(tasksData) ? tasksData : []);
       setDocContent(docData?.content || "");
       setPoll(pollData && pollData._id ? pollData : null);
+      setContributions(Array.isArray(contribData) ? contribData : []);
+      setDocLinks(Array.isArray(docLinksData) ? docLinksData : []);
       if (pollData?.options && myId) {
         for (const opt of pollData.options) {
           if (opt.voterIds?.includes(myId)) { setMyVotedOptionId(opt._id); break; }
@@ -253,8 +287,12 @@ export default function CollabPage() {
         body: JSON.stringify({
           groupId: activeGroup._id,
           title: newTaskTitle,
-          assignee: newTaskAssignee || "Belum Ditentukan",
+          assignee: newTaskAssigneeUserId
+            ? (activeGroup.members.find(m => m.userId === newTaskAssigneeUserId)?.name || newTaskAssignee || "Belum Ditentukan")
+            : (newTaskAssignee || "Belum Ditentukan"),
           dueDate: newTaskDate,
+          ...(newTaskAssigneeUserId ? { assigneeUserId: newTaskAssigneeUserId } : {}),
+          bobotKontribusi: newTaskBobot,
         }),
       });
       if (res.ok) {
@@ -262,7 +300,7 @@ export default function CollabPage() {
         const next = [...tasks, added];
         setTasks(next);
         broadcast("task:update", { tasks: next, senderId: myId });
-        setNewTaskTitle(""); setNewTaskAssignee(""); setNewTaskDate("");
+        setNewTaskTitle(""); setNewTaskAssignee(""); setNewTaskDate(""); setNewTaskAssigneeUserId(""); setNewTaskBobot(1);
         setShowTaskForm(false);
       }
     } catch {}
@@ -324,6 +362,34 @@ export default function CollabPage() {
       .then(r => r.ok ? r.json() : [])
       .then(d => { setGroups(Array.isArray(d) ? d : []); })
       .finally(() => setLoadingGroups(false));
+  };
+
+  const handleAddDocLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDocJudul.trim() || !newDocUrl.trim() || !activeGroup) return;
+    setDocLinkError("");
+    try {
+      const res = await fetch("/api/collab/docs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: activeGroup._id, judul: newDocJudul, googleDocUrl: newDocUrl }),
+      });
+      if (res.ok) {
+        const added = await res.json();
+        setDocLinks(prev => [added, ...prev]);
+        setNewDocJudul(""); setNewDocUrl(""); setShowDocForm(false); setDocLinkError("");
+      } else {
+        const d = await res.json();
+        setDocLinkError(d.error || "Gagal menambahkan dokumen.");
+      }
+    } catch { setDocLinkError("Terjadi kesalahan jaringan."); }
+  };
+
+  const handleDeleteDocLink = async (id: string) => {
+    try {
+      await fetch(`/api/collab/docs?id=${id}`, { method: "DELETE" });
+      setDocLinks(prev => prev.filter(d => d._id !== id));
+    } catch {}
   };
 
   // ---- No session ----
@@ -608,20 +674,46 @@ export default function CollabPage() {
                   placeholder="Misal: Bikin PPT..."
                 />
                 <div className="grid grid-cols-2 gap-3">
-                  <input
-                    value={newTaskAssignee} onChange={e => setNewTaskAssignee(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                    placeholder="Nama PIC"
-                  />
+                  <select
+                    value={newTaskAssigneeUserId}
+                    onChange={e => {
+                      const uid = e.target.value;
+                      setNewTaskAssigneeUserId(uid);
+                      if (uid) {
+                        const mb = activeGroup.members.find(m => m.userId === uid);
+                        setNewTaskAssignee(mb?.name || "");
+                      } else {
+                        setNewTaskAssignee("");
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value="">Pilih PIC (opsional)</option>
+                    {activeGroup.members.map(m => (
+                      <option key={m.userId} value={m.userId}>{m.name}</option>
+                    ))}
+                  </select>
                   <input
                     value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                     placeholder="Tenggat (18 Juni)"
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-medium shrink-0">Bobot:</span>
+                  <select
+                    value={newTaskBobot}
+                    onChange={e => setNewTaskBobot(Number(e.target.value))}
+                    className="px-3 py-2 rounded-xl bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value={1}>1 – Ringan</option>
+                    <option value={2}>2 – Sedang</option>
+                    <option value={3}>3 – Berat</option>
+                  </select>
+                </div>
                 <div className="flex gap-2 pt-1">
                   <button type="submit" className="flex-1 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl">Simpan</button>
-                  <button type="button" onClick={() => setShowTaskForm(false)} className="px-4 py-2 border border-border font-bold text-muted-foreground hover:text-foreground rounded-xl text-xs">Batal</button>
+                  <button type="button" onClick={() => { setShowTaskForm(false); setNewTaskAssigneeUserId(""); setNewTaskBobot(1); }} className="px-4 py-2 border border-border font-bold text-muted-foreground hover:text-foreground rounded-xl text-xs">Batal</button>
                 </div>
               </form>
             )}
@@ -655,6 +747,106 @@ export default function CollabPage() {
                       onClick={() => handleDeleteTask(task)}
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded-lg hover:bg-destructive/10"
                       title="Hapus tugas"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Kontribusi Anggota */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={18} className="text-primary" />
+              <h2 className="font-bold text-foreground">Kontribusi Anggota</h2>
+            </div>
+            {loadingTasks ? (
+              <div className="space-y-3">{[0,1,2].map(i => <div key={i} className="skeleton h-10 w-full rounded-xl" />)}</div>
+            ) : contributions.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">Belum ada data kontribusi. Selesaikan tugas yang sudah ditugaskan untuk melihat statistik.</p>
+            ) : (
+              <div className="space-y-4">
+                {contributions.map((c) => (
+                  <div key={c.userId} className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-foreground">{c.nama}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{c.persen}% · {c.selesai} selesai</span>
+                    </div>
+                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${c.persen}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Dokumen Google */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
+            <div className="flex justify-between items-center">
+              <h2 className="font-bold text-foreground flex items-center gap-2">
+                <FileText size={18} className="text-primary" />
+                Dokumen Google
+              </h2>
+              <button
+                onClick={() => { setShowDocForm(!showDocForm); setDocLinkError(""); }}
+                className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Plus size={14} /> Tambah
+              </button>
+            </div>
+
+            {docLinkError && (
+              <p className="text-xs text-destructive font-semibold bg-destructive/10 px-3 py-2 rounded-xl">{docLinkError}</p>
+            )}
+
+            {showDocForm && (
+              <form onSubmit={handleAddDocLink} className="p-4 bg-muted/50 border border-border rounded-2xl space-y-3">
+                <input
+                  required value={newDocJudul} onChange={e => setNewDocJudul(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                  placeholder="Judul dokumen"
+                />
+                <input
+                  required value={newDocUrl} onChange={e => setNewDocUrl(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                  placeholder="https://docs.google.com/..."
+                />
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" className="flex-1 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl">Simpan</button>
+                  <button type="button" onClick={() => { setShowDocForm(false); setDocLinkError(""); }} className="px-4 py-2 border border-border font-bold text-muted-foreground hover:text-foreground rounded-xl text-xs">Batal</button>
+                </div>
+              </form>
+            )}
+
+            {loadingTasks ? (
+              <div className="space-y-2">{[0,1].map(i => <div key={i} className="skeleton h-12 w-full rounded-xl" />)}</div>
+            ) : docLinks.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">Belum ada dokumen. Tempel tautan Google Docs di atas.</p>
+            ) : (
+              <div className="space-y-2">
+                {docLinks.map((d) => (
+                  <div key={d._id} className="flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-primary/30 transition-colors group">
+                    <FileText size={16} className="text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{d.judul}</p>
+                      <p className="text-xs text-muted-foreground">{d.createdByNama}</p>
+                    </div>
+                    <a
+                      href={d.googleDocUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 px-2 py-1 bg-primary/10 rounded-lg transition-colors shrink-0"
+                    >
+                      <ExternalLink size={12} /> Buka
+                    </a>
+                    <button
+                      onClick={() => handleDeleteDocLink(d._id)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded-lg hover:bg-destructive/10"
+                      title="Hapus dokumen"
                     >
                       <Trash2 size={14} />
                     </button>

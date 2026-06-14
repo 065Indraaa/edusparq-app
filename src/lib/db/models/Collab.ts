@@ -1,4 +1,4 @@
-import { Schema, models, model, Types } from "mongoose";
+import mongoose, { Schema, models, model, Types } from "mongoose";
 
 /**
  * Real, persisted collaboration primitives.
@@ -31,6 +31,10 @@ const CollabTaskSchema = new Schema({
   completed: { type: Boolean, default: false },
   createdBy: { type: Types.ObjectId, ref: "User" },
   createdAt: { type: Date, default: Date.now },
+  // Extended fields
+  assigneeUserId: { type: Types.ObjectId, ref: "User" },
+  bobotKontribusi: { type: Number, default: 1 },
+  hasilUrl: { type: String, default: "" },
 });
 
 const CollabDocSchema = new Schema({
@@ -53,7 +57,52 @@ const CollabPollSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// --- New models ---
+
+const CollabDocLinkSchema = new Schema({
+  groupId: { type: Types.ObjectId, ref: "CollabGroup", required: true, index: true },
+  judul: { type: String, required: true },
+  googleDocUrl: { type: String, required: true },
+  createdByNama: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const CollabReviewSchema = new Schema({
+  groupId: { type: Types.ObjectId, ref: "CollabGroup", required: true, index: true },
+  taskId: { type: Types.ObjectId, ref: "CollabTask" },
+  reviewerId: { type: Types.ObjectId, ref: "User" },
+  reviewerNama: { type: String, default: "" },
+  komentar: { type: String, default: "" },
+  rating: { type: Number, default: 5 },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const CollabConflictSchema = new Schema({
+  groupId: { type: Types.ObjectId, ref: "CollabGroup", required: true, index: true },
+  isu: { type: String, required: true },
+  status: {
+    type: String,
+    enum: ["terbuka", "diskusi", "selesai"],
+    default: "terbuka",
+  },
+  dibuatNama: { type: String, default: "" },
+  riwayat: [
+    {
+      aksi: { type: String },
+      oleh: { type: String },
+      pada: { type: Date, default: Date.now },
+    },
+  ],
+  createdAt: { type: Date, default: Date.now },
+});
+
 export const CollabGroup = models.CollabGroup || model("CollabGroup", CollabGroupSchema);
 export const CollabTask = models.CollabTask || model("CollabTask", CollabTaskSchema);
 export const CollabDoc = models.CollabDoc || model("CollabDoc", CollabDocSchema);
 export const CollabPoll = models.CollabPoll || model("CollabPoll", CollabPollSchema);
+export const CollabDocLink = models.CollabDocLink || model("CollabDocLink", CollabDocLinkSchema);
+export const CollabReview = models.CollabReview || model("CollabReview", CollabReviewSchema);
+export const CollabConflict = models.CollabConflict || model("CollabConflict", CollabConflictSchema);
+
+// Suppress unused import warning — mongoose is required by the pattern contract.
+void mongoose;

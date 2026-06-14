@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
     assignee: String(body?.assignee || "").trim(),
     dueDate: String(body?.dueDate || "").trim(),
     createdBy: session.user.id,
+    ...(body?.assigneeUserId ? { assigneeUserId: body.assigneeUserId } : {}),
+    bobotKontribusi: typeof body?.bobotKontribusi === "number" ? body.bobotKontribusi : 1,
+    hasilUrl: String(body?.hasilUrl || "").trim(),
   });
 
   await broadcastToGroup(String(group._id), "task:changed", { senderId: session.user.id });

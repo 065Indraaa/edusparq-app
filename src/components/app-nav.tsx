@@ -14,6 +14,7 @@ import {
   BarChart3,
   Search,
   UserCircle,
+  Building2,
 } from "lucide-react";
 
 export type NavItem = {
@@ -54,6 +55,10 @@ export const navGroups: NavGroup[] = [
       { name: "Tugas & Tenggat", href: "/deadlines", icon: CalendarDays },
       { name: "Kelompok", href: "/collab", icon: Users },
     ],
+  },
+  {
+    label: "Organisasi",
+    items: [{ name: "HIMA", href: "/hima", icon: Building2 }],
   },
   {
     label: "Akun",
