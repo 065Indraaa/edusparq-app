@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { UserCircle, Save, RefreshCw, GraduationCap, Building2, BookOpen, Hash, CheckCircle2 } from "lucide-react";
 import { UniversityPicker } from "@/components/university-picker";
+import { GoogleConnectCard } from "@/components/google-connect-card";
 
 interface ProfileForm {
   name: string;
@@ -229,6 +230,8 @@ export default function ProfilePage() {
           )}
         </div>
       </motion.form>
+
+      <GoogleConnectCard />
     </motion.div>
   );
 }

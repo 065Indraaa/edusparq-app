@@ -11,6 +11,7 @@ const DeadlineSchema = new Schema({
   weight: { type: String, default: "" }, // e.g. "15%"
   requirements: { type: String, default: "" },
   status: { type: String, enum: ["pending", "done", "overdue"], default: "pending" },
+  googleCalendarEventId: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 });
 
