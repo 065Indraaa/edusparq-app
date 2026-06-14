@@ -6,6 +6,7 @@ import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag"
 import { checkRateLimit } from "@/lib/rate-limit";
 import Groq from "groq-sdk";
 import { AI_MODEL } from "@/lib/ai";
+import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
 
 let groqClient: Groq | null = null;
 const getGroqClient = () => {
@@ -18,22 +19,6 @@ const getGroqClient = () => {
   return groqClient;
 };
 
-const SYSTEM_PROMPTS: Record<string, string> = {
-  socratic: `Kamu adalah tutor akademik yang menggunakan metode Socratic untuk mahasiswa Indonesia. 
-Jangan pernah memberikan jawaban langsung. Selalu bantu mahasiswa berpikir sendiri dengan mengajukan pertanyaan-pertanyaan yang mengarahkan.
-Gunakan bahasa Indonesia yang santai tapi tetap akademik. Jangan gunakan kata-kata yang terlalu formal seperti "saya siap membantu Anda".
-Mulailah dengan memahami apa yang sudah diketahui mahasiswa tentang topik tersebut.`,
-
-  helper: `Kamu adalah asisten akademik untuk mahasiswa Indonesia. Berikan penjelasan yang jelas, terstruktur, dan mudah dipahami.
-Gunakan bahasa Indonesia yang natural — seperti kakak atau teman yang lebih senior menjelaskan ke adik kelasnya.
-Hindari jargon AI seperti "Tentu!", "Dengan senang hati!", atau "Saya akan membantu Anda".
-Langsung ke inti masalah. Gunakan contoh nyata dari konteks Indonesia bila relevan.`,
-
-  research: `Kamu adalah asisten riset akademik untuk mahasiswa Indonesia. 
-Bantu mahasiswa menemukan sudut pandang penelitian, metodologi yang tepat, dan sumber-sumber relevan.
-Gunakan bahasa Indonesia akademik yang mengalir natural. Jangan seperti robot — bicara seperti dosen pembimbing yang menyenangkan.
-Bila membahas jurnal atau referensi, jelaskan secara singkat kenapa referensi itu relevan.`,
-};
 
 export async function GET() {
   const session = await auth();
@@ -101,15 +86,9 @@ export async function POST(req: NextRequest) {
     documentId: c.documentId,
   }));
 
-  // Build the system prompt, grounding it in retrieved sources when available.
-  let systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.helper;
-  if (chunks.length > 0) {
-    const contextBlock = buildContextBlock(chunks);
-    systemPrompt +=
-      `\n\nBerikut adalah kutipan dari materi/dokumen mahasiswa yang relevan dengan pertanyaan. ` +
-      `Dasarkan jawabanmu pada sumber-sumber ini sebisa mungkin, dan sebutkan secara jujur ketika ada informasi yang tidak tercakup di dalamnya.\n\n` +
-      `${contextBlock}`;
-  }
+  // Persona akademik profesional + grounding ke materi mahasiswa (RAG).
+  const sourceBlock = chunks.length > 0 ? buildContextBlock(chunks) : undefined;
+  const systemPrompt = buildSystemPrompt(personaFromMode(mode), { sourceBlock });
 
   const encoder = new TextEncoder();
   let fullResponse = "";

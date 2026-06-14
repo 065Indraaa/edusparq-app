@@ -66,3 +66,266 @@ export function parseLooseJSON<T = unknown>(raw: string): T | null {
     return null;
   }
 }
+
+/* =============================================================================
+ * MULTI-MODEL ROUTER
+ * -----------------------------------------------------------------------------
+ * EduSparq memakai beberapa penyedia AI gratis/murah dan merutekan tiap jenis
+ * tugas ke model yang paling pas — TANPA dependency npm baru (Moonshot & Gemini
+ * dipanggil lewat `fetch` REST; keduanya/­Groq OpenAI-compatible).
+ *
+ *   - Groq   (llama-3.3-70b-versatile) : GRATIS, cepat. Default + fallback chat.
+ *   - Kimi   (kimi-k2.6, Moonshot)     : BERBAYAR murah, reasoning kuat. Untuk
+ *                                        tugas akurat: grading & generate soal.
+ *   - Gemini (gemini-1.5-flash)        : GRATIS/murah. Untuk ringkasan & rekom.
+ *
+ * SEMUA panggilan graceful-degrade: kalau key provider pilihan kosong atau
+ * error, otomatis jatuh ke Groq. Kalau Groq pun gagal, error dilempar ke caller
+ * yang sudah punya penanganan masing-masing. TIDAK pernah mengarang jawaban.
+ * ============================================================================= */
+
+export type AiProvider = "groq" | "moonshot" | "gemini";
+
+/** Nama model per provider, terpusat di satu tempat. */
+export const PROVIDER_MODELS = {
+  groq: AI_MODEL,
+  moonshot: "kimi-k2.6",
+  gemini: "gemini-1.5-flash",
+} as const;
+
+/** Jenis tugas AI di EduSparq. Dipakai untuk routing + budget token. */
+export type AiTask =
+  | "chat"
+  | "summarize"
+  | "flashcards"
+  | "quiz"
+  | "analyze"
+  | "recommend"
+  | "grade"
+  | "draft"; // draft tulisan panjang (Studio Dokumen)
+
+/**
+ * Preferensi provider per tugas. Kalau provider utama tak tersedia (key kosong)
+ * atau gagal, router otomatis fallback ke Groq.
+ */
+const TASK_PROVIDER: Record<AiTask, AiProvider> = {
+  chat: "groq", // streaming ditangani terpisah di /api/chat
+  summarize: "gemini",
+  flashcards: "groq",
+  quiz: "moonshot", // butuh soal berkualitas + distraktor masuk akal
+  analyze: "gemini",
+  recommend: "gemini",
+  grade: "moonshot", // penilaian akurat berbasis rubrik
+  draft: "groq",
+};
+
+/** Budget token output tambahan untuk tugas baru. */
+export const TASK_MAX_TOKENS: Record<AiTask, number> = {
+  chat: AI_MAX_TOKENS.chat,
+  summarize: AI_MAX_TOKENS.summarize,
+  flashcards: AI_MAX_TOKENS.flashcards,
+  quiz: AI_MAX_TOKENS.quiz,
+  analyze: AI_MAX_TOKENS.analyze,
+  recommend: AI_MAX_TOKENS.recommend,
+  grade: AI_MAX_TOKENS.grade,
+  draft: 4096,
+};
+
+export interface ChatTurn {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export interface AiCompleteOptions {
+  task: AiTask;
+  /** System prompt (persona). Boleh kosong. */
+  system?: string;
+  /** Riwayat percakapan. Kalau hanya satu giliran, cukup pakai `user`. */
+  messages?: ChatTurn[];
+  /** Shortcut untuk satu pesan user (digabung dengan `system`). */
+  user?: string;
+  temperature?: number;
+  maxTokens?: number;
+  /** Minta output JSON (mengaktifkan response_format bila didukung). */
+  json?: boolean;
+  /** Paksa provider tertentu (mis. untuk testing). */
+  forceProvider?: AiProvider;
+}
+
+export interface AiCompleteResult {
+  text: string;
+  provider: AiProvider;
+  model: string;
+}
+
+/** Cek ketersediaan key tiap provider tanpa membocorkan nilainya. */
+function providerAvailable(p: AiProvider): boolean {
+  if (p === "groq") return !!process.env.GROQ_API_KEY;
+  if (p === "moonshot") return !!process.env.MOONSHOT_API_KEY;
+  if (p === "gemini") return !!process.env.GEMINI_API_KEY;
+  return false;
+}
+
+function buildTurns(opts: AiCompleteOptions): ChatTurn[] {
+  const turns: ChatTurn[] = [];
+  if (opts.system) turns.push({ role: "system", content: opts.system });
+  if (opts.messages && opts.messages.length > 0) {
+    for (const m of opts.messages) {
+      if (m.role === "system") continue; // system sudah ditambah di atas
+      turns.push(m);
+    }
+  } else if (opts.user) {
+    turns.push({ role: "user", content: opts.user });
+  }
+  return turns;
+}
+
+/** Panggilan OpenAI-compatible (dipakai Groq & Moonshot). */
+async function openaiCompatComplete(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  turns: ChatTurn[],
+  opts: AiCompleteOptions
+): Promise<string> {
+  const body: Record<string, unknown> = {
+    model,
+    messages: turns,
+    temperature: opts.temperature ?? 0.7,
+    max_tokens: opts.maxTokens ?? TASK_MAX_TOKENS[opts.task],
+  };
+  if (opts.json) body.response_format = { type: "json_object" };
+
+  const res = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`${model} HTTP ${res.status}: ${errText.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  const choice = data?.choices?.[0]?.message;
+  // Kimi K2.6 adalah reasoning model: jawaban final ada di `content`,
+  // proses berpikir di `reasoning_content` (jangan dipakai sebagai jawaban).
+  const text = (choice?.content || "").trim();
+  return text;
+}
+
+/** Panggilan Gemini REST (generateContent). */
+async function geminiComplete(
+  apiKey: string,
+  model: string,
+  turns: ChatTurn[],
+  opts: AiCompleteOptions
+): Promise<string> {
+  const systemTurns = turns.filter((t) => t.role === "system");
+  const convoTurns = turns.filter((t) => t.role !== "system");
+  const body: Record<string, unknown> = {
+    contents: convoTurns.map((t) => ({
+      role: t.role === "assistant" ? "model" : "user",
+      parts: [{ text: t.content }],
+    })),
+    generationConfig: {
+      temperature: opts.temperature ?? 0.7,
+      maxOutputTokens: opts.maxTokens ?? TASK_MAX_TOKENS[opts.task],
+      ...(opts.json ? { responseMimeType: "application/json" } : {}),
+    },
+  };
+  if (systemTurns.length > 0) {
+    body.systemInstruction = {
+      parts: [{ text: systemTurns.map((t) => t.content).join("\n\n") }],
+    };
+  }
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`${model} HTTP ${res.status}: ${errText.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts;
+  const text = Array.isArray(parts)
+    ? parts.map((p: { text?: string }) => p?.text || "").join("").trim()
+    : "";
+  return text;
+}
+
+async function runProvider(
+  provider: AiProvider,
+  turns: ChatTurn[],
+  opts: AiCompleteOptions
+): Promise<string> {
+  if (provider === "groq") {
+    return openaiCompatComplete(
+      "https://api.groq.com/openai/v1",
+      process.env.GROQ_API_KEY!,
+      PROVIDER_MODELS.groq,
+      turns,
+      opts
+    );
+  }
+  if (provider === "moonshot") {
+    return openaiCompatComplete(
+      "https://api.moonshot.ai/v1",
+      process.env.MOONSHOT_API_KEY!,
+      PROVIDER_MODELS.moonshot,
+      turns,
+      opts
+    );
+  }
+  // gemini
+  return geminiComplete(
+    process.env.GEMINI_API_KEY!,
+    PROVIDER_MODELS.gemini,
+    turns,
+    opts
+  );
+}
+
+/**
+ * Entry point terpusat untuk SEMUA panggilan AI non-streaming di EduSparq.
+ * Memilih provider sesuai jenis tugas, dengan fallback otomatis ke Groq.
+ *
+ * Contoh:
+ *   const { text } = await aiComplete({ task: "grade", system, user, json: true });
+ */
+export async function aiComplete(
+  opts: AiCompleteOptions
+): Promise<AiCompleteResult> {
+  const turns = buildTurns(opts);
+  const primary = opts.forceProvider || TASK_PROVIDER[opts.task];
+
+  // Urutan percobaan: provider utama (bila ada key) → Groq sebagai fallback.
+  const order: AiProvider[] = [];
+  if (providerAvailable(primary)) order.push(primary);
+  if (primary !== "groq" && providerAvailable("groq")) order.push("groq");
+  if (order.length === 0) {
+    throw new Error(
+      "Tidak ada penyedia AI yang terkonfigurasi (cek GROQ_API_KEY)."
+    );
+  }
+
+  let lastErr: unknown = null;
+  for (const provider of order) {
+    try {
+      const text = await runProvider(provider, turns, opts);
+      if (text) return { text, provider, model: PROVIDER_MODELS[provider] };
+      lastErr = new Error(`${provider} mengembalikan respons kosong`);
+    } catch (err) {
+      lastErr = err;
+      // lanjut ke provider berikutnya (fallback)
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error("Semua penyedia AI gagal merespons.");
+}
