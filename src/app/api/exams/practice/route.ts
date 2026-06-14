@@ -15,6 +15,8 @@ interface GenQuestion {
   options?: string[];
   correctIndex?: number;
   explanation?: string;
+  explanation?: string;
+  points?: number;
   idealAnswer?: string;
 }
 
