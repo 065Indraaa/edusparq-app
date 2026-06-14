@@ -172,26 +172,29 @@ export default function DeadlinesPage() {
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-            <CalendarDays size={24} className="text-primary" />
-            Tenggat Waktu
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Seluruh tenggat tugas kuliah Anda tersusun rapi agar tidak ada yang terlewat.
-          </p>
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
+        <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
+              <CalendarDays size={14} /> Tugas & Tenggat
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Tenggat Waktu</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
+              Seluruh tenggat tugas kuliah Anda tersusun rapi agar tidak ada yang terlewat.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-4 min-h-[44px] w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-sm font-bold transition-all shadow-sm shrink-0"
+          >
+            <Plus size={16} />
+            Tambah Tugas
+          </button>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-sm font-bold transition-all shadow-sm shrink-0"
-        >
-          <Plus size={16} />
-          Tambah Tugas
-        </button>
       </motion.div>
 
       {/* Add Deadline Modal */}

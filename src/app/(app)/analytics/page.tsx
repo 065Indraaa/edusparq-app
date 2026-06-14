@@ -144,19 +144,22 @@ export default function AnalyticsPage() {
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
       {/* Header */}
-      <motion.div variants={itemVariants}>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <BarChart3 size={24} className="text-primary" />
-          Analitik Akademik
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Ringkasan aktivitas belajar Anda di EduSparq, dihimpun dari data Anda sendiri.
-        </p>
-        {isEmpty && !loading && (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-            Belum ada aktivitas. Mulai gunakan Tutor AI, unggah dokumen, atau buat flashcard untuk melihat statistik nyata Anda di sini.
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
+        <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
+            <BarChart3 size={14} /> Statistik Belajar
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Analitik Akademik</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
+            Ringkasan aktivitas belajar Anda di EduSparq, dihimpun dari data Anda sendiri.
           </p>
-        )}
+          {isEmpty && !loading && (
+            <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground bg-background/70 border border-border px-2.5 py-1 rounded-full">
+              Belum ada aktivitas. Mulai gunakan Tutor AI, unggah dokumen, atau buat flashcard untuk melihat statistik nyata Anda di sini.
+            </p>
+          )}
+        </div>
       </motion.div>
 
       {/* Metrics Row */}
