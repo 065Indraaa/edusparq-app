@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarNav, BottomNav } from "@/components/app-nav"; import { OnboardingGate } from "@/components/onboarding-gate";
+import { NotificationBell } from "@/components/notification-bell";
 import { auth, signOut } from "@/lib/auth";
 import {
-  Bell,
   Sparkles,
   LogOut,
 } from "lucide-react";
@@ -29,13 +29,7 @@ export default async function AppLayout({
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <button
-            className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Notifikasi"
-          >
-            <Bell size={18} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-warning rounded-full ring-2 ring-background" />
-          </button>
+          <NotificationBell />
           {user?.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt={user.name || "Pengguna"} className="w-9 h-9 rounded-full border border-border object-cover" />
@@ -56,7 +50,10 @@ export default async function AppLayout({
             </div>
             <span className="font-extrabold text-xl tracking-tight text-foreground truncate">EduSparq</span>
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <ThemeToggle />
+          </div>
         </div>
 
         <SidebarNav />
