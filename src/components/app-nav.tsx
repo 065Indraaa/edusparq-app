@@ -99,18 +99,21 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Desktop sidebar navigation with grouped sections + active-route highlight. */
+/** Desktop sidebar navigation with grouped command-center sections. */
 export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex-1 px-3 py-5 space-y-5 overflow-y-auto no-scrollbar">
-      {groups.map((group) => (
-        <div key={group.label} className="space-y-1">
-          <span className="px-3.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
-            {group.label}
-          </span>
-          <div className="space-y-1 mt-1.5">
+    <nav className="flex-1 px-3 py-3 space-y-3 overflow-y-auto no-scrollbar">
+      {groups.map((group, groupIndex) => (
+        <div key={group.label} className="nav-group-card p-2.5" style={{ animationDelay: `${groupIndex * 55}ms` }}>
+          <div className="flex items-center justify-between px-2 pb-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/75 select-none">
+              {group.label}
+            </span>
+            <span className="h-px flex-1 ml-3 bg-gradient-to-r from-border to-transparent" />
+          </div>
+          <div className="space-y-1">
             {group.items.map((item) => {
               const Icon = item.icon;
               const active = isActive(pathname, item.href);
@@ -119,27 +122,26 @@ export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
                   key={item.name}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl min-h-[44px] transition-all group ${
-                    active
-                      ? "bg-primary/10 text-primary"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
+                  className={`nav-command group relative flex items-center gap-3 px-2.5 py-2.5 text-sm font-bold rounded-2xl min-h-[46px] overflow-hidden ${
+                    active ? "is-active text-primary" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary transition-all ${
-                      active ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <Icon
-                    size={18}
-                    className={`shrink-0 transition-colors ${
-                      active
-                        ? "text-primary"
-                        : "text-slate-400 group-hover:text-primary"
-                    }`}
-                  />
-                  <span className="truncate">{item.name}</span>
+                  {active && (
+                    <motion.span
+                      layoutId="sidebar-active-glow"
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/14 via-primary/8 to-transparent"
+                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                    />
+                  )}
+                  <span className={`relative grid h-9 w-9 place-items-center rounded-xl border transition-all ${
+                    active
+                      ? "border-primary/25 bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary))]"
+                      : "border-border/70 bg-background/70 text-muted-foreground group-hover:border-primary/25 group-hover:text-primary group-hover:bg-primary/8"
+                  }`}>
+                    <Icon size={17} strokeWidth={active ? 2.8 : 2.2} />
+                  </span>
+                  <span className="relative truncate tracking-tight">{item.name}</span>
+                  {active && <span className="relative ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]" />}
                 </Link>
               );
             })}
@@ -158,7 +160,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-border px-2 py-1.5 flex justify-around items-center select-none shadow-glass">
+      <nav className="md:hidden fixed bottom-3 left-3 right-3 z-40 mobile-dock px-2 py-1.5 flex justify-around items-center select-none">
         {primary.map((item) => {
           const Icon = item.icon;
           const active = isActive(pathname, item.href);
@@ -167,9 +169,9 @@ export function BottomNav() {
               key={item.name}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[48px] rounded-xl transition-all ${
-                active ? "text-primary" : "text-slate-500 hover:text-primary active:text-primary"
-              }`}
+              className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[52px] rounded-2xl transition-all ${
+                active ? "bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_hsl(var(--primary))]" : "text-muted-foreground hover:text-primary active:text-primary"
+              }`
             >
               <span className={`flex items-center justify-center transition-transform ${active ? "scale-110" : "scale-100"}`}>
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />
@@ -184,7 +186,7 @@ export function BottomNav() {
           type="button"
           onClick={() => setMenuOpen(true)}
           aria-label="Buka semua menu"
-          className="flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[48px] rounded-xl transition-all text-slate-500 hover:text-primary active:text-primary"
+          className="flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[52px] rounded-2xl transition-all text-muted-foreground hover:text-primary active:text-primary"
         >
           <span className="flex items-center justify-center">
             <Menu size={20} strokeWidth={2} />
@@ -199,18 +201,18 @@ export function BottomNav() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end"
+            className="md:hidden fixed inset-0 z-50 bg-black/55 backdrop-blur-md flex items-end"
             onClick={() => setMenuOpen(false)}
             role="dialog"
             aria-modal="true"
             aria-label="Semua menu"
           >
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              initial={{ y: "100%", scale: 0.98 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: "100%", scale: 0.98 }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="w-full bg-card border-t border-border rounded-t-3xl max-h-[80vh] overflow-y-auto no-scrollbar p-5 pb-8"
+              className="w-full bg-card/95 backdrop-blur-2xl border-t border-border rounded-t-[2rem] max-h-[82vh] overflow-y-auto no-scrollbar p-5 pb-8 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />

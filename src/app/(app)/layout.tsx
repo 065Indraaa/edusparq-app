@@ -18,14 +18,18 @@ export default async function AppLayout({
     : "?";
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground transition-colors duration-300">
+    <div className="app-shell min-h-screen flex flex-col md:flex-row bg-background text-foreground transition-colors duration-300">
+      <div className="edus-ambient" aria-hidden="true" />
       {/* Top Header for Mobile */}
-      <header className="sticky top-0 z-40 w-full glass-panel-solid px-4 py-3 flex items-center justify-between md:hidden shrink-0 border-b border-border">
+      <header className="sticky top-0 z-40 w-full mobile-topbar px-4 py-3 flex items-center justify-between md:hidden shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="bg-primary/10 text-primary p-1.5 rounded-lg flex items-center justify-center">
+          <div className="brand-orb h-10 w-10 rounded-2xl flex items-center justify-center">
             <Sparkles size={18} />
           </div>
-          <span className="font-extrabold text-base tracking-tight text-foreground">EduSparq</span>
+          <div className="leading-tight">
+            <span className="font-black text-base tracking-tight text-foreground block">EduSparq</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">Campus OS</span>
+          </div>
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -42,13 +46,16 @@ export default async function AppLayout({
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 glass-panel-solid h-screen sticky top-0 shrink-0 border-r border-border">
-        <div className="px-5 py-5 border-b border-border flex items-center justify-between gap-2">
-          <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
-            <div className="bg-primary/10 text-primary p-2 rounded-xl flex items-center justify-center shrink-0">
-              <Sparkles size={20} />
+      <aside className="command-sidebar hidden md:flex flex-col w-[18rem] h-screen sticky top-0 shrink-0">
+        <div className="relative px-5 pt-5 pb-4 flex items-center justify-between gap-2">
+          <Link href="/dashboard" className="group flex items-center gap-3 min-w-0">
+            <div className="brand-orb h-12 w-12 rounded-3xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Sparkles size={22} />
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-foreground truncate">EduSparq</span>
+            <div className="min-w-0 leading-tight">
+              <span className="font-black text-xl tracking-tight text-foreground truncate block">EduSparq</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.24em] text-primary/80">Campus OS</span>
+            </div>
           </Link>
           <div className="flex items-center gap-1">
             <NotificationBell />
@@ -58,8 +65,17 @@ export default async function AppLayout({
 
         <SidebarNav />
 
-        <div className="p-3 border-t border-border bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-3 px-1">
+        <div className="px-3 pb-3">
+          <div className="sidebar-insight-card p-4 mb-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">Next move</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.8)]" />
+            </div>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-foreground/80">
+              Fokus hari ini: unggah materi, tanya Tutor, lalu buat latihan ujian.
+            </p>
+          </div>
+          <div className="user-dock flex items-center gap-3 px-3 py-3">
             {user?.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.image} alt={user.name || ""} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
@@ -101,12 +117,12 @@ export default async function AppLayout({
               </Link>
             )}
           </div>
-        </div>
+          </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto w-full px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col min-h-screen bg-batik-grid transition-colors duration-300">
- <div className="max-w-screen-2xl w-full mx-auto flex-1 flex flex-col"> <OnboardingGate />
+      <main id="main-content" className="edus-main flex-1 overflow-y-auto w-full px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col min-h-screen transition-colors duration-300">
+        <div className="max-w-screen-2xl w-full mx-auto flex-1 flex flex-col animate-fade-up"> <OnboardingGate />
           {children}
         </div>
       </main>

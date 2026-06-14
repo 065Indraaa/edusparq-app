@@ -316,3 +316,150 @@ input, textarea, select {
 .prose-editor blockquote { border-left: 3px solid hsl(var(--primary) / 0.5); padding-left: 0.9em; margin: 0 0 0.75em; color: hsl(var(--muted-foreground)); font-style: italic; }
 .prose-editor strong { font-weight: 700; }
 .prose-editor a { color: hsl(var(--primary)); text-decoration: underline; }
+
+/* ===== EduSparq Fresh UI System — Campus OS visual layer ===== */
+.app-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 16% 12%, hsl(var(--primary) / 0.13), transparent 28rem),
+    radial-gradient(circle at 86% 4%, rgba(20, 184, 166, 0.14), transparent 24rem),
+    linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted) / 0.55));
+}
+.edus-ambient {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+.edus-ambient::before,
+.edus-ambient::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(54px);
+  opacity: 0.55;
+  animation: float-slow 11s ease-in-out infinite;
+}
+.edus-ambient::before {
+  width: 24rem;
+  height: 24rem;
+  left: 18rem;
+  top: -8rem;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.22), transparent 62%);
+}
+.edus-ambient::after {
+  width: 28rem;
+  height: 28rem;
+  right: -10rem;
+  bottom: 6rem;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.18), transparent 62%);
+  animation-delay: -3s;
+}
+.edus-main {
+  position: relative;
+  background:
+    linear-gradient(180deg, hsl(var(--background) / 0.22), hsl(var(--background) / 0.72)),
+    radial-gradient(rgba(122, 50, 18, 0.055) 1px, transparent 1px),
+    radial-gradient(rgba(20, 184, 166, 0.045) 1px, transparent 1px);
+  background-size: auto, 28px 28px, 56px 56px;
+  background-position: 0 0, 0 0, 14px 18px;
+}
+.edus-main::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.18) 42%, transparent 58%);
+  opacity: 0.45;
+  mix-blend-mode: soft-light;
+}
+.command-sidebar {
+  position: relative;
+  border-right: 1px solid hsl(var(--border) / 0.72);
+  background:
+    linear-gradient(180deg, hsl(var(--card) / 0.86), hsl(var(--background) / 0.78)),
+    radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.13), transparent 18rem);
+  backdrop-filter: blur(28px) saturate(1.2);
+  box-shadow: 24px 0 80px -56px hsl(var(--primary) / 0.55);
+}
+.command-sidebar::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, hsl(var(--primary) / 0.35), transparent);
+}
+.mobile-topbar,
+.mobile-dock {
+  background: hsl(var(--card) / 0.78);
+  border: 1px solid hsl(var(--border) / 0.75);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 18px 50px -28px hsl(var(--primary) / 0.42);
+}
+.mobile-dock { border-radius: 1.5rem; }
+.brand-orb {
+  color: hsl(var(--primary-foreground));
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.65), transparent 22%),
+    linear-gradient(135deg, hsl(var(--primary)), #d97706 52%, #14b8a6);
+  box-shadow: 0 18px 38px -22px hsl(var(--primary)), inset 0 1px 0 rgba(255,255,255,0.42);
+}
+.nav-group-card {
+  border: 1px solid hsl(var(--border) / 0.55);
+  border-radius: 1.35rem;
+  background: linear-gradient(180deg, hsl(var(--card) / 0.48), hsl(var(--muted) / 0.20));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.38);
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.nav-command {
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.24s ease;
+}
+.nav-command:hover {
+  transform: translateX(3px);
+  background: hsl(var(--background) / 0.62);
+}
+.nav-command.is-active {
+  box-shadow: 0 14px 34px -28px hsl(var(--primary));
+}
+.sidebar-insight-card,
+.user-dock {
+  border-radius: 1.45rem;
+  border: 1px solid hsl(var(--border) / 0.68);
+  background:
+    linear-gradient(135deg, hsl(var(--card) / 0.78), hsl(var(--muted) / 0.42)),
+    radial-gradient(circle at 100% 0%, hsl(var(--primary) / 0.10), transparent 12rem);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 44px -32px hsl(var(--primary) / 0.55), inset 0 1px 0 rgba(255,255,255,0.34);
+}
+/* Give generic cards a less templated, more product-like surface. */
+.bg-card.border,
+[class*="bg-card"][class*="border"] {
+  background-image: linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.72));
+  backdrop-filter: blur(14px);
+}
+[class*="rounded-3xl"][class*="bg-card"],
+[class*="rounded-[2rem]"][class*="bg-gradient"] {
+  box-shadow: 0 20px 60px -44px hsl(var(--primary) / 0.42), inset 0 1px 0 rgba(255,255,255,0.36);
+}
+[class*="rounded-3xl"][class*="bg-card"]:hover {
+  transform: translateY(-2px);
+}
+@media (max-width: 767px) {
+  .edus-main { padding-bottom: 6.5rem; }
+}
+.dark .command-sidebar {
+  background:
+    linear-gradient(180deg, rgba(7, 12, 24, 0.88), rgba(10, 16, 31, 0.78)),
+    radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.16), transparent 18rem);
+}
+.dark .mobile-topbar,
+.dark .mobile-dock {
+  background: rgba(7, 12, 24, 0.78);
+}
+.dark .brand-orb {
+  box-shadow: 0 18px 42px -22px hsl(var(--primary) / 0.9), inset 0 1px 0 rgba(255,255,255,0.2);
+}
