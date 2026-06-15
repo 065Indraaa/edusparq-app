@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw, Pencil, Bell, BellRing } from "lucide-react";
+import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw, Pencil, Bell, BellRing, Wand2, FileText } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { CourseSelect } from "@/components/course-select";
 
@@ -37,6 +37,11 @@ export default function DeadlinesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Purely local, non-persistent reminder markers (cleared on reload).
   const [reminders, setReminders] = useState<Record<string, boolean>>({});
+
+  // AI Extraction State
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const today = new Date();
   const year = today.getFullYear();
@@ -131,6 +136,55 @@ export default function DeadlinesPage() {
     setSubmitting(false);
   };
 
+  const handleExtractSyllabus = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    setExtractError("");
+
+    try {
+      // 1. Upload to Cloudinary
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!uploadRes.ok) throw new Error("Gagal mengunggah silabus.");
+      const uploadData = await uploadRes.json();
+      
+      const fileUrl = uploadData.secure_url;
+      const fileType = file.name.endsWith(".pdf") ? "pdf" : file.name.endsWith(".docx") ? "docx" : "raw";
+
+      // 2. Extract deadlines using AI
+      const extractRes = await fetch("/api/deadlines/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileUrl, fileType, courseName: file.name.replace(/\.[^/.]+$/, "") }),
+      });
+
+      if (!extractRes.ok) {
+        const err = await extractRes.json().catch(() => ({}));
+        throw new Error(err.error || "Gagal mengekstrak tenggat dari dokumen.");
+      }
+
+      const extractedData = await extractRes.json();
+      
+      // 3. Update local state
+      if (extractedData.deadlines && Array.isArray(extractedData.deadlines)) {
+        setDeadlines((prev) => 
+          [...prev, ...extractedData.deadlines].sort(
+            (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          )
+        );
+        alert(`Berhasil mengekstrak ${extractedData.count} tugas dari silabus!`);
+      }
+    } catch (error: any) {
+      setExtractError(error.message || "Terjadi kesalahan sistem.");
+    } finally {
+      setIsExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const toggleReminder = (id: string) => {
     setReminders((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -184,16 +238,42 @@ export default function DeadlinesPage() {
               Seluruh tenggat tugas kuliah Anda tersusun rapi agar tidak ada yang terlewat.
             </p>
           </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 px-4 min-h-[44px] w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-sm font-bold transition-all shadow-sm shrink-0"
-          >
-            <Plus size={16} />
-            Tambah Tugas
-          </button>
+          <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+            {extractError && (
+              <p className="text-[10px] text-destructive bg-destructive/10 px-2 py-1 rounded text-center font-bold">
+                {extractError}
+              </p>
+            )}
+            <div className="flex gap-2 w-full">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".pdf,.docx,.txt"
+                onChange={handleExtractSyllabus}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isExtracting}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 min-h-[44px] bg-muted hover:bg-muted/80 text-foreground border border-border rounded-2xl text-sm font-bold transition-all shadow-sm disabled:opacity-60"
+              >
+                {isExtracting ? <RefreshCw size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                <span className="hidden sm:inline">Ekstrak Silabus</span>
+                <span className="sm:hidden">Silabus</span>
+              </button>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowForm(true);
+                }}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-sm font-bold transition-all shadow-sm"
+              >
+                <Plus size={16} />
+                <span className="hidden sm:inline">Tambah Tugas</span>
+                <span className="sm:hidden">Tugas</span>
+              </button>
+            </div>
+          </div>
         </div>
       </motion.div>
 
@@ -492,10 +572,10 @@ export default function DeadlinesPage() {
           <div className="bg-card border border-border rounded-3xl p-5 space-y-3 shadow-sm">
             <div className="flex items-center gap-2">
               <UploadCloud size={18} className="text-primary" />
-              <h3 className="font-bold text-sm text-foreground">Pindai dari tangkapan layar</h3>
+              <h3 className="font-bold text-sm text-foreground">Ekstrak Silabus Otomatis</h3>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Memiliki foto papan tulis atau tangkapan layar informasi tugas? Unggah di Workspace, dan AI akan berupaya membaca tenggatnya secara otomatis.
+              Punya file silabus (RPS) dalam bentuk PDF atau Word? Gunakan tombol <strong>Ekstrak Silabus</strong> di atas. AI akan membaca jadwal tugas Anda dan langsung memasukkannya ke kalender secara otomatis!
             </p>
           </div>
         </motion.div>

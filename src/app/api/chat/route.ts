@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { ChatMessage } from "@/lib/db/models/ChatMessage";
 import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag";
+import { extractTextFromUrl } from "@/lib/server-extract";
 import { checkRateLimit } from "@/lib/rate-limit";
 import OpenAI from "openai";
 import { AI_MODEL } from "@/lib/ai";
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { message, mode = "helper", courseName = "" } = await req.json();
-  if (!message?.trim()) return NextResponse.json({ error: "Message required" }, { status: 400 });
+  const { message, mode = "helper", courseName = "", attachmentUrl, attachmentType } = await req.json();
+  if (!message?.trim() && !attachmentUrl) return NextResponse.json({ error: "Message required" }, { status: 400 });
   if (message.length > 4000) {
     return NextResponse.json(
       { error: "Pesan terlalu panjang. Ringkas dulu (maksimal 4000 karakter), ya." },
@@ -90,12 +91,31 @@ export async function POST(req: NextRequest) {
     documentId: c.documentId,
   }));
 
+  // Handle direct file attachment extraction
+  let attachmentContent = "";
+  if (attachmentUrl && attachmentType) {
+    try {
+      const extractedText = await extractTextFromUrl(attachmentUrl, attachmentType);
+      if (extractedText.trim()) {
+        attachmentContent = `\n\n[LAMPIRAN LANGSUNG DARI PENGGUNA]\nBerikut adalah isi dokumen yang baru saja dilampirkan oleh pengguna. Jadikan ini sebagai konteks utama jika relevan dengan pertanyaan:\n${extractedText.slice(0, 15000)}`;
+      }
+    } catch (err) {
+      console.error("[chat] failed to extract attachment:", err);
+    }
+  }
+
   // Persona akademik profesional + grounding ke materi mahasiswa (RAG).
   const sourceBlock = chunks.length > 0 ? buildContextBlock(chunks) : undefined;
-  const systemPrompt = buildSystemPrompt(personaFromMode(mode), {
+  
+  // Build system prompt, injecting attachment directly if present.
+  let systemPrompt = buildSystemPrompt(personaFromMode(mode), {
     sourceBlock,
     courses: courseName ? [String(courseName)] : undefined,
   });
+
+  if (attachmentContent) {
+    systemPrompt += attachmentContent;
+  }
 
   const encoder = new TextEncoder();
   let fullResponse = "";

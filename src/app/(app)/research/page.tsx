@@ -80,15 +80,12 @@ export default function ResearchPage() {
     setResult("");
     setError(false);
 
-    const prompt = `Kamu asisten riset akademik. ${
-      prodi ? `Penanya adalah mahasiswa program studi ${prodi}. ` : ""
-    }Untuk topik/pertanyaan riset berikut, berikan dalam Bahasa Indonesia:\n"${q}"\n\n1. 3-5 sudut pandang / angle penelitian yang relevan dan bisa diteliti.\n2. Daftar kata kunci & referensi kunci (nama penulis/teori/jurnal yang biasa dipakai di bidang ini).\n3. Ringkasan singkat tinjauan literatur (literature overview) 1-2 paragraf.\n\nBalas rapi dengan heading bernomor. Ingatkan bahwa referensi yang disebut perlu diverifikasi sendiri.`;
-
+    // The backend now handles the prompt and Crossref fetching.
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, mode: "research" }),
+        body: JSON.stringify({ query: q, prodi }),
       });
       if (!res.body) throw new Error("no-body");
 
@@ -178,7 +175,9 @@ export default function ResearchPage() {
                 className="absolute right-2 top-1/2 -translate-y-1/2 px-4 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:shadow-none flex items-center gap-1.5"
               >
                 {isLoading ? (
-                  <RefreshCw size={15} className="animate-spin" />
+                  <>
+                    <RefreshCw size={15} className="animate-spin" /> Sedang mencari...
+                  </>
                 ) : (
                   <>
                     <Sparkles size={14} /> Cari

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Sparkles, Search, BookOpen, GraduationCap, Send, Trash2, RefreshCw } from "lucide-react";
+import { Bot, Sparkles, Search, BookOpen, GraduationCap, Send, Trash2, RefreshCw, Paperclip, X, FileText } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { ConfidenceBadge, ConfidenceLevel, SourceAttribution } from "@/components/ui/ConfidenceBadge";
 
@@ -62,8 +62,11 @@ export default function TutorPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingHistory, setIsFetchingHistory] = useState(true);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentMode = MODES.find((m) => m.id === mode) || MODES[1];
   const visibleMessages = course
@@ -103,11 +106,45 @@ export default function TutorPage() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !attachment) || isLoading || isUploading) return;
 
-    const userMsg: ChatMessage = { role: "user", content: input, mode, courseName: course };
+    let attachmentUrl = "";
+    let attachmentType = "";
+    let attachmentName = "";
+
+    if (attachment) {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", attachment);
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadRes.ok) throw new Error("Gagal mengunggah lampiran");
+        const uploadData = await uploadRes.json();
+        attachmentUrl = uploadData.secure_url;
+        attachmentType = attachment.name.endsWith(".pdf") ? "pdf" : attachment.name.endsWith(".docx") ? "docx" : "raw";
+        attachmentName = attachment.name;
+      } catch (err) {
+        alert("Gagal mengunggah file lampiran. Silakan coba lagi.");
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+    const userMsg: ChatMessage = { 
+      role: "user", 
+      content: attachment ? `[Melampirkan file: ${attachmentName}]\n${input}` : input, 
+      mode, 
+      courseName: course 
+    };
+    
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setIsLoading(true);
 
     // Placeholder streaming message
@@ -124,7 +161,13 @@ export default function TutorPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg.content, mode, courseName: course }),
+        body: JSON.stringify({ 
+          message: userMsg.content, 
+          mode, 
+          courseName: course,
+          attachmentUrl,
+          attachmentType
+        }),
       });
 
       if (!res.body) throw new Error("No response body");
@@ -398,24 +441,57 @@ export default function TutorPage() {
         </div>
 
         {/* Input */}
-        <div className="shrink-0 border-t border-border p-3 sm:p-4 bg-card">
+        <div className="shrink-0 border-t border-border p-3 sm:p-4 bg-card flex flex-col gap-2">
+          {attachment && (
+            <div className="flex items-center justify-between bg-muted rounded-xl px-3 py-2 border border-border/50 max-w-sm">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <FileText size={16} className="text-primary shrink-0" />
+                <span className="text-xs font-semibold text-foreground truncate">{attachment.name}</span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setAttachment(null)}
+                className="text-muted-foreground hover:text-destructive p-1 rounded-md transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
           <form onSubmit={handleSend} className="flex gap-2.5 items-center">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept=".pdf,.docx,.txt"
+              onChange={(e) => {
+                if (e.target.files?.[0]) setAttachment(e.target.files[0]);
+              }} 
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || isUploading}
+              aria-label="Lampirkan file"
+              className="grid place-items-center w-12 h-12 shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-2xl transition-all border border-border disabled:opacity-50"
+            >
+              <Paperclip size={20} />
+            </button>
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={currentMode.placeholder}
-              disabled={isLoading}
+              placeholder={attachment ? "Tambahkan pesan untuk lampiran ini..." : currentMode.placeholder}
+              disabled={isLoading || isUploading}
               className="flex-1 px-4 min-h-[48px] rounded-2xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-60"
             />
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || isUploading || (!input.trim() && !attachment)}
               aria-label="Kirim pesan"
               className="grid place-items-center w-12 h-12 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              {isLoading ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} />}
+              {isLoading || isUploading ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} />}
             </button>
           </form>
         </div>
