@@ -38,6 +38,22 @@ const DOC_TYPES = [
   { id: "artikel", label: "Artikel" },
 ];
 
+const parseMarkdown = (text: string) => {
+  let html = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+  
+  html = html.replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>');
+  html = html.replace(/<\/ul><br><ul>/g, ''); 
+  return html;
+};
+
 export default function DocumentStudio({
   universitas,
   prodi,
@@ -78,6 +94,19 @@ export default function DocumentStudio({
 
   const editorRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [savedRange, setSavedRange] = useState<Range | null>(null);
+
+  const handleSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && editorRef.current?.contains(selection.anchorNode)) {
+      setSavedRange(selection.getRangeAt(0).cloneRange());
+      const text = selection.toString().trim();
+      if (text && text.length > 10) {
+        setInputText(text);
+        setActiveTool("paraphrase");
+      }
+    }
+  };
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -259,7 +288,21 @@ Instruksi Detail:
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             const data = line.slice(6);
-            if (data === "[DONE]") break;
+            if (data === "[DONE]") {
+              // Auto-insert Outline to Document
+              if (editorRef.current) {
+                editorRef.current.focus();
+                if (savedRange) {
+                  const sel = window.getSelection();
+                  sel?.removeAllRanges();
+                  sel?.addRange(savedRange);
+                }
+                const html = parseMarkdown(result);
+                document.execCommand("insertHTML", false, `<br><h2>Kerangka Pemikiran</h2>${html}<br>`);
+                scheduleSave();
+              }
+              break;
+            }
             try { result += JSON.parse(data).text; setGeneratedOutline(result); } catch {}
           }
         }
@@ -308,7 +351,19 @@ Teks Asli:
       for (const line of lines) {
         if (line.startsWith("data: ")) {
           const data = line.slice(6);
-          if (data === "[DONE]") break;
+          if (data === "[DONE]") {
+            // Auto-replace Paraphrase to Document
+            if (editorRef.current && savedRange) {
+              editorRef.current.focus();
+              const sel = window.getSelection();
+              sel?.removeAllRanges();
+              sel?.addRange(savedRange);
+              const html = parseMarkdown(result);
+              document.execCommand("insertHTML", false, html);
+              scheduleSave();
+            }
+            break;
+          }
           try { result += JSON.parse(data).text; setOutputText(result); } catch {}
         }
       }
@@ -571,6 +626,8 @@ Teks Asli:
               contentEditable
               suppressContentEditableWarning
               onInput={scheduleSave}
+              onMouseUp={handleSelection}
+              onKeyUp={handleSelection}
               className="prose-editor min-h-full p-10 md:p-16 text-[15px] leading-[2] text-foreground focus:outline-none max-w-4xl mx-auto font-serif focus:ring-0 selection:bg-primary/20"
               style={{ wordBreak: "break-word" }}
             />
