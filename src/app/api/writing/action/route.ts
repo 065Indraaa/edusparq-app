@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { aiComplete } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { getUserPersonaContext } from "@/lib/ai-memory";
 
 export const runtime = "nodejs";
 
@@ -41,11 +42,16 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
 
-  const system = buildSystemPrompt(
+  let system = buildSystemPrompt(
     "editor",
     undefined,
     `${instruction}\n\nKELUARKAN HANYA hasil teksnya saja, tanpa penjelasan, tanpa tanda kutip pembungkus, tanpa markdown.`
   );
+
+  const personaContext = await getUserPersonaContext(session.user.id);
+  if (personaContext) {
+    system = personaContext + system;
+  }
 
   try {
     const { text: result } = await aiComplete({

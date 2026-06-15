@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Users, Sparkles, Plus, CheckCircle2, MessageSquare, Save, LogIn, Hash, Copy, Check, Trash2, FileText, ExternalLink, BarChart3 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, Sparkles, Plus, CheckCircle2, MessageSquare, Save, LogIn, Hash, Copy, Check, Trash2, FileText, ExternalLink, BarChart3, List } from "lucide-react";
 import { useSession } from "next-auth/react";
 import PusherClient from "pusher-js";
 
@@ -431,72 +431,74 @@ export default function CollabPage() {
           </motion.p>
         )}
 
-        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-6 mt-12">
           <button
             onClick={() => { setShowGroupForm("create"); setGroupError(""); }}
-            className={`p-6 rounded-3xl border-2 text-center space-y-3 transition-all hover-lift ${showGroupForm === "create" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
+            className={`p-8 rounded-[2rem] border-2 text-center space-y-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${showGroupForm === "create" ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border/50 bg-card/60 backdrop-blur-xl hover:border-primary/40 hover:shadow-md"}`}
           >
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-              <Plus size={24} className="text-primary" />
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto shadow-inner">
+              <Plus size={32} className="text-primary" />
             </div>
             <div>
-              <p className="font-bold text-foreground text-sm">Buat Grup</p>
-              <p className="text-xs text-muted-foreground mt-1">Mulai ruang kerja baru</p>
+              <p className="font-bold text-foreground text-lg">Buat Grup</p>
+              <p className="text-sm text-muted-foreground mt-1">Mulai ruang kerja baru</p>
             </div>
           </button>
           <button
             onClick={() => { setShowGroupForm("join"); setGroupError(""); }}
-            className={`p-6 rounded-3xl border-2 text-center space-y-3 transition-all hover-lift ${showGroupForm === "join" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}
+            className={`p-8 rounded-[2rem] border-2 text-center space-y-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${showGroupForm === "join" ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10" : "border-border/50 bg-card/60 backdrop-blur-xl hover:border-emerald-500/40 hover:shadow-md"}`}
           >
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto">
-              <LogIn size={24} className="text-emerald-500" />
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 flex items-center justify-center mx-auto shadow-inner">
+              <LogIn size={32} className="text-emerald-500" />
             </div>
             <div>
-              <p className="font-bold text-foreground text-sm">Gabung Grup</p>
-              <p className="text-xs text-muted-foreground mt-1">Masukkan kode undangan</p>
+              <p className="font-bold text-foreground text-lg">Gabung Grup</p>
+              <p className="text-sm text-muted-foreground mt-1">Masukkan kode undangan</p>
             </div>
           </button>
         </motion.div>
 
         {showGroupForm === "create" && (
           <motion.form
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onSubmit={handleCreateGroup}
-            className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[2rem] p-8 space-y-5 shadow-xl"
           >
-            <h2 className="font-bold text-foreground">Nama Grup Baru</h2>
+            <h2 className="font-display font-bold text-xl text-foreground">Nama Grup Baru</h2>
             <input
               required value={groupName} onChange={e => setGroupName(e.target.value)}
               placeholder="Misal: Kelompok Skripsi Bab 3"
-              className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              className="w-full px-5 py-4 rounded-2xl bg-muted/50 border border-border/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
             />
             <button
               type="submit" disabled={groupLoading}
-              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-colors disabled:opacity-60"
+              className="w-full py-4 bg-foreground hover:bg-foreground/90 text-background font-bold text-sm rounded-2xl transition-all shadow-md active:scale-[0.98] disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
             >
-              {groupLoading ? "Membuat..." : "Buat Grup"}
+              {groupLoading && <Sparkles size={16} className="animate-spin" />}
+              {groupLoading ? "Membuat Grup..." : "Buat Grup Sekarang"}
             </button>
           </motion.form>
         )}
 
         {showGroupForm === "join" && (
           <motion.form
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onSubmit={handleJoinGroup}
-            className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm"
+            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[2rem] p-8 space-y-5 shadow-xl"
           >
-            <h2 className="font-bold text-foreground">Kode Undangan</h2>
+            <h2 className="font-display font-bold text-xl text-foreground">Kode Undangan</h2>
             <input
               required value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
               placeholder="Misal: ABC123"
-              className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-mono tracking-widest uppercase"
+              className="w-full px-5 py-4 rounded-2xl bg-muted/50 border border-border/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-mono tracking-widest uppercase text-center text-xl"
               maxLength={10}
             />
             <button
               type="submit" disabled={groupLoading}
-              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-colors disabled:opacity-60"
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-2xl transition-all shadow-md shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
             >
-              {groupLoading ? "Bergabung..." : "Gabung Grup"}
+              {groupLoading && <Sparkles size={16} className="animate-spin" />}
+              {groupLoading ? "Memeriksa Kode..." : "Gabung ke Grup"}
             </button>
           </motion.form>
         )}
@@ -509,23 +511,25 @@ export default function CollabPage() {
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
       {/* Header */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border/50 bg-gradient-to-br from-primary/10 via-card/80 to-card/80 backdrop-blur-xl p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
-            <h1 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-              <Users size={24} className="text-primary" />
+            <h1 className="font-display tracking-tight text-3xl font-extrabold text-foreground flex items-center gap-3">
+              <Users size={28} className="text-primary" />
               {activeGroup.name}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {activeGroup.members.length} anggota · Kode:{" "}
-              <button onClick={copyCode} className="font-mono font-bold text-primary hover:text-primary/80 inline-flex items-center gap-1 transition-colors">
-                <Hash size={12} />
+            <div className="flex items-center gap-3 mt-3">
+              <span className="text-sm font-semibold px-3 py-1 bg-muted rounded-lg text-muted-foreground">
+                {activeGroup.members.length} Anggota
+              </span>
+              <button onClick={copyCode} className="group font-mono font-bold text-primary hover:text-primary-foreground hover:bg-primary px-3 py-1 rounded-lg border border-primary/20 hover:border-primary inline-flex items-center gap-2 transition-all active:scale-95 shadow-sm">
+                <Hash size={14} />
                 {activeGroup.joinCode}
-                {copied ? <Check size={12} /> : <Copy size={12} />}
+                {copied ? <Check size={14} className="text-emerald-500 group-hover:text-emerald-300" /> : <Copy size={14} />}
               </button>
-            </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {groups.length > 1 && (
               <select
                 value={activeGroup._id}
@@ -555,26 +559,27 @@ export default function CollabPage() {
           </div>
         </div>
       </motion.div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Left 2 Cols: Shared Document Editor */}
-        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col min-h-[500px]">
+        <motion.div variants={itemVariants} className="lg:col-span-2 flex flex-col">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col flex-1 min-h-[600px] transition-shadow hover:shadow-md">
 
             {/* Editor Top Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Dokumen Bersama</span>
-                <h2 className="font-extrabold text-foreground">Dokumen Kelompok — {activeGroup.name}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/50 pb-5">
+              <div className="space-y-1.5">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                  <FileText size={12} /> Kanvas Utama
+                </span>
+                <h2 className="font-display font-extrabold text-xl text-foreground">Makalah Kolaborasi</h2>
               </div>
 
               {/* Member avatars */}
-              <div className="flex items-center -space-x-2">
-                {activeGroup.members.slice(0, 4).map((m, idx) => {
-                  const colors = ["from-primary to-indigo-600", "from-emerald-400 to-teal-500", "from-amber-400 to-orange-500", "from-pink-400 to-rose-500"];
+              <div className="flex items-center -space-x-3 hover:space-x-0 transition-all duration-300">
+                {activeGroup.members.slice(0, 5).map((m, idx) => {
+                  const colors = ["from-primary to-indigo-600", "from-emerald-400 to-teal-500", "from-amber-400 to-orange-500", "from-pink-400 to-rose-500", "from-purple-400 to-fuchsia-500"];
                   return (
-                    <div key={idx} title={m.name} className={`w-9 h-9 rounded-full bg-gradient-to-tr ${colors[idx % colors.length]} border-2 border-card flex items-center justify-center font-bold text-xs text-white cursor-pointer select-none`}>
+                    <div key={idx} title={m.name} className={`w-10 h-10 rounded-full bg-gradient-to-tr ${colors[idx % colors.length]} border-2 border-card flex items-center justify-center font-bold text-xs text-white cursor-help select-none shadow-sm hover:scale-110 hover:-translate-y-1 transition-transform`}>
                       {(m.name || "?").charAt(0).toUpperCase()}
                     </div>
                   );
@@ -583,26 +588,29 @@ export default function CollabPage() {
             </div>
 
             {/* Typing indicator */}
-            <div className="mt-4 h-8 flex items-center">
+            <div className="mt-5 mb-2 h-8 flex items-center">
               {typingUser ? (
-                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 bg-primary/10 text-primary rounded-lg w-fit">
-                  <Sparkles size={14} className="animate-pulse" />
-                  <span>{typingUser} sedang mengetik...</span>
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 bg-primary/10 text-primary rounded-xl shadow-sm w-fit border border-primary/20">
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                  <span>{typingUser} mengetik...</span>
                 </motion.div>
               ) : (
-                <button onClick={handleSaveDoc} className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                  {savingDoc ? <Sparkles size={14} className="animate-spin" /> : <Save size={14} />}
-                  {savingDoc ? "Menyimpan..." : "Simpan dokumen"}
+                <button onClick={handleSaveDoc} className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 bg-muted/50 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-95 border border-border/50">
+                  {savingDoc ? <Sparkles size={14} className="animate-spin text-primary" /> : <Save size={14} />}
+                  {savingDoc ? "Menyimpan ke Cloud..." : "Penyimpanan Otomatis Aktif"}
                 </button>
               )}
             </div>
 
             {/* Text Editor */}
-            <div className="relative flex-1 mt-2">
+            <div className="relative flex-1 group">
               <textarea
                 value={docContent}
                 onChange={(e) => handleDocChange(e.target.value)}
-                className="w-full h-full p-5 rounded-2xl bg-muted/40 border border-border text-sm font-mono resize-none leading-relaxed text-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                className="w-full h-full p-6 md:p-8 rounded-[1.5rem] bg-muted/30 border border-border/50 text-[15px] font-serif resize-none leading-[2] text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all shadow-inner custom-scrollbar selection:bg-primary/20"
                 placeholder="Mulai ketik isi makalah bersama di sini..."
               />
             </div>
@@ -610,17 +618,17 @@ export default function CollabPage() {
         </motion.div>
 
         {/* Right 1 Col: Tasks & Poll */}
-        <motion.div variants={itemVariants} className="lg:col-span-1 space-y-6">
+        <motion.div variants={itemVariants} className="lg:col-span-1 space-y-6 flex flex-col">
 
           {/* Poll (if exists) */}
           {poll && (
-            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-[2rem] p-6 shadow-sm space-y-5 hover:shadow-md transition-shadow">
               <div>
-                <h2 className="font-bold text-foreground flex items-center gap-2">
+                <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
                   <MessageSquare size={18} className="text-primary" />
-                  Voting
+                  Voting Keputusan
                 </h2>
-                <p className="text-xs text-muted-foreground mt-1">{poll.question}</p>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{poll.question}</p>
               </div>
 
               <div className="space-y-3">
@@ -633,45 +641,47 @@ export default function CollabPage() {
                       key={opt._id}
                       onClick={() => handleVote(opt._id)}
                       disabled={!!myVotedOptionId}
-                      className={`w-full text-left p-4 rounded-2xl border transition-all space-y-3 relative overflow-hidden ${voted ? "bg-primary/10 border-primary shadow-sm" : "bg-muted/40 border-border hover:border-primary/50"} ${myVotedOptionId && !voted ? "opacity-60" : ""}`}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 space-y-3 relative overflow-hidden ${voted ? "bg-primary/5 border-primary shadow-sm" : "bg-muted/30 border-border/50 hover:border-primary/50 hover:bg-muted/60"} ${myVotedOptionId && !voted ? "opacity-50 scale-[0.98]" : "hover:scale-[1.02] active:scale-[0.98]"}`}
                     >
-                      <div className="flex justify-between items-start gap-3">
+                      <div className="flex justify-between items-start gap-3 relative z-10">
                         <span className="font-bold text-sm text-foreground leading-snug">{opt.label}</span>
-                        <span className="font-black text-primary text-sm shrink-0">{opt.voterIds.length} Suara</span>
+                        <span className="font-black text-primary text-xs px-2 py-1 bg-primary/10 rounded-md shrink-0">{opt.voterIds.length} Suara</span>
                       </div>
-                      <div className="h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                      <div className="h-2.5 w-full bg-background rounded-full overflow-hidden relative z-10 border border-border/50">
                         <div className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style={{ width: `${pct}%` }} />
                       </div>
+                      {voted && <div className="absolute inset-0 bg-primary/[0.02] z-0 pointer-events-none" />}
                     </button>
                   );
                 })}
               </div>
               {myVotedOptionId && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center flex items-center justify-center gap-1.5">
-                  <CheckCircle2 size={14} /> Pilihan tersimpan.
-                </p>
+                <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center flex items-center justify-center gap-1.5 p-2 bg-emerald-500/10 rounded-xl">
+                  <CheckCircle2 size={14} /> Voting Anda telah direkam.
+                </motion.p>
               )}
             </div>
           )}
 
           {/* Task List */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-[2rem] p-6 shadow-sm space-y-5 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center">
-              <h2 className="font-bold text-foreground">Pembagian Tugas</h2>
+              <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
+                <List size={18} className="text-primary" /> Target Grup
+              </h2>
               <button
                 onClick={() => setShowTaskForm(!showTaskForm)}
-                className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                className="text-xs font-bold text-foreground bg-foreground/5 hover:bg-foreground/10 px-3 py-1.5 rounded-xl transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
               >
-                <Plus size={14} /> Tugas
+                <Plus size={14} /> Tambah
               </button>
             </div>
-
             {showTaskForm && (
-              <form onSubmit={handleAddTask} className="p-4 bg-muted/50 border border-border rounded-2xl space-y-3">
+              <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} onSubmit={handleAddTask} className="p-5 bg-muted/40 border border-border/50 rounded-[1.5rem] space-y-4 shadow-inner overflow-hidden">
                 <input
                   required value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                  placeholder="Misal: Bikin PPT..."
+                  className="w-full px-4 py-3 rounded-xl bg-card border border-border/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+                  placeholder="Deskripsi tugas (Misal: Cari Jurnal...)"
                 />
                 <div className="grid grid-cols-2 gap-3">
                   <select
@@ -686,97 +696,101 @@ export default function CollabPage() {
                         setNewTaskAssignee("");
                       }
                     }}
-                    className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                    className="w-full px-3 py-2.5 rounded-xl bg-card border border-border/50 text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
                   >
-                    <option value="">Pilih PIC (opsional)</option>
+                    <option value="">Delegasi (opsional)</option>
                     {activeGroup.members.map(m => (
                       <option key={m.userId} value={m.userId}>{m.name}</option>
                     ))}
                   </select>
                   <input
                     value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    className="w-full px-3 py-2.5 rounded-xl bg-card border border-border/50 text-xs font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                     placeholder="Tenggat (18 Juni)"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground font-medium shrink-0">Bobot:</span>
+                <div className="flex items-center gap-3 bg-card px-4 py-2.5 rounded-xl border border-border/50">
+                  <span className="text-xs text-muted-foreground font-bold shrink-0">Bobot Beban:</span>
                   <select
                     value={newTaskBobot}
                     onChange={e => setNewTaskBobot(Number(e.target.value))}
-                    className="px-3 py-2 rounded-xl bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                    className="flex-1 bg-transparent border-none text-xs font-bold text-foreground focus:outline-none focus:ring-0"
                   >
-                    <option value={1}>1 – Ringan</option>
-                    <option value={2}>2 – Sedang</option>
-                    <option value={3}>3 – Berat</option>
+                    <option value={1}>Ringan (1)</option>
+                    <option value={2}>Sedang (2)</option>
+                    <option value={3}>Berat (3)</option>
                   </select>
                 </div>
-                <div className="flex gap-2 pt-1">
-                  <button type="submit" className="flex-1 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl">Simpan</button>
-                  <button type="button" onClick={() => { setShowTaskForm(false); setNewTaskAssigneeUserId(""); setNewTaskBobot(1); }} className="px-4 py-2 border border-border font-bold text-muted-foreground hover:text-foreground rounded-xl text-xs">Batal</button>
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" className="flex-1 py-2.5 bg-foreground text-background font-bold text-xs rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md">Tambahkan</button>
+                  <button type="button" onClick={() => { setShowTaskForm(false); setNewTaskAssigneeUserId(""); setNewTaskBobot(1); }} className="px-5 py-2.5 bg-muted font-bold text-muted-foreground hover:text-foreground rounded-xl text-xs hover:bg-muted/80 transition-all">Batal</button>
                 </div>
-              </form>
+              </motion.form>
             )}
 
             {loadingTasks ? (
-              <div className="space-y-3">{[0,1,2].map(i => <div key={i} className="skeleton h-16 w-full rounded-2xl" />)}</div>
+              <div className="space-y-3">{[0,1,2].map(i => <div key={i} className="skeleton h-20 w-full rounded-[1.5rem]" />)}</div>
             ) : tasks.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-xs font-medium">
-                Belum ada tugas. Tambahkan tugas pertama untuk kelompok ini.
+              <div className="py-10 text-center flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-3"><List size={24} className="text-muted-foreground/50" /></div>
+                <p className="text-muted-foreground text-sm font-semibold max-w-[200px]">Belum ada target misi. Tambahkan tugas pertama!</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {tasks.map((task) => (
-                  <div key={task._id} className="flex items-start gap-3 p-3 rounded-2xl border border-border hover:border-primary/30 transition-colors group">
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} key={task._id} className={`flex items-start gap-4 p-4 rounded-[1.5rem] border transition-all duration-300 group ${task.completed ? "bg-muted/30 border-border/30" : "bg-card border-border/60 hover:border-primary/50 shadow-sm hover:shadow-md"}`}>
                     <button
                       onClick={() => handleToggleTask(task)}
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${task.completed ? "bg-emerald-500 border-emerald-500 text-white" : "border-muted-foreground/30 hover:border-primary"}`}
+                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300 hover:scale-110 active:scale-90 ${task.completed ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" : "border-muted-foreground/30 hover:border-primary/60 bg-background"}`}
                     >
-                      {task.completed && <CheckCircle2 size={14} />}
+                      {task.completed && <CheckCircle2 size={16} />}
                     </button>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <span className={`text-sm block font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <span className={`text-sm block font-bold leading-snug transition-all ${task.completed ? "line-through text-muted-foreground/60" : "text-foreground"}`}>
                         {task.title}
                       </span>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground font-medium">{task.assignee}</span>
-                        {task.dueDate && <span className="font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-md">{task.dueDate}</span>}
+                      <div className="flex justify-between items-center text-[11px] font-semibold">
+                        <span className="text-muted-foreground px-2 py-1 bg-muted rounded-md">{task.assignee}</span>
+                        {task.dueDate && <span className="text-primary px-2 py-1 bg-primary/10 rounded-md border border-primary/20">{task.dueDate}</span>}
                       </div>
                     </div>
                     <button
                       onClick={() => handleDeleteTask(task)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded-lg hover:bg-destructive/10"
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-white hover:bg-destructive transition-all p-2 rounded-xl"
                       title="Hapus tugas"
                     >
                       <Trash2 size={14} />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
           </div>
 
           {/* Kontribusi Anggota */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5">
-            <div className="flex items-center gap-2">
-              <BarChart3 size={18} className="text-primary" />
-              <h2 className="font-bold text-foreground">Kontribusi Anggota</h2>
+          <div className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-[2rem] p-6 shadow-sm space-y-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 border-b border-border/50 pb-4">
+              <BarChart3 size={20} className="text-primary" />
+              <h2 className="font-display font-bold text-lg text-foreground">Kinerja Tim</h2>
             </div>
             {loadingTasks ? (
-              <div className="space-y-3">{[0,1,2].map(i => <div key={i} className="skeleton h-10 w-full rounded-xl" />)}</div>
+              <div className="space-y-4">{[0,1,2].map(i => <div key={i} className="skeleton h-12 w-full rounded-xl" />)}</div>
             ) : contributions.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">Belum ada data kontribusi. Selesaikan tugas yang sudah ditugaskan untuk melihat statistik.</p>
+              <p className="text-xs text-muted-foreground text-center py-6 leading-relaxed font-semibold">Tuntaskan setidaknya satu tugas berbobot untuk melihat statistik kontribusi secara *real-time*.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {contributions.map((c) => (
-                  <div key={c.userId} className="space-y-1.5">
-                    <div className="flex justify-between items-center">
+                  <div key={c.userId} className="space-y-2">
+                    <div className="flex justify-between items-end">
                       <span className="text-sm font-bold text-foreground">{c.nama}</span>
-                      <span className="text-xs text-muted-foreground font-medium">{c.persen}% · {c.selesai} selesai</span>
+                      <div className="text-right">
+                        <span className="text-sm font-black text-primary">{c.persen}%</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold ml-2">({c.selesai} tugas)</span>
+                      </div>
                     </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div className="h-3 w-full bg-background rounded-full overflow-hidden border border-border/50 shadow-inner">
                       <div
-                        className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+                        className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-1000 ease-out"
                         style={{ width: `${c.persen}%` }}
                       />
                     </div>

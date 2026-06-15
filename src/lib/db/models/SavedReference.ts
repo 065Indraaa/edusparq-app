@@ -17,6 +17,7 @@ const SavedReferenceSchema = new Schema({
   publisher: { type: String, default: "" },
   doi: { type: String, default: "" },
   url: { type: String, default: "" },
+  content: { type: String, default: "" }, // Field baru untuk menyimpan teks sintesis AI
   savedAt: { type: Date, default: Date.now },
 });
 

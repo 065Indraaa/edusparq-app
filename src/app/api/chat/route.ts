@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import OpenAI from "openai";
 import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
+import { getUserPersonaContext, extractAndStorePersona } from "@/lib/ai-memory";
 
 let kimiClient: OpenAI | null = null;
 const getKimiClient = () => {
@@ -113,6 +114,12 @@ export async function POST(req: NextRequest) {
     courses: courseName ? [String(courseName)] : undefined,
   });
 
+  // Inject user persona/memory context
+  const personaContext = await getUserPersonaContext(session.user.id);
+  if (personaContext) {
+    systemPrompt = personaContext + systemPrompt;
+  }
+
   if (attachmentContent) {
     systemPrompt += attachmentContent;
   }
@@ -162,6 +169,12 @@ export async function POST(req: NextRequest) {
           courseName: typeof courseName === "string" ? courseName : "",
         });
       } catch {}
+
+      // Background worker: trigger persona extraction asynchronously 
+      // Fire-and-forget so it doesn't block the request.
+      extractAndStorePersona(session.user.id).catch(err => {
+        console.error("[Background Task] extractAndStorePersona failed:", err);
+      });
 
       // Emit metadata line (sources + confidence) right before [DONE].
       // text:"" keeps other SSE readers (writing/research) backward-compatible.

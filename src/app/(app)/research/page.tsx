@@ -28,6 +28,7 @@ export default function ResearchPage() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [topics, setTopics] = useState<string[]>(GENERIC_TOPICS);
@@ -120,6 +121,28 @@ export default function ResearchPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSave = async () => {
+    if (!result || isSaving) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Hasil Kajian: ${query}`,
+          content: result,
+          query: query,
+        }),
+      });
+      if (!res.ok) throw new Error("Gagal menyimpan");
+      alert("Berhasil disimpan ke Pustaka Saya!");
+    } catch (err) {
+      alert("Gagal menyimpan atau dokumen sudah ada di Pustaka.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="w-full pb-24">
       {/* Page Header */}
@@ -131,11 +154,10 @@ export default function ResearchPage() {
           </p>
         </div>
         <div className="flex gap-4">
-          <button className="bg-card/80 backdrop-blur-md border border-border px-5 py-2.5 rounded-xl flex items-center gap-2 text-foreground font-semibold hover:bg-muted transition-all shadow-sm">
+          <a href="/library" className="bg-card/80 backdrop-blur-md border border-border px-5 py-2.5 rounded-xl flex items-center gap-2 text-foreground font-semibold hover:bg-muted transition-all shadow-sm">
             <Bookmark size={18} className="text-primary fill-primary/20" />
             Pustaka Saya
-            <span className="ml-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">12</span>
-          </button>
+          </a>
         </div>
       </motion.div>
 
@@ -293,8 +315,8 @@ export default function ResearchPage() {
                       {copied ? <Check size={16} /> : <Copy size={16} />}
                       {copied ? "Tersalin" : "Salin Teks"}
                     </button>
-                    <button disabled={isLoading} className="w-full py-2.5 bg-transparent border border-border text-foreground rounded-xl font-semibold text-xs hover:bg-muted transition-colors flex justify-center items-center gap-2">
-                      <BookmarkPlus size={16} /> Simpan Draft
+                    <button onClick={handleSave} disabled={isLoading || isSaving} className="w-full py-2.5 bg-transparent border border-border text-foreground rounded-xl font-semibold text-xs hover:bg-muted transition-colors flex justify-center items-center gap-2">
+                      <BookmarkPlus size={16} /> {isSaving ? "Menyimpan..." : "Simpan Draft"}
                     </button>
                   </div>
                 </article>

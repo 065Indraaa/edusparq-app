@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { aiComplete } from "@/lib/ai";
 import { buildSystemPrompt, type StudentContext } from "@/lib/ai-prompts";
+import { getUserPersonaContext } from "@/lib/ai-memory";
 
 export const runtime = "nodejs";
 
@@ -47,7 +48,12 @@ Gaya sitasi: ${citationStyle}. Tulis konten yang benar-benar berisi paragraf utu
 
 KELUARKAN HANYA HTML BERSIH (tanpa <html>, <head>, <body>, tanpa blok kode markdown). Gunakan hanya tag: <h1> untuk judul, <h2>/<h3> untuk subjudul, <p> untuk paragraf, <ul>/<ol>/<li> untuk daftar, <strong>/<em> untuk penekanan, <blockquote> untuk kutipan. Mulai langsung dari <h1>.`;
 
-  const system = buildSystemPrompt("editor", ctx, instruction);
+  let system = buildSystemPrompt("editor", ctx, instruction);
+
+  const personaContext = await getUserPersonaContext(session.user.id);
+  if (personaContext) {
+    system = personaContext + system;
+  }
 
   try {
     const { text, provider, model } = await aiComplete({
