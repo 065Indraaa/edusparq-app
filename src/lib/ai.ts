@@ -6,7 +6,7 @@ import Groq from "groq-sdk";
  * EduSparq is now configured to exclusively use Kimi (Moonshot)
  * via the Kimchi Dev base URL.
  */
-export const AI_MODEL = "kimi-k2.6";
+export const AI_MODEL = "moonshotai/kimi-k2.7-code-free";
 
 /**
  * Centralized token budget.
@@ -33,7 +33,7 @@ export const getKimiClient = (): Groq => {
     }
     kimiClient = new Groq({ 
       apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: "https://llm.kimchi.dev/openai/v1"
+      baseURL: "https://zenmux.ai/api/v1"
     });
   }
   return kimiClient;
@@ -152,7 +152,7 @@ async function kimiComplete(
   };
   if (opts.json) body.response_format = { type: "json_object" };
 
-  const res = await fetch("https://llm.kimchi.dev/openai/v1/chat/completions", {
+  const res = await fetch("https://zenmux.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
