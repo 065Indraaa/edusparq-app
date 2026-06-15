@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getKimiClient, AI_MODEL } from "@/lib/ai";
 
@@ -8,7 +7,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -16,9 +15,9 @@ export async function POST(req: Request) {
     const { query, prodi = "" } = await req.json();
     if (!query?.trim()) return NextResponse.json({ error: "Query required" }, { status: 400 });
 
-    const clientIp = req.headers.get("x-forwarded-for") || "unknown";
-    const { allowed, isRateLimited } = await checkRateLimit(clientIp);
-    if (!allowed && isRateLimited) {
+    const clientIp = req.headers.get("x-forwarded-for") || session.user.id || "unknown";
+    const rl = checkRateLimit("research:" + clientIp, 20, 60_000);
+    if (!rl.allowed) {
       return NextResponse.json(
         { error: "Sistem mendeteksi aktivitas berlebihan. Tunggu 1 menit ya." },
         { status: 429 }
