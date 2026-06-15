@@ -16,7 +16,7 @@ const getKimiClient = () => {
     }
     kimiClient = new OpenAI({ 
       apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: "https://zenmux.ai/api/v1"
+      baseURL: "https://www.phanrouter.com/phanrouter/v1"
     });
   }
   return kimiClient;
