@@ -237,26 +237,26 @@ export default function DashboardPage() {
       variants={container} 
       initial="hidden" 
       animate="show" 
-      className="space-y-6 flex-1 flex flex-col justify-between w-full mx-auto max-w-7xl"
+      className="space-y-5 flex-1 flex flex-col justify-between w-full mx-auto max-w-full"
     >
       {/* Top Welcome Banner (Spans Full Width on Desktop) */}
-      <motion.section variants={item} className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm flex flex-col md:flex-row items-center justify-between min-h-[220px]">
+      <motion.section variants={item} className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm flex flex-col md:flex-row items-center justify-between min-h-[180px]">
         {/* Background Accent */}
         <div className="absolute -right-10 -top-10 opacity-[0.03] pointer-events-none hidden md:block">
           <Sparkles size={300} className="text-foreground" />
         </div>
         
-        <div className="p-8 md:p-10 z-10 flex-1">
+        <div className="p-6 md:p-7 z-10 flex-1">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground uppercase tracking-[0.18em] mb-4">
             <Clock size={13} /> Dashboard Akademik
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
             {timeGreeting}, {firstName}.
           </h1>
           <p className="text-muted-foreground text-sm md:text-base mt-3 max-w-xl leading-relaxed">
             {userSemester ? userSemester + '. ' : ''}Hari ini adalah hari yang baik untuk merangkum catatan, memeriksa tenggat tugas, atau bertanya pada Tutor AI.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/tutor" className="px-6 py-3 bg-foreground hover:bg-foreground/90 text-background font-semibold rounded-2xl text-sm transition-transform hover:scale-[1.02] inline-flex items-center gap-2 shadow-sm">
               <Bot size={18} /> Chat Tutor AI
             </Link>
@@ -267,7 +267,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Small Daily Quote/Tip Card on the right of banner */}
-        <div className="hidden lg:flex flex-col p-8 z-10 w-[300px] shrink-0 border-l border-border bg-muted/20 h-full justify-center">
+        <div className="hidden lg:flex flex-col p-5 z-10 w-[300px] shrink-0 border-l border-border bg-muted/20 h-full justify-center">
           <GraduationCap size={24} className="text-muted-foreground mb-3 opacity-50" />
           <p className="text-sm font-medium text-foreground italic leading-relaxed">
             "Konsistensi mengalahkan intensitas. Satu halaman hari ini lebih baik dari sepuluh halaman esok hari."
@@ -276,7 +276,7 @@ export default function DashboardPage() {
       </motion.section>
 
       {/* Main Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         
         {/* Statistics (4 mini blocks) */}
         <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 grid grid-cols-2 gap-4">
@@ -284,7 +284,7 @@ export default function DashboardPage() {
             const meta = [GraduationCap, BookOpen, CalendarDays, PenTool][idx] || BookOpen;
             const Icon = meta;
             return (
-              <div key={idx} className="rounded-3xl border border-border bg-card p-6 shadow-sm flex flex-col justify-center items-center text-center hover:bg-muted/30 transition-colors">
+              <div key={idx} className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-center items-center text-center hover:bg-muted/30 transition-colors">
                 <div className="w-12 h-12 rounded-2xl bg-muted text-foreground flex items-center justify-center mb-4">
                   <Icon size={22} strokeWidth={2} />
                 </div>
@@ -302,8 +302,8 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Upcoming Deadlines Bento */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
+        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <CalendarDays size={20} /> Tenggat Terdekat
             </h2>
@@ -341,8 +341,8 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Classes Today */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <Clock size={20} /> Kelas Hari Ini
             </h2>
@@ -387,9 +387,9 @@ export default function DashboardPage() {
                <Link
                  key={idx}
                  href={feat.href}
-                 className="group bg-card border border-border hover:bg-muted/20 rounded-3xl p-5 flex flex-col justify-center items-center text-center transition-all min-h-[140px] shadow-sm hover:-translate-y-1"
+                 className="group bg-card border border-border hover:bg-muted/20 rounded-2xl p-5 flex flex-col justify-center items-center text-center transition-all min-h-[140px] shadow-sm hover:-translate-y-1"
                >
-                 <div className="bg-background shadow-sm border border-border text-foreground w-14 h-14 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 mb-4">
+                 <div className="bg-background shadow-sm border border-border text-foreground w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 mb-4">
                    <Icon size={24} strokeWidth={2} />
                  </div>
                  <h3 className="font-bold text-sm text-foreground">{feat.name}</h3>

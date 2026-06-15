@@ -43,7 +43,7 @@ export default function LandingPage() {
             <span className="font-extrabold text-base md:text-lg tracking-tight">EduSparq</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
+          <nav className="hidden md:flex items-center gap-5 text-sm font-semibold text-muted-foreground">
             <a href="#hero" className="hover:text-foreground transition-colors">Beranda</a>
             <a href="#fitur" className="hover:text-foreground transition-colors">Fitur</a>
             <a href="#cara-kerja" className="hover:text-foreground transition-colors">Alur Kerja</a>
@@ -68,14 +68,14 @@ export default function LandingPage() {
       </div>
 
       {/* ===== Hero Bento Section ===== */}
-      <section id="hero" className="relative pt-32 pb-20 md:pt-40 md:pb-32 px-4 md:px-6 max-w-[1400px] mx-auto flex flex-col items-center">
+      <section id="hero" className="relative pt-28 pb-16 md:pt-32 md:pb-20 px-4 md:px-6 max-w-[1400px] mx-auto flex flex-col items-center">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(hsl(var(--foreground)/0.03)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-        <motion.div variants={stagger} initial="hidden" animate="show" className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+        <motion.div variants={stagger} initial="hidden" animate="show" className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-4">
           
           {/* Main Hero Card */}
-          <motion.div variants={fadeUp} className="md:col-span-8 lg:col-span-7 bg-card border border-border rounded-[2.5rem] p-8 md:p-12 lg:p-16 flex flex-col justify-center shadow-sm relative overflow-hidden group">
+          <motion.div variants={fadeUp} className="md:col-span-8 lg:col-span-7 bg-card border border-border rounded-[1.5rem] p-6 md:p-6 lg:p-10 flex flex-col justify-center shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-foreground/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-foreground/10 transition-colors duration-700" />
             
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-muted text-foreground border border-border w-fit mb-8">
@@ -86,18 +86,18 @@ export default function LandingPage() {
               Asisten AI Mahasiswa
             </div>
             
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-[1.05] text-foreground mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[1.05] text-foreground mb-6">
               Satu <span className="text-muted-foreground/50">ruang</span><br/>untuk semua<br/>tugas kuliah.
             </h1>
             
-            <p className="text-lg text-muted-foreground font-medium max-w-md leading-relaxed mb-10">
+            <p className="text-lg text-muted-foreground font-medium max-w-md leading-relaxed mb-6">
               Manajemen tenggat, tutor AI yang jujur, pembuat sitasi, dan perangkum materi, semuanya dalam satu antarmuka yang bersih.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-full bg-foreground text-background font-bold text-base hover:scale-[1.02] transition-transform shadow-lg active:scale-95"
+                className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-full bg-foreground text-background font-bold text-base hover:scale-[1.02] transition-transform shadow-lg active:scale-95"
               >
                 Mulai Belajar Sekarang
               </Link>
@@ -105,10 +105,10 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Right Bento Column */}
-          <div className="md:col-span-4 lg:col-span-5 grid grid-rows-2 gap-4 md:gap-6">
+          <div className="md:col-span-4 lg:col-span-5 grid grid-rows-2 gap-4 md:gap-4">
             
             {/* AI Confidence Showcase Card */}
-            <motion.div variants={fadeUp} className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+            <motion.div variants={fadeUp} className="bg-card border border-border rounded-[1.5rem] p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group">
               <div className="flex justify-between items-start mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
                   <Bot size={24} className="text-foreground" />
@@ -132,7 +132,7 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Quick Stats / Visual Card */}
-            <motion.div variants={fadeUp} className="bg-foreground text-background rounded-[2.5rem] p-8 shadow-md flex flex-col justify-between relative overflow-hidden">
+            <motion.div variants={fadeUp} className="bg-foreground text-background rounded-[1.5rem] p-6 shadow-md flex flex-col justify-between relative overflow-hidden">
                {/* Abstract pattern inside the dark card */}
                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
                
@@ -153,8 +153,8 @@ export default function LandingPage() {
       </section>
 
       {/* ===== Bento Features Grid ===== */}
-      <section id="fitur" className="py-24 px-4 md:px-6 max-w-[1400px] mx-auto border-t border-border/40">
-        <div className="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-8">
+      <section id="fitur" className="py-16 px-4 md:px-6 max-w-[1400px] mx-auto border-t border-border/40">
+        <div className="mb-6 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-5">
           <div className="max-w-2xl">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
               Berhenti berpindah tab.
@@ -168,9 +168,9 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-4">
           
-          <div className="md:col-span-2 bg-card border border-border rounded-[2.5rem] p-8 md:p-12 hover:shadow-md transition-shadow group flex flex-col md:flex-row items-center gap-8">
+          <div className="md:col-span-2 bg-card border border-border rounded-[1.5rem] p-6 md:p-6 hover:shadow-md transition-shadow group flex flex-col md:flex-row items-center gap-5">
              <div className="flex-1">
                <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform">
                  <CalendarDays size={28} className="text-foreground" />
@@ -192,7 +192,7 @@ export default function LandingPage() {
              </div>
           </div>
 
-          <div className="bg-card border border-border rounded-[2.5rem] p-8 md:p-12 hover:shadow-md transition-shadow group">
+          <div className="bg-card border border-border rounded-[1.5rem] p-6 md:p-6 hover:shadow-md transition-shadow group">
              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform">
                <Users size={28} className="text-foreground" />
              </div>
@@ -202,7 +202,7 @@ export default function LandingPage() {
              </p>
           </div>
 
-          <div className="bg-card border border-border rounded-[2.5rem] p-8 md:p-12 hover:shadow-md transition-shadow group">
+          <div className="bg-card border border-border rounded-[1.5rem] p-6 md:p-6 hover:shadow-md transition-shadow group">
              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform">
                <PenTool size={28} className="text-foreground" />
              </div>
@@ -212,7 +212,7 @@ export default function LandingPage() {
              </p>
           </div>
 
-          <div className="md:col-span-2 bg-foreground text-background rounded-[2.5rem] p-8 md:p-12 hover:shadow-lg transition-shadow group flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+          <div className="md:col-span-2 bg-foreground text-background rounded-[1.5rem] p-6 md:p-6 hover:shadow-lg transition-shadow group flex flex-col md:flex-row items-center gap-5 relative overflow-hidden">
              <div className="absolute right-0 top-0 w-1/2 h-full bg-background/5 blur-3xl rounded-full translate-x-1/3 -translate-y-1/4" />
              
              <div className="flex-1 relative z-10">
@@ -230,7 +230,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== Big CTA Section ===== */}
-      <section className="py-24 px-4 md:px-6">
+      <section className="py-16 px-4 md:px-6">
         <div className="max-w-[1000px] mx-auto bg-card border border-border rounded-[3rem] p-10 md:p-20 text-center shadow-sm relative overflow-hidden">
           <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[600px] h-[300px] bg-foreground/5 rounded-[100%] blur-[80px] pointer-events-none" />
           
@@ -241,7 +241,7 @@ export default function LandingPage() {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6">
             Meja kerja masa depan.
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto mb-10">
+          <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto mb-6">
             Didesain khusus untuk meningkatkan produktivitas mahasiswa. Bergabunglah sekarang, gratis selamanya untuk fitur dasar.
           </p>
           
@@ -256,7 +256,7 @@ export default function LandingPage() {
 
       {/* ===== Minimal Footer ===== */}
       <footer className="border-t border-border/50 py-12 px-4 md:px-6 mt-12">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 md:gap-3">
             <div className="bg-foreground text-background p-1.5 rounded-full flex items-center justify-center">
               <Sparkles size={12} />
@@ -266,7 +266,7 @@ export default function LandingPage() {
           <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">
             © 2026 EduSparq Studio. Hak Cipta Dilindungi.
           </p>
-          <div className="flex items-center gap-6 text-sm font-semibold text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
             <a href="#" className="hover:text-foreground transition-colors">Privasi</a>
             <a href="#" className="hover:text-foreground transition-colors">Ketentuan</a>
             <a href="https://github.com/edusparq" className="hover:text-foreground transition-colors" aria-label="GitHub">
