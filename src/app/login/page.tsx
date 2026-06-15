@@ -74,11 +74,11 @@ export default function LoginPage() {
           <div className="bg-primary/20 text-primary p-2.5 rounded-xl border border-primary/30">
             <Sparkles size={22} />
           </div>
-          <span className="font-extrabold text-2xl tracking-tight text-white">EduSparq</span>
+          <span className="font-display tracking-tight font-extrabold text-2xl tracking-tight text-white">EduSparq</span>
         </Link>
 
         <div className="relative z-10 space-y-7">
-          <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
+          <h1 className="font-display tracking-tight text-4xl font-extrabold text-white leading-tight tracking-tight">
             Belajar lebih cerdas,<br />
             <span className="text-primary">terarah, dan jujur.</span>
           </h1>
@@ -130,7 +130,7 @@ export default function LoginPage() {
 
           {/* Header */}
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
+            <h2 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground">
               {mode === "login" ? "Masuk ke akun Anda" : "Buat akun baru"}
             </h2>
             <p className="text-muted-foreground text-sm">

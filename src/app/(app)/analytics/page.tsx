@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
             <BarChart3 size={14} /> Statistik Belajar
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Analitik Akademik</h1>
+          <h1 className="font-display tracking-tight text-3xl sm:text-4xl font-black tracking-tight text-gradient">Analitik Akademik</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
             Ringkasan aktivitas belajar Anda di EduSparq, dihimpun dari data Anda sendiri.
           </p>
@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
                 className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-2 hover-lift hover:border-primary/20 transition-all"
               >
                 <m.icon size={18} className={m.accent} />
-                <span className="text-2xl font-black text-foreground block leading-none">{m.value}</span>
+                <span className="font-display tracking-tight text-2xl font-black text-foreground block leading-none">{m.value}</span>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                   {m.label}
                 </span>

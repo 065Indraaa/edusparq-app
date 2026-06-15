@@ -204,7 +204,7 @@ export default function TutorPage() {
       <div className="shrink-0 mb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
+            <h1 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
               <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
                 <Bot size={20} />
               </span>

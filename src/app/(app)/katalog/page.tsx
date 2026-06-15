@@ -230,7 +230,7 @@ export default function KatalogPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
               <Library size={14} /> Crossref Library
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Katalog Riset</h1>
+            <h1 className="font-display tracking-tight text-3xl sm:text-4xl font-black tracking-tight text-gradient">Katalog Riset</h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
               Cari referensi akademik, simpan ke pustaka pribadi, lalu salin sitasi bersih untuk tugas, makalah, atau skripsi.
             </p>
@@ -238,11 +238,11 @@ export default function KatalogPage() {
           <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
             <div className="rounded-2xl bg-background/70 border border-border p-3">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Tersimpan</p>
-              <p className="text-2xl font-black text-foreground">{library.length}</p>
+              <p className="font-display tracking-tight text-2xl font-black text-foreground">{library.length}</p>
             </div>
             <div className="rounded-2xl bg-background/70 border border-border p-3">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Hasil</p>
-              <p className="text-2xl font-black text-foreground">{results.length}</p>
+              <p className="font-display tracking-tight text-2xl font-black text-foreground">{results.length}</p>
             </div>
           </div>
         </div>

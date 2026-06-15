@@ -189,7 +189,7 @@ export default function ExamPractice({
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             className="bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 rounded-3xl p-6 text-center shadow-sm">
             <Award size={32} className="mx-auto text-primary mb-2" />
-            <p className="text-4xl font-black text-gradient">{result.overall}</p>
+            <p className="font-display tracking-tight text-4xl font-black text-gradient">{result.overall}</p>
             <p className="text-sm text-muted-foreground mt-1">Skor keseluruhan</p>
           </motion.div>
         )}

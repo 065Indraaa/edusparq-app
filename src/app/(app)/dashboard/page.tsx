@@ -250,7 +250,7 @@ export default function DashboardPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground uppercase tracking-[0.18em] mb-4">
             <Clock size={13} /> Dashboard Akademik
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
+          <h1 className="font-display tracking-tight text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
             {timeGreeting}, {firstName}.
           </h1>
           <p className="text-muted-foreground text-sm md:text-base mt-3 max-w-xl leading-relaxed">
@@ -292,7 +292,7 @@ export default function DashboardPage() {
                   {loading ? (
                     <span className="skeleton h-10 w-20 rounded-md block mb-1 mx-auto" />
                   ) : (
-                    <span className="text-4xl font-black text-foreground block leading-none tracking-tight mb-2">{stat.value}</span>
+                    <span className="font-display tracking-tight text-4xl font-black text-foreground block leading-none tracking-tight mb-2">{stat.value}</span>
                   )}
                   <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest block">{stat.label}</span>
                 </div>
@@ -304,7 +304,7 @@ export default function DashboardPage() {
         {/* Upcoming Deadlines Bento */}
         <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+            <h2 className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-2">
               <CalendarDays size={20} /> Tenggat Terdekat
             </h2>
             <Link href="/deadlines" className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors">
@@ -343,7 +343,7 @@ export default function DashboardPage() {
         {/* Classes Today */}
         <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+            <h2 className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-2">
               <Clock size={20} /> Kelas Hari Ini
             </h2>
             <Link href="/jadwal" className="text-xs text-muted-foreground hover:text-foreground font-semibold inline-flex items-center transition-colors">

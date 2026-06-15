@@ -421,7 +421,7 @@ export default function CollabPage() {
           <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto">
             <Users size={32} className="text-primary" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Kolaborasi Kelompok</h1>
+          <h1 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground">Kolaborasi Kelompok</h1>
           <p className="text-sm text-muted-foreground">Buat grup baru atau bergabung dengan kode undangan.</p>
         </motion.div>
 
@@ -512,7 +512,7 @@ export default function CollabPage() {
       <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+            <h1 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
               <Users size={24} className="text-primary" />
               {activeGroup.name}
             </h1>

@@ -132,7 +132,7 @@ export default function ProfilePage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
             <UserCircle size={14} /> Profil Mahasiswa
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gradient">Profil Akademik</h1>
+          <h1 className="font-display tracking-tight text-3xl sm:text-4xl font-black tracking-tight text-gradient">Profil Akademik</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
             Lengkapi data akademik Anda. Informasi kampus dipakai untuk menyesuaikan kerangka penulisan, rekomendasi riset, dan konteks Tutor AI dengan perguruan tinggi Anda.
           </p>
@@ -152,7 +152,7 @@ export default function ProfilePage() {
             {s.value === null ? (
               <span className="skeleton h-7 w-12 rounded-md mt-1 block" />
             ) : (
-              <span className="text-2xl font-black text-foreground block leading-tight mt-0.5">{s.value}</span>
+              <span className="font-display tracking-tight text-2xl font-black text-foreground block leading-tight mt-0.5">{s.value}</span>
             )}
             <span className="text-[10px] text-muted-foreground">{s.hint}</span>
           </div>
