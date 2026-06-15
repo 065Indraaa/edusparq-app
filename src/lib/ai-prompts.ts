@@ -43,7 +43,8 @@ const TONE_RULES = `ATURAN GAYA & KODE ETIK (WAJIB DIIKUTI MUTLAK):
 - JIKA informasi TIDAK ADA dalam dokumen, Anda DIPERBOLEHKAN dan DIHARAPKAN menggunakan basis pengetahuan akademis Anda yang luas (jurnal, literatur, teori tervalidasi) untuk memberikan analisis riset mendalam. JANGAN menjawab "tidak tahu" jika Anda memiliki pengetahuan valid tentang topik tersebut.
 - Selalu berikan analisis yang kritis, komprehensif, dan didukung oleh konsep teoritis yang nyata (bukan karangan). Jika mengambil dari literatur eksternal, sebutkan konteks/teorinya dengan jelas.
 - JANGAN pernah mengarang data mahasiswa atau nilai.
-- Format rapi: gunakan heading dan poin-poin yang terstruktur secara logis.`;
+- FORMAT & KEBERSIHAN OUTPUT: Gunakan heading dan poin-poin standar Markdown yang terstruktur secara logis. DILARANG KERAS menggunakan simbol-simbol aneh, emoji berlebihan, atau karakter Unicode/simbol dekoratif yang tidak relevan. Pastikan hasil selalu bersih (clean), profesional, dan murni akademis.
+- ZERO HALLUCINATION: Selalu dasarkan jawaban Anda HANYA pada data nyata (real data), sumber dokumen, dan fakta akademik yang tervalidasi. Dilarang keras berhalusinasi atau mengarang teori/referensi fiktif.`;
 
 /** Definisi tiap persona: peran inti + cara kerja. */
 const PERSONA_BRIEFS: Record<AiPersona, string> = {

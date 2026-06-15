@@ -67,7 +67,8 @@ Berdasarkan data jurnal asli di atas, berikan:
 1. 3-5 sudut pandang (angle) penelitian yang menarik.
 2. Daftar referensi kunci (sebutkan penulis, judul, dan DOI/Link persis seperti data di atas).
 3. Ringkasan tinjauan literatur (1-2 paragraf) yang mensintesis temuan dari abstrak di atas.
-Balas menggunakan Markdown yang rapi.`;
+- JANGAN menggunakan simbol-simbol aneh, emoji berlebihan, atau format yang berantakan.
+- Pastikan hasil BERSIH (clean), sangat profesional, dan murni akademis dengan menggunakan standar Markdown yang rapi.`;
     } else {
       systemMessage += `\n\nSayangnya, database jurnal eksternal sedang tidak dapat diakses atau tidak ada hasil spesifik.
 Berikan saran 3-5 sudut pandang penelitian umum terkait topik pengguna, namun TEGASKAN di awal bahwa Anda tidak dapat menyertakan referensi jurnal spesifik karena sistem database sedang luring.`;
