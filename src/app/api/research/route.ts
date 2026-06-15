@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getKimiClient, AI_MODEL } from "@/lib/ai";
+import { AI_MODEL } from "@/lib/ai";
+import OpenAI from "openai";
+
+let kimiClient: OpenAI | null = null;
+const getClient = () => {
+  if (!kimiClient) {
+    kimiClient = new OpenAI({ 
+      apiKey: process.env.MOONSHOT_API_KEY,
+      baseURL: "https://www.phanrouter.com/phanrouter/v1"
+    });
+  }
+  return kimiClient;
+};
 
 export const maxDuration = 60;
 
@@ -78,10 +90,10 @@ Berikan saran 3-5 sudut pandang penelitian umum terkait topik pengguna, namun TE
       systemMessage += `\n\nPenanya adalah mahasiswa program studi ${prodi}. Sesuaikan sudut pandang agar relevan dengan bidang ini jika memungkinkan.`;
     }
 
-    const kimiClient = await getKimiClient();
+    const openai = getClient();
 
     // 3. Request streaming completion
-    const response = await kimiClient.chat.completions.create({
+    const response = await openai.chat.completions.create({
       model: AI_MODEL,
       messages: [
         { role: "system", content: systemMessage },
