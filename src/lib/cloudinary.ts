@@ -34,7 +34,8 @@ export function isCloudinaryConfigured(): boolean {
 export function uploadBuffer(
   buffer: Buffer,
   folder: string,
-  filename?: string
+  filename?: string,
+  resourceType: "auto" | "image" | "video" | "raw" = "auto"
 ): Promise<{ url: string; publicId: string }> {
   if (!isCloudinaryConfigured()) {
     throw new Error("Cloudinary belum dikonfigurasi");
@@ -44,7 +45,7 @@ export function uploadBuffer(
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
-        resource_type: "auto",
+        resource_type: resourceType,
         ...(filename ? { public_id: filename.replace(/\.[^/.]+$/, "") } : {}),
         use_filename: Boolean(filename),
         unique_filename: true,

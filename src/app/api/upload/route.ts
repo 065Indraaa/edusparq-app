@@ -67,10 +67,16 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await blob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    let cloudinaryResourceType: "auto" | "image" | "video" | "raw" = "auto";
+    if (fileType === "image") cloudinaryResourceType = "image";
+    else if (fileType === "video" || fileType === "audio") cloudinaryResourceType = "video";
+    else if (fileType === "pdf" || fileType === "docx") cloudinaryResourceType = "raw";
+
     const { url, publicId } = await uploadBuffer(
       buffer,
       `edusparq/${session.user.id}`,
-      originalName
+      originalName,
+      cloudinaryResourceType
     );
 
     return NextResponse.json({
