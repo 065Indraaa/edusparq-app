@@ -162,13 +162,11 @@ export default function WorkspacePage() {
       .finally(() => setLoadingChunks(false));
   }, [inspectingFile?.id, usingSampleData]);
 
-  // Opens the in-app viewer for PDFs; for other types opens the stored file in
-  // a new tab when a URL is available.
+  // Opens the in-app viewer for all supported media/docs; 
+  // falls back to the inspector if no URL is available.
   const handleOpen = (file: DocumentFile) => {
-    if (isPdf(file) && file.fileUrl) {
+    if (file.fileUrl) {
       setViewerFile(file);
-    } else if (file.fileUrl) {
-      window.open(file.fileUrl, "_blank", "noopener,noreferrer");
     } else {
       // No stored URL (sample/demo data) — fall back to the inspector.
       setInspectingFile(file);
@@ -1004,15 +1002,24 @@ export default function WorkspacePage() {
               </div>
 
               {/* Document frame */}
-              <div className="flex-1 bg-muted/20 min-h-0">
+              <div className="flex-1 bg-muted/20 min-h-0 relative flex items-center justify-center">
                 {viewerFile.fileUrl ? (
-                  <iframe
-                    src={viewerFile.fileUrl}
-                    title={`Pratinjau ${viewerFile.name}`}
-                    className="w-full h-full border-0"
-                  />
+                  viewerFile.type === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={viewerFile.fileUrl} alt={viewerFile.name} className="max-w-full max-h-full object-contain p-4" />
+                  ) : viewerFile.type === "video" ? (
+                    <video src={viewerFile.fileUrl} controls className="max-w-full max-h-full p-4" />
+                  ) : viewerFile.type === "audio" ? (
+                    <audio src={viewerFile.fileUrl} controls className="w-full max-w-md p-4" />
+                  ) : (
+                    <iframe
+                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewerFile.fileUrl)}&embedded=true`}
+                      title={`Pratinjau ${viewerFile.name}`}
+                      className="w-full h-full border-0"
+                    />
+                  )
                 ) : (
-                  <div className="h-full flex items-center justify-center p-8 text-center">
+                  <div className="h-full flex items-center justify-center p-8 text-center w-full">
                     <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
                       Pratinjau tidak tersedia karena berkas ini belum memiliki tautan penyimpanan (mode contoh atau demo).
                     </p>

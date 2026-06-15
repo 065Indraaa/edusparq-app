@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarNav, BottomNav } from "@/components/app-nav"; import { OnboardingGate } from "@/components/onboarding-gate";
 import { NotificationBell } from "@/components/notification-bell";
+import { PageTransition } from "@/components/page-transition";
 import { auth, signOut } from "@/lib/auth";
 import {
   Sparkles,
@@ -122,8 +123,11 @@ export default async function AppLayout({
 
       {/* Main Content Area */}
       <main id="main-content" className="edus-main flex-1 overflow-y-auto w-full px-4 py-6 md:px-8 md:py-4 pb-24 md:pb-4 flex flex-col min-h-screen transition-colors duration-300">
-        <div className="max-w-screen-2xl w-full mx-auto flex-1 flex flex-col animate-fade-up"> <OnboardingGate />
-          {children}
+        <div className="max-w-screen-2xl w-full mx-auto flex-1 flex flex-col"> 
+          <OnboardingGate />
+          <PageTransition>
+            {children}
+          </PageTransition>
         </div>
       </main>
 
