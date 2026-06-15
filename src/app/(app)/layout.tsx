@@ -46,7 +46,7 @@ export default async function AppLayout({
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="command-sidebar hidden md:flex flex-col w-[18rem] h-screen sticky top-0 shrink-0">
+      <aside className="command-sidebar hidden md:flex flex-col w-[17.5rem] h-[calc(100vh-2rem)] my-4 ml-4 rounded-[2rem] sticky top-4 shrink-0 overflow-hidden shadow-md border border-border">
         <div className="relative px-5 pt-5 pb-4 flex items-center justify-between gap-2">
           <Link href="/dashboard" className="group flex items-center gap-3 min-w-0">
             <div className="brand-orb h-12 w-12 rounded-3xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -121,7 +121,7 @@ export default async function AppLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main id="main-content" className="edus-main flex-1 overflow-y-auto w-full px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col min-h-screen transition-colors duration-300">
+      <main id="main-content" className="edus-main flex-1 overflow-y-auto w-full px-4 py-6 md:px-8 md:py-4 pb-24 md:pb-4 flex flex-col min-h-screen transition-colors duration-300">
         <div className="max-w-screen-2xl w-full mx-auto flex-1 flex flex-col animate-fade-up"> <OnboardingGate />
           {children}
         </div>
