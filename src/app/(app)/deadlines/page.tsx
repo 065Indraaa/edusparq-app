@@ -158,7 +158,7 @@ export default function DeadlinesPage() {
       const extractRes = await fetch("/api/deadlines/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileUrl, fileType, courseName: file.name.replace(/\.[^/.]+$/, "") }),
+        body: JSON.stringify({ fileUrl, fileType }),
       });
 
       if (!extractRes.ok) {

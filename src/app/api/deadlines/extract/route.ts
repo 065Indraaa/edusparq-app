@@ -5,6 +5,7 @@ import { extractTextFromUrl } from "@/lib/server-extract";
 import { getKimiClient, AI_MODEL } from "@/lib/ai";
 import { connectDB } from "@/lib/db/mongodb";
 import { Deadline } from "@/lib/db/models/Deadline";
+import { Course } from "@/lib/db/models/Course";
 
 export const maxDuration = 60;
 
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { fileUrl, fileType, courseName = "Tugas Baru" } = await req.json();
+    const { fileUrl, fileType } = await req.json();
     if (!fileUrl) {
       return NextResponse.json({ error: "fileUrl is required" }, { status: 400 });
     }
@@ -34,17 +35,22 @@ export async function POST(req: Request) {
 
     // 2. Request JSON extraction from Kimi
     const systemPrompt = `Anda adalah asisten akademik ahli pengekstrak silabus (RPS).
-Tugas Anda adalah membaca teks silabus yang diberikan, dan mengekstrak semua jadwal tugas, kuis, UTS, UAS, atau presentasi ke dalam format JSON.
+Tugas Anda adalah membaca teks silabus yang diberikan, dan mengekstrak informasi MATA KULIAH serta jadwal TUGAS (kuis, UTS, UAS, presentasi) ke dalam format JSON.
 
 Aturan ketat:
-- Hasil HANYA boleh berupa JSON berformat objek tunggal dengan properti "deadlines" yang berisi array.
-- Tiap objek di dalam "deadlines" memiliki field:
+- Hasil HANYA boleh berupa JSON berformat objek tunggal dengan 2 properti utama: "course" dan "deadlines".
+- Properti "course" adalah objek dengan field:
+  - "name": Nama mata kuliah (WAJIB).
+  - "instructor": Nama dosen pengampu (jika ada).
+  - "credits": Jumlah SKS berupa angka (misal: 3). Jika tidak disebutkan, isi null.
+  - "semester": Semester mata kuliah ini (misal: "Semester 5"). Jika tidak disebutkan, isi string kosong "".
+- Properti "deadlines" adalah array di mana tiap objek memiliki field:
   - "title": Nama tugas (misal: "Kuis 1", "UTS", "Tugas Makalah").
-  - "dueDate": Tanggal tenggat dalam format "YYYY-MM-DD". Jika tahun tidak disebutkan, asumsikan tahun saat ini (${new Date().getFullYear()}). Jika tanggal tidak spesifik (misal: "Minggu 3"), buat estimasi tanggal atau gunakan tanggal hari ini saja sebagai fallback.
+  - "dueDate": Tanggal tenggat dalam format "YYYY-MM-DD". Jika tahun tidak disebutkan, asumsikan tahun saat ini (${new Date().getFullYear()}). Jika tanggal tidak spesifik, buat estimasi atau gunakan tanggal hari ini sebagai fallback.
   - "dueTime": Waktu dalam format "HH:MM". Jika tidak ada, gunakan "23:59".
-  - "requirements": Catatan tambahan, bobot persentase, format tugas, atau "Minggu ke-X" jika tanggal spesifik tidak ada.
+  - "requirements": Catatan tambahan, bobot persentase, atau "Minggu ke-X".
 
-JSON murni tanpa markdown, tanpa penjelasan!`;
+JSON murni tanpa markdown, tanpa penjelasan! DILARANG KERAS menggunakan simbol aneh atau emoji.`;
 
     const kimiClient = await getKimiClient();
     const response = await kimiClient.chat.completions.create({
@@ -58,10 +64,12 @@ JSON murni tanpa markdown, tanpa penjelasan!`;
     });
 
     const resultStr = response.choices[0]?.message?.content || "";
-    let deadlinesToSave = [];
+    let extractedCourse: any = null;
+    let deadlinesToSave: any[] = [];
     
     try {
       const parsed = JSON.parse(resultStr);
+      extractedCourse = parsed.course;
       deadlinesToSave = parsed.deadlines || [];
     } catch (e) {
       return NextResponse.json({ error: "Gagal memproses JSON dari AI" }, { status: 500 });
@@ -73,11 +81,39 @@ JSON murni tanpa markdown, tanpa penjelasan!`;
 
     // 3. Save to MongoDB
     await connectDB();
+    
+    // Auto-create or update Course profile
+    let actualCourseName = extractedCourse?.name || "Mata Kuliah Baru";
+    if (extractedCourse?.name) {
+      const existingCourse = await Course.findOne({ 
+        userId: session.user.id, 
+        name: { $regex: new RegExp(`^${extractedCourse.name}$`, "i") } 
+      });
+
+      if (!existingCourse) {
+        // Create new course
+        await Course.create({
+          userId: session.user.id,
+          name: extractedCourse.name,
+          instructor: extractedCourse.instructor || "",
+          credits: extractedCourse.credits || 3,
+          semester: extractedCourse.semester || "Semester Berjalan",
+        });
+      } else {
+        // Update instructor if missing
+        if (!existingCourse.instructor && extractedCourse.instructor) {
+          existingCourse.instructor = extractedCourse.instructor;
+          await existingCourse.save();
+        }
+        actualCourseName = existingCourse.name; // Keep consistent casing
+      }
+    }
+
     const savedDeadlines = [];
     for (const dl of deadlinesToSave) {
       const newDl = await Deadline.create({
         userEmail: session.user.email,
-        courseName: courseName,
+        courseName: actualCourseName,
         title: dl.title || "Tugas",
         dueDate: dl.dueDate || new Date().toISOString().split("T")[0],
         dueTime: dl.dueTime || "23:59",

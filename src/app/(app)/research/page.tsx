@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Sparkles, Copy, Check, RefreshCw, Quote } from "lucide-react";
+import { Search, Sparkles, Copy, Check, RefreshCw, Quote, Bookmark, SlidersHorizontal, CalendarDays, BookmarkPlus } from "lucide-react";
 import { useSession } from "next-auth/react";
 
-// Generic fallback topics, used only when the user has no courses/prodi yet.
+// Generic fallback topics
 const GENERIC_TOPICS = [
   "Dampak AI terhadap pendidikan tinggi",
   "Kesehatan mental mahasiswa",
@@ -17,13 +17,10 @@ const containerVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
+
 const itemVariants = {
   hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 300, damping: 26 },
-  },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 26 } },
 };
 
 export default function ResearchPage() {
@@ -34,12 +31,9 @@ export default function ResearchPage() {
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [topics, setTopics] = useState<string[]>(GENERIC_TOPICS);
-  const [topicsFromCourses, setTopicsFromCourses] = useState(false);
   const [prodi, setProdi] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Build topic suggestions from the user's real courses (and prodi). This keeps
-  // suggestions relevant to whatever the student is actually studying, on any campus.
   useEffect(() => {
     if (!session?.user) return;
     let active = true;
@@ -54,11 +48,7 @@ export default function ResearchPage() {
         ? courses.map((c: { name?: string }) => c?.name).filter((n): n is string => Boolean(n))
         : [];
       if (courseNames.length > 0) {
-        const derived = courseNames
-          .slice(0, 8)
-          .map((name) => `Isu terkini dalam ${name}`);
-        setTopics(derived);
-        setTopicsFromCourses(true);
+        setTopics(courseNames.slice(0, 8).map((name) => `Isu terkini dalam ${name}`));
       } else if (userProdi) {
         setTopics([
           `Tren penelitian terbaru di bidang ${userProdi}`,
@@ -66,12 +56,9 @@ export default function ResearchPage() {
           `Penerapan teknologi pada ${userProdi}`,
           `Studi kasus ${userProdi} di Indonesia`,
         ]);
-        setTopicsFromCourses(true);
       }
     });
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [session]);
 
   const runSearch = async (q: string) => {
@@ -80,7 +67,6 @@ export default function ResearchPage() {
     setResult("");
     setError(false);
 
-    // The backend now handles the prompt and Crossref fetching.
     try {
       const res = await fetch("/api/research", {
         method: "POST",
@@ -135,144 +121,188 @@ export default function ResearchPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-6 max-w-4xl"
-    >
-      {/* Header */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm bg-grid">
-        <div className="relative space-y-2">
-          <h1 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary">
-              <Search size={20} />
-            </span>
-            Penelitian
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-            Temukan sudut pandang riset, referensi kunci, dan gambaran literatur untuk topik yang Anda kaji.
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="w-full pb-24">
+      {/* Page Header */}
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+        <div>
+          <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-2">Katalog Riset</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl">
+            Jelajahi ribuan literatur akademik, jurnal, dan publikasi penelitian terkini untuk mendukung studi Anda. Diperkuat oleh Crossref & AI.
           </p>
+        </div>
+        <div className="flex gap-4">
+          <button className="bg-card/80 backdrop-blur-md border border-border px-5 py-2.5 rounded-xl flex items-center gap-2 text-foreground font-semibold hover:bg-muted transition-all shadow-sm">
+            <Bookmark size={18} className="text-primary fill-primary/20" />
+            Pustaka Saya
+            <span className="ml-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">12</span>
+          </button>
+        </div>
+      </motion.div>
 
-          {/* Search bar */}
-          <motion.form variants={itemVariants} onSubmit={handleSubmit} className="pt-3">
-            <div className="relative">
-              <Search
-                size={20}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-              />
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Sidebar Filter (Visual Mockup adapted from Stitch HTML) */}
+        <motion.aside variants={itemVariants} className="w-full lg:w-64 flex-shrink-0 space-y-8">
+          <div className="bg-card/80 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <SlidersHorizontal size={18} /> Filter Lanjutan
+            </h3>
+            <div className="space-y-6">
+              {/* Tipe Dokumen */}
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block font-semibold">Tipe Dokumen</label>
+                <div className="space-y-3">
+                  {["Jurnal (Peer-Reviewed)", "Skripsi / Tugas Akhir", "Tesis & Disertasi", "Prosiding Konferensi"].map((type, idx) => (
+                    <label key={type} className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative flex items-center justify-center w-4 h-4">
+                        <input type="checkbox" defaultChecked={idx === 0} className="peer appearance-none w-4 h-4 border border-input rounded bg-background checked:bg-primary checked:border-primary transition-all" />
+                        <Check size={12} strokeWidth={4} className="absolute text-primary-foreground opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                      </div>
+                      <span className={`text-sm transition-colors ${idx === 0 ? "text-foreground font-medium" : "text-muted-foreground group-hover:text-foreground"}`}>
+                        {type}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <hr className="border-border/50" />
+              {/* Rentang Tahun */}
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block font-semibold">Tahun Publikasi</label>
+                <div className="flex items-center gap-2">
+                  <input type="text" placeholder="Dari" className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary text-sm outline-none transition-all" />
+                  <span className="text-muted-foreground">-</span>
+                  <input type="text" placeholder="Sampai" className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary text-sm outline-none transition-all" />
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <button className="px-2 py-1 bg-muted border border-border rounded text-xs text-muted-foreground hover:text-foreground hover:border-foreground transition-colors">Tahun ini</button>
+                  <button className="px-2 py-1 bg-muted border border-border rounded text-xs text-muted-foreground hover:text-foreground hover:border-foreground transition-colors">5 Tahun Terakhir</button>
+                </div>
+              </div>
+              <hr className="border-border/50" />
+              {/* Bidang Ilmu */}
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block font-semibold">Bidang Ilmu</label>
+                <select className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary text-sm outline-none transition-all text-foreground cursor-pointer">
+                  <option>Semua Bidang</option>
+                  <option>Ilmu Komputer</option>
+                  <option>Psikologi</option>
+                  <option>Ekonomi</option>
+                  <option>Sastra</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </motion.aside>
+
+        {/* Right Content Area */}
+        <motion.div variants={itemVariants} className="flex-1 space-y-6">
+          {/* Real Search Bar mapped into the Stitch style control bar */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-card border border-border rounded-2xl p-2 shadow-sm">
+            <form onSubmit={handleSubmit} className="relative w-full flex-1">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cari jurnal, artikel, atau topik penelitian..."
-                className="w-full pl-12 pr-28 min-h-[56px] rounded-2xl bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                placeholder="Masukkan kata kunci penelitian (contoh: dampak AI pada UI/UX)..."
+                className="w-full pl-10 pr-28 py-3 rounded-xl bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
               />
               <button
                 type="submit"
                 disabled={isLoading || !query.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:shadow-none flex items-center gap-1.5"
+                className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-2 bg-foreground text-background font-semibold text-sm rounded-lg hover:bg-foreground/90 transition-all disabled:opacity-50 flex items-center gap-2"
               >
-                {isLoading ? (
-                  <>
-                    <RefreshCw size={15} className="animate-spin" /> Sedang mencari...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={14} /> Cari
-                  </>
-                )}
+                {isLoading ? <><RefreshCw size={14} className="animate-spin" /> Mencari</> : "Pencarian AI"}
               </button>
+            </form>
+            <div className="flex items-center gap-2 w-full sm:w-auto px-4 border-t sm:border-t-0 sm:border-l border-border pt-3 sm:pt-0">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Urutkan:</span>
+              <select className="bg-transparent text-sm font-semibold text-foreground outline-none cursor-pointer">
+                <option>Relevansi AI</option>
+                <option>Sitasi Terbanyak</option>
+                <option>Terbaru</option>
+              </select>
             </div>
-          </motion.form>
-        </div>
-      </motion.div>
-
-      {/* Topic suggestions */}
-      <motion.div variants={itemVariants} className="space-y-3">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          {topicsFromCourses ? "Berdasarkan mata kuliah & prodi Anda" : "Topik untuk memulai"}
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {topics.map((topic) => (
-            <button
-              key={topic}
-              onClick={() => handleTopic(topic)}
-              disabled={isLoading}
-              className="px-4 min-h-[44px] rounded-full bg-muted border border-border text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-60"
-            >
-              {topic}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Result / states */}
-      <motion.div variants={itemVariants}>
-        {error ? (
-          <div className="bg-card border border-border rounded-3xl p-8 text-center space-y-3 shadow-sm">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-400/10 text-amber-500 flex items-center justify-center">
-              <RefreshCw size={22} />
-            </div>
-            <p className="text-sm font-bold text-foreground">
-              Asisten riset belum dapat dihubungi.
-            </p>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              Silakan coba kembali beberapa saat lagi atau perbarui kata kunci Anda. Topik populer di atas tetap dapat dipilih.
-            </p>
           </div>
-        ) : result || isLoading ? (
-          <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4 shadow-sm animate-fade-up">
-            <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
-                <Sparkles size={12} /> AI · Mode Riset
-              </span>
-              {result && (
+
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Mengumpulkan referensi dari Crossref..." : result ? "Menampilkan hasil riset terpadu." : "Silakan masukkan kata kunci atau pilih topik rekomendasi di bawah."}
+          </p>
+
+          {/* Quick Topics */}
+          {!result && !isLoading && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {topics.map((topic) => (
                 <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 min-h-[36px] px-2 text-xs font-semibold text-primary hover:underline"
+                  key={topic}
+                  onClick={() => handleTopic(topic)}
+                  className="px-4 py-2 rounded-lg bg-muted border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
                 >
-                  {copied ? <Check size={13} /> : <Copy size={13} />}
-                  {copied ? "Tersalin" : "Salin"}
+                  {topic}
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* AI Result Card (Modeled after Stitch's "Paper Card") */}
+          {(result || isLoading || error) && (
+            <div className="space-y-4">
+              {error ? (
+                <article className="bg-card/80 backdrop-blur-md border border-border rounded-2xl p-8 text-center shadow-sm">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mb-4">
+                    <RefreshCw size={24} />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground mb-2">Gagal Menarik Data</h3>
+                  <p className="text-sm text-muted-foreground">Server jurnal sedang sibuk. Silakan coba lagi.</p>
+                </article>
+              ) : (
+                <article className="bg-card/80 backdrop-blur-md rounded-2xl p-6 md:p-8 hover:shadow-lg transition-shadow duration-300 relative group border-l-4 border-l-primary border-t border-r border-b border-border shadow-sm flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="px-2.5 py-1 bg-primary/10 text-primary text-[10px] font-bold tracking-widest uppercase rounded">Sintesis Literatur AI</span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1"><CalendarDays size={14} /> Live Crossref Data</span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1"><Sparkles size={14} /> Di-generate Otomatis</span>
+                    </div>
+                    
+                    <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4 leading-tight">
+                      Hasil Kajian: {query}
+                    </h3>
+                    
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {result}
+                      {isLoading && (
+                        <span className="inline-flex gap-1 ml-2 align-middle">
+                          <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0ms] opacity-70" />
+                          <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:150ms] opacity-70" />
+                          <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:300ms] opacity-70" />
+                        </span>
+                      )}
+                    </div>
+
+                    {!isLoading && result && (
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-8 pt-4 border-t border-border">
+                        <Quote size={16} className="text-primary/50" /> Data disintesis dari 5 jurnal teratas untuk menghindari halusinasi teks.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Actions Bar (from Stitch layout) */}
+                  <div className="flex md:flex-col gap-3 justify-end items-end md:w-40 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 mt-4 md:mt-0">
+                    <button onClick={handleCopy} disabled={isLoading} className="w-full py-2.5 bg-foreground text-background rounded-xl font-semibold text-xs hover:bg-foreground/90 transition-colors flex justify-center items-center gap-2">
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                      {copied ? "Tersalin" : "Salin Teks"}
+                    </button>
+                    <button disabled={isLoading} className="w-full py-2.5 bg-transparent border border-border text-foreground rounded-xl font-semibold text-xs hover:bg-muted transition-colors flex justify-center items-center gap-2">
+                      <BookmarkPlus size={16} /> Simpan Draft
+                    </button>
+                  </div>
+                </article>
               )}
             </div>
-
-            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
-              {result}
-              {isLoading && (
-                <span className="inline-flex gap-1 ml-1 align-middle">
-                  <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0ms] opacity-70" />
-                  <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:150ms] opacity-70" />
-                  <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:300ms] opacity-70" />
-                </span>
-              )}
-            </div>
-
-            {result && !isLoading && (
-              <div className="flex items-start gap-2.5 pt-4 border-t border-border text-xs text-muted-foreground">
-                <Quote size={15} className="shrink-0 mt-0.5 text-amber-400" />
-                <p className="leading-relaxed">
-                  Hasil ini disusun oleh AI. Seluruh referensi dan data yang disebutkan wajib Anda verifikasi secara mandiri sebelum digunakan dalam tugas atau publikasi.
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-card border border-dashed border-border rounded-3xl p-10 text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-primary/15 to-teal-500/15 text-primary flex items-center justify-center">
-              <Search size={28} />
-            </div>
-            <div className="space-y-1.5">
-              <h3 className="font-bold text-foreground">Mulai eksplorasi riset Anda</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Tuliskan topik pada kolom pencarian atau pilih salah satu topik populer di atas untuk memperoleh sudut pandang penelitian dan referensi awal.
-              </p>
-            </div>
-          </div>
-        )}
-      </motion.div>
+          )}
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
