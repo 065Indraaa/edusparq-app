@@ -4,17 +4,17 @@ import { connectDB } from "@/lib/db/mongodb";
 import { ChatMessage } from "@/lib/db/models/ChatMessage";
 import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag";
 import { checkRateLimit } from "@/lib/rate-limit";
-import Groq from "groq-sdk";
+import OpenAI from "openai";
 import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
 
-let kimiClient: Groq | null = null;
+let kimiClient: OpenAI | null = null;
 const getKimiClient = () => {
   if (!kimiClient) {
     if (!process.env.MOONSHOT_API_KEY) {
       throw new Error("MOONSHOT_API_KEY belum diisi di .env.local");
     }
-    kimiClient = new Groq({ 
+    kimiClient = new OpenAI({ 
       apiKey: process.env.MOONSHOT_API_KEY,
       baseURL: "https://llm.kimchi.dev/openai/v1"
     });
@@ -122,7 +122,8 @@ export async function POST(req: NextRequest) {
           fullResponse += text;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
         }
-      } catch {
+      } catch (err) {
+        console.error("[chat streaming error]:", err);
         // Degrade gracefully: stream a professional error token instead of 500-ing.
         const errText = "Mohon maaf, sistem AI sedang mengalami kendala koneksi ke server pusat. Silakan coba kirim ulang pesan Anda dalam beberapa saat.";
         fullResponse = fullResponse || errText;
