@@ -197,11 +197,20 @@ export default function TutorPage() {
 
   const userName = session?.user?.name?.split(" ")[0] || "Anda";
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] max-h-[860px]">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] max-h-[860px]">
 
       {/* Header */}
-      <div className="shrink-0 mb-4">
+      <motion.div variants={itemVariants} className="shrink-0 mb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-display tracking-tight text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
@@ -303,10 +312,10 @@ export default function TutorPage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Chat Area */}
-      <div className="flex-1 bg-card border border-border rounded-3xl flex flex-col overflow-hidden shadow-sm">
+      <motion.div variants={itemVariants} className="flex-1 bg-card border border-border rounded-3xl flex flex-col overflow-hidden shadow-sm">
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 no-scrollbar">
@@ -410,7 +419,7 @@ export default function TutorPage() {
             </button>
           </form>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
