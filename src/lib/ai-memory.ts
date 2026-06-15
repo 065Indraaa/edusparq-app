@@ -26,7 +26,7 @@ export async function extractAndStorePersona(userId: string) {
       .sort({ createdAt: -1 })
       .limit(15);
       
-    if (messages.length < 5) return; // Belum cukup data
+    if (messages.length < 5 || messages.length % 5 !== 0) return; // Ekstrak hanya setiap kelipatan 5 pesan untuk mencegah Rate Limit API
 
     // Balik urutan menjadi kronologis
     messages.reverse();
