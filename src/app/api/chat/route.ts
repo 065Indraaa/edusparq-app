@@ -8,15 +8,18 @@ import Groq from "groq-sdk";
 import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
 
-let groqClient: Groq | null = null;
-const getGroqClient = () => {
-  if (!groqClient) {
-    if (!process.env.GROQ_API_KEY) {
-      throw new Error("GROQ_API_KEY belum diisi di .env.local");
+let kimiClient: Groq | null = null;
+const getKimiClient = () => {
+  if (!kimiClient) {
+    if (!process.env.MOONSHOT_API_KEY) {
+      throw new Error("MOONSHOT_API_KEY belum diisi di .env.local");
     }
-    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    kimiClient = new Groq({ 
+      apiKey: process.env.MOONSHOT_API_KEY,
+      baseURL: "https://llm.kimchi.dev/openai/v1"
+    });
   }
-  return groqClient;
+  return kimiClient;
 };
 
 
@@ -102,15 +105,15 @@ export async function POST(req: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        // Call Groq API with streaming
-        const stream = await getGroqClient().chat.completions.create({
+        // Call Kimi SDK with streaming
+        const stream = await getKimiClient().chat.completions.create({
           model: AI_MODEL,
           messages: [
             { role: "system", content: systemPrompt },
             ...historyMessages,
           ],
           stream: true,
-          temperature: 0.75,
+          temperature: 0.3, // Lowered temperature for zero-hallucination professional output
           max_tokens: 1024,
         });
 
@@ -120,8 +123,8 @@ export async function POST(req: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
         }
       } catch {
-        // Degrade gracefully: stream a friendly error token instead of 500-ing.
-        const errText = "Maaf, terjadi kendala saat menghubungi tutor. Coba kirim lagi sebentar lagi, ya.";
+        // Degrade gracefully: stream a professional error token instead of 500-ing.
+        const errText = "Mohon maaf, sistem AI sedang mengalami kendala koneksi ke server pusat. Silakan coba kirim ulang pesan Anda dalam beberapa saat.";
         fullResponse = fullResponse || errText;
         if (fullResponse === errText) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: errText })}\n\n`));
