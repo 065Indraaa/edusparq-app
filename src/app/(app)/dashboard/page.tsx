@@ -210,7 +210,7 @@ export default function DashboardPage() {
             }))
         );
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -243,10 +243,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <motion.div 
-      variants={container} 
-      initial="hidden" 
-      animate="show" 
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
       className="space-y-5 flex-1 flex flex-col justify-between w-full mx-auto max-w-full"
     >
       {/* Top Welcome Banner (Spans Full Width on Desktop) */}
@@ -255,7 +255,7 @@ export default function DashboardPage() {
         <div className="absolute -right-10 -top-10 opacity-[0.03] pointer-events-none hidden md:block">
           <Sparkles size={300} className="text-foreground" />
         </div>
-        
+
         <div className="p-6 md:p-7 z-10 flex-1">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground uppercase tracking-[0.18em] mb-4">
             <Clock size={13} /> Dashboard Akademik
@@ -287,7 +287,7 @@ export default function DashboardPage() {
 
       {/* Main Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        
+
         {/* Statistics (4 mini blocks) */}
         <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 grid grid-cols-2 gap-4">
           {stats.map((stat, idx) => {
@@ -338,11 +338,10 @@ export default function DashboardPage() {
                   <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block truncate mb-1">{dl.course}</span>
                   <span className="font-bold text-sm text-foreground block leading-tight truncate">{dl.title}</span>
                 </div>
-                <span className={`text-[10px] font-extrabold px-3 py-1.5 rounded-xl uppercase shrink-0 ${
-                  dl.daysLeft <= 1
-                    ? "bg-foreground text-background"
-                    : "bg-muted text-muted-foreground"
-                }`}>
+                <span className={`text-[10px] font-extrabold px-3 py-1.5 rounded-xl uppercase shrink-0 ${dl.daysLeft <= 1
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground"
+                  }`}>
                   {dueLabel(dl.daysLeft)}
                 </span>
               </div>
@@ -371,42 +370,42 @@ export default function DashboardPage() {
                   <div className="w-[2px] bg-border rounded-full" />
                   <div className="flex flex-col justify-center min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{c.courseName}</p>
-                    {c.ruang && <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center gap-1.5"><Info size={12}/> {c.ruang}</p>}
+                    {c.ruang && <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center gap-1.5"><Info size={12} /> {c.ruang}</p>}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-             <div className="flex items-center p-6 bg-muted/30 rounded-2xl border border-border">
-               <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center mr-4 shrink-0 shadow-sm">
-                 <Bot size={24} className="text-muted-foreground" />
-               </div>
-               <div>
-                 <h3 className="text-sm font-bold text-foreground">Jadwal Kosong</h3>
-                 <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed">Tidak ada jadwal hari ini. Mungkin saat yang tepat untuk mereview materi kuliah sebelumnya.</p>
-               </div>
-             </div>
+            <div className="flex items-center p-6 bg-muted/30 rounded-2xl border border-border">
+              <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center mr-4 shrink-0 shadow-sm">
+                <Bot size={24} className="text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Jadwal Kosong</h3>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed">Tidak ada jadwal hari ini. Mungkin saat yang tepat untuk mereview materi kuliah sebelumnya.</p>
+              </div>
+            </div>
           )}
         </motion.div>
 
         {/* Quick Access Menu / Widgets */}
         <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 grid grid-cols-2 gap-4">
-           {quickFeatures.map((feat, idx) => {
-             const Icon = feat.icon;
-             return (
-               <Link
-                 key={idx}
-                 href={feat.href}
-                 className="group bg-card border border-border hover:bg-muted/20 rounded-2xl p-5 flex flex-col justify-center items-center text-center transition-all min-h-[140px] shadow-sm hover:-translate-y-1"
-               >
-                 <div className="bg-background shadow-sm border border-border text-foreground w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 mb-4">
-                   <Icon size={24} strokeWidth={2} />
-                 </div>
-                 <h3 className="font-bold text-sm text-foreground">{feat.name}</h3>
-                 <p className="text-[10px] text-muted-foreground mt-1">Akses cepat</p>
-               </Link>
-             );
-           })}
+          {quickFeatures.map((feat, idx) => {
+            const Icon = feat.icon;
+            return (
+              <Link
+                key={idx}
+                href={feat.href}
+                className="group bg-card border border-border hover:bg-muted/20 rounded-2xl p-5 flex flex-col justify-center items-center text-center transition-all min-h-[140px] shadow-sm hover:-translate-y-1"
+              >
+                <div className="bg-background shadow-sm border border-border text-foreground w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 mb-4">
+                  <Icon size={24} strokeWidth={2} />
+                </div>
+                <h3 className="font-bold text-sm text-foreground">{feat.name}</h3>
+                <p className="text-[10px] text-muted-foreground mt-1">Akses cepat</p>
+              </Link>
+            );
+          })}
         </motion.div>
 
         {/* Recent Documents */}
@@ -429,7 +428,7 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">{doc.title || "Tanpa Judul"}</h3>
                   <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
-                    <span className="flex items-center gap-1"><BookOpen size={12}/> {doc.wordCount || 0} Kata</span>
+                    <span className="flex items-center gap-1"><BookOpen size={12} /> {doc.wordCount || 0} Kata</span>
                   </div>
                 </Link>
               ))}
