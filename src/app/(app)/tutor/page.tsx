@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Sparkles, Search, BookOpen, GraduationCap, Send, Trash2, RefreshCw, Paperclip, X, FileText } from "lucide-react";
+import { Bot, Sparkles, Search, BookOpen, GraduationCap, Send, Trash2, RefreshCw, Paperclip, X, FileText, FileUp, LayoutTemplate, CalendarClock } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { ConfidenceBadge, ConfidenceLevel, SourceAttribution } from "@/components/ui/ConfidenceBadge";
 
@@ -64,6 +64,7 @@ export default function TutorPage() {
   const [isFetchingHistory, setIsFetchingHistory] = useState(true);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [nearestDeadline, setNearestDeadline] = useState<{title: string, date: string, course: string} | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +83,22 @@ export default function TutorPage() {
         if (Array.isArray(data)) setMessages(data);
       })
       .finally(() => setIsFetchingHistory(false));
+  }, [session]);
+
+  // Load nearest deadline
+  useEffect(() => {
+    if (!session?.user) return;
+    fetch("/api/deadlines")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const sorted = data.filter(d => d.dueDate && new Date(d.dueDate).getTime() >= Date.now()).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+          if (sorted.length > 0) {
+            setNearestDeadline({ title: sorted[0].title, date: sorted[0].dueDate, course: sorted[0].courseName });
+          }
+        }
+      })
+      .catch(() => {});
   }, [session]);
 
   // Load the student's real courses for the focus selector.
@@ -371,17 +388,66 @@ export default function TutorPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center h-full text-center space-y-5 pb-8"
+              className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto space-y-6 pb-8 pt-4 w-full"
             >
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-primary/15 to-teal-500/15 text-primary flex items-center justify-center">
-                <Sparkles size={28} />
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-bold text-lg text-foreground">Selamat datang, {userName}.</h3>
-                <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-                  {currentMode.desc} Tuliskan pertanyaan Anda pada kolom di bawah; gunakan bahasa yang paling nyaman bagi Anda.
+              {nearestDeadline && (
+                <div className="w-full flex items-center justify-center">
+                  <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-semibold shadow-sm">
+                    <CalendarClock size={16} />
+                    Peringatan: Tenggat tugas "{nearestDeadline.title}" ({nearestDeadline.course}) segera tiba. Mari kita selesaikan!
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-center space-y-2 mb-2">
+                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-primary/15 to-teal-500/15 text-primary flex items-center justify-center mx-auto mb-4">
+                  <Sparkles size={28} />
+                </div>
+                <h3 className="font-display font-black text-2xl text-foreground">Halo, {userName}.</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                  Pusat kendali akademik Anda. Unggah dokumen untuk dianalisis, atau gunakan pustaka template di bawah untuk memulai secara otomatis.
                 </p>
               </div>
+
+              {/* Big Upload Area */}
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full relative overflow-hidden group bg-card border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 transition-all"
+              >
+                <div className="w-14 h-14 bg-background rounded-2xl flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all shadow-sm">
+                  <FileUp size={28} />
+                </div>
+                <div className="text-center">
+                  <span className="font-bold text-foreground block mb-1 group-hover:text-primary transition-colors">Unggah Materi / Referensi (PDF, Word)</span>
+                  <span className="text-xs text-muted-foreground">Tutor AI akan membaca dokumen ini dan menjawab berdasarkan konteksnya.</span>
+                </div>
+              </button>
+
+              {/* Template Center */}
+              <div className="w-full pt-4">
+                <div className="flex items-center gap-2 mb-3 px-2">
+                  <LayoutTemplate size={16} className="text-muted-foreground" />
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Pustaka Template</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { label: "Laporan Praktikum", prompt: "Tolong buatkan format dan kerangka penulisan untuk Laporan Praktikum berdasarkan panduan standar, dan analisis data yang akan saya unggah." },
+                    { label: "Bab 1 Pendahuluan", prompt: "Bantu saya menyusun Bab 1: Pendahuluan (Latar Belakang, Rumusan Masalah, Tujuan) untuk skripsi/makalah saya. Saya akan memberikan topik detailnya." },
+                    { label: "Analisis Jurnal", prompt: "Saya akan mengunggah sebuah jurnal PDF. Tolong buatkan analisis kritis yang mencakup temuan utama, metodologi, dan kelemahan penelitian tersebut." },
+                    { label: "Esai Opini", prompt: "Bantu saya membuat kerangka esai opini akademis sepanjang 1000 kata dengan argumen pro dan kontra terkait topik yang akan saya sebutkan." }
+                  ].map((tpl, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setInput(tpl.prompt); inputRef.current?.focus(); }}
+                      className="text-left bg-card hover:bg-muted border border-border p-4 rounded-2xl transition-colors shadow-sm flex flex-col gap-2"
+                    >
+                      <span className="font-bold text-sm text-foreground">{tpl.label}</span>
+                      <span className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{tpl.prompt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </motion.div>
           ) : (
             <AnimatePresence initial={false}>

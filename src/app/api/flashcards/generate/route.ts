@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
@@ -6,6 +6,7 @@ import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { Flashcard } from "@/lib/db/models/Flashcard";
 import { aiComplete, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -93,10 +94,7 @@ Aturan: "difficulty" hanya "easy" | "medium" | "hard" sesuai kompleksitas konsep
   // Defensive JSON parse: strip ```json fences, locate first [
   let parsed: Array<{ front: string; back: string; difficulty: string }>;
   try {
-    const cleaned = rawText
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/g, "")
-      .trim();
+    const cleaned = sanitizeOutput(rawText, { stripCodeFences: true });
     const start = cleaned.indexOf("[");
     if (start === -1) throw new Error("Array JSON tidak ditemukan dalam respons AI.");
     const jsonStr = cleaned.slice(start);

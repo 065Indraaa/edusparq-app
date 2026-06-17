@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SidebarNav, BottomNav } from "@/components/app-nav"; import { OnboardingGate } from "@/components/onboarding-gate";
+import { SidebarNav, BottomNav } from "@/components/app-nav";
+import { OnboardingGate } from "@/components/onboarding-gate";
 import { NotificationBell } from "@/components/notification-bell";
 import { PageTransition } from "@/components/page-transition";
 import { auth, signOut } from "@/lib/auth";

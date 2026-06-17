@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { extractTextFromUrl } from "@/lib/server-extract";
 import { getKimiClient, AI_MODEL } from "@/lib/ai";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 import { connectDB } from "@/lib/db/mongodb";
 import { Deadline } from "@/lib/db/models/Deadline";
 import { Course } from "@/lib/db/models/Course";
@@ -68,7 +69,7 @@ JSON murni tanpa markdown, tanpa penjelasan! DILARANG KERAS menggunakan simbol a
     let deadlinesToSave: any[] = [];
     
     try {
-      const parsed = JSON.parse(resultStr);
+      const parsed = JSON.parse(sanitizeOutput(resultStr, { stripCodeFences: true }));
       extractedCourse = parsed.course;
       deadlinesToSave = parsed.deadlines || [];
     } catch (e) {

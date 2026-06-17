@@ -1,4 +1,4 @@
-import { connectDB } from "@/lib/db/mongodb";
+﻿import { connectDB } from "@/lib/db/mongodb";
 import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 
 export interface RetrievedChunk {
@@ -38,20 +38,44 @@ export function chunkText(text: string, size = 900, overlap = 150): string[] {
   return chunks.filter(Boolean);
 }
 
-/** Extracts a few meaningful keywords from a free-text query. */
-function extractKeywords(query: string, max = 6): string[] {
+/** Extracts meaningful keywords from a free-text query (stop-word aware). */
+const STOPWORDS = new Set([
+  "yang", "dan", "di", "ke", "dari", "untuk", "pada", "dengan", "atau", "ini",
+  "itu", "adalah", "akan", "tidak", "juga", "dalam", "agar", "karena", "sebagai",
+  "oleh", "para", "the", "and", "for", "with", "that", "this", "are", "from",
+  "apa", "bagaimana", "mengapa", "siapa", "kapan", "mana", "jelaskan", "berikan",
+  "bantu", "tolong", "saya", "kami", "mereka", "kita", "anda",
+]);
+
+function extractKeywords(query: string, max = 8): string[] {
   return (query || "")
     .toLowerCase()
-    .replace(/[^a-z0-9À-ɏ\s]/gi, " ")
+    .replace(/[^a-z0-9\u00C0-\u024F\s]/gi, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 2)
+    .filter((w) => w.length > 2 && !STOPWORDS.has(w))
     .slice(0, max);
 }
 
+/** Tokenize to lowercase words for overlap scoring. */
+function tokenize(text: string): Set<string> {
+  return new Set(
+    (text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\u00C0-\u024F\s]/gi, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 1)
+  );
+}
+
 /**
- * Retrieves the most relevant chunks for a user query.
- * Primary path: MongoDB $text search (textScore). Fallback: case-insensitive
- * regex on extracted keywords. Returns [] on any error — never throws.
+ * Retrieves the most relevant chunks for a user query using a hybrid strategy:
+ *
+ * 1. MongoDB $text full-text search (textScore) — recall.
+ * 2. Keyword overlap rescoring (Jaccard-like) — precision on meaning.
+ * 3. Final score = normalized textScore + overlap weight, then sorted.
+ *
+ * Falls back to pure regex keyword match if the text index is unavailable.
+ * Returns [] on any error — never throws.
  */
 export async function retrieveChunks(
   userId: string,
@@ -66,6 +90,19 @@ export async function retrieveChunks(
     return [];
   }
 
+  const queryTokens = tokenize(query);
+  const keywords = extractKeywords(query);
+
+  const rescore = (content: string, textScore: number): number => {
+    const contentTokens = tokenize(content);
+    let overlap = 0;
+    for (const t of queryTokens) if (contentTokens.has(t)) overlap++;
+    const overlapRatio = queryTokens.size > 0 ? overlap / queryTokens.size : 0;
+    // Normalize textScore (can be >1) and weight overlap meaningfully.
+    const normText = textScore > 0 ? Math.min(textScore / 2, 1) : 0;
+    return normText + overlapRatio * 1.5;
+  };
+
   // Primary: full-text search.
   try {
     const docs = await DocumentChunk.find(
@@ -73,24 +110,30 @@ export async function retrieveChunks(
       { score: { $meta: "textScore" } }
     )
       .sort({ score: { $meta: "textScore" } })
-      .limit(limit)
+      .limit(limit * 3) // over-fetch for rescoring
       .lean();
 
     if (docs && docs.length > 0) {
-      return docs.map((d: any) => ({
-        content: d.content,
-        courseName: d.courseName || "",
-        documentId: String(d.documentId),
-        score: typeof d.score === "number" ? d.score : 1,
-      }));
+      const scored = docs
+        .map((d: any) => {
+          const rawScore = typeof d.score === "number" ? d.score : 1;
+          return {
+            content: d.content,
+            courseName: d.courseName || "",
+            documentId: String(d.documentId),
+            score: rescore(d.content || "", rawScore),
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+      if (scored.length > 0) return scored;
     }
   } catch {
     // text index may not exist yet — fall through to regex fallback.
   }
 
-  // Fallback: regex keyword match.
+  // Fallback: regex keyword match + overlap rescore.
   try {
-    const keywords = extractKeywords(query);
     if (keywords.length === 0) return [];
 
     const orFilters = keywords.map((kw) => ({
@@ -101,26 +144,26 @@ export async function retrieveChunks(
       userId,
       $or: orFilters,
     })
-      .limit(limit)
+      .limit(limit * 4)
       .lean();
 
-    return (docs || []).map((d: any) => {
-      const lc = (d.content || "").toLowerCase();
-      const score = keywords.reduce((acc, kw) => (lc.includes(kw) ? acc + 1 : acc), 0);
-      return {
+    return (docs || [])
+      .map((d: any) => ({
         content: d.content,
         courseName: d.courseName || "",
         documentId: String(d.documentId),
-        score,
-      };
-    }).sort((a, b) => b.score - a.score);
+        score: rescore(d.content || "", 0),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
   } catch {
     return [];
   }
 }
 
 /**
- * Heuristic confidence based on number of retrieved chunks and the top score.
+ * Heuristic confidence based on the number of retrieved chunks and the top
+ * rescored score. Thresholds tuned for the hybrid scoring above.
  */
 export function computeConfidence(
   chunks: RetrievedChunk[]
@@ -129,9 +172,10 @@ export function computeConfidence(
 
   const top = chunks[0]?.score ?? 0;
 
-  if (chunks.length >= 3 || top >= 1.5) return "High";
-  if (chunks.length >= 1 || top > 0) return "Medium";
-  return "Low";
+  if (chunks.length >= 3 && top >= 0.9) return "High";
+  if (chunks.length >= 1 && top >= 0.4) return "Medium";
+  if (top > 0) return "Low";
+  return "Unknown";
 }
 
 /**

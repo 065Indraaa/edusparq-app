@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Wand2, ClipboardList } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { CourseSelect } from "@/components/course-select";
-import ExamPractice from "./ExamPractice";
+import AssignmentSolver from "./AssignmentSolver";
 
 interface Flashcard {
   _id: string;
@@ -13,6 +13,10 @@ interface Flashcard {
   back: string;
   courseName: string;
   difficulty: "easy" | "medium" | "hard";
+  due?: string;
+  reps?: number;
+  interval?: number;
+  lapses?: number;
 }
 
 const containerVariants = {
@@ -35,6 +39,10 @@ export default function ExamsPage() {
   const [loadingCards, setLoadingCards] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [dueCount, setDueCount] = useState(0);
+  const [rating, setRating] = useState<0 | 1 | 2 | 3 | null>(null);
+  const [ratingCard, setRatingCard] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -223,6 +231,69 @@ export default function ExamsPage() {
     }
   };
 
+  // Refresh due count for the SRS badge.
+  const refreshDueCount = () => {
+    fetch("/api/flashcards?due=true")
+      .then((r) => r.json())
+      .then((data) => setDueCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => setDueCount(0));
+  };
+
+  useEffect(() => {
+    if (session?.user) refreshDueCount();
+  }, [session]);
+
+  // Start a focused SRS review session from due cards.
+  const startReviewSession = async () => {
+    setLoadingCards(true);
+    try {
+      const r = await fetch("/api/flashcards?due=true");
+      const data = await r.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setFlashcards(data);
+        setCurrentIdx(0);
+        setIsFlipped(false);
+        setReviewMode(true);
+      } else {
+        alert("Tidak ada kartu jatuh tempo saat ini. Kerja bagus!");
+      }
+    } finally {
+      setLoadingCards(false);
+    }
+  };
+
+  // Submit an SRS rating and advance to the next card.
+  const handleRate = async (r: 0 | 1 | 2 | 3) => {
+    if (!currentCard || ratingCard) return;
+    setRatingCard(true);
+    setRating(r);
+    try {
+      await fetch("/api/flashcards/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: currentCard._id, rating: r }),
+      });
+    } catch {}
+    setTimeout(() => {
+      setRating(null);
+      setRatingCard(false);
+      setIsFlipped(false);
+      if (currentIdx < flashcards.length - 1) {
+        setCurrentIdx((i) => i + 1);
+      } else {
+        // End of session.
+        if (reviewMode) {
+          alert("Sesi ulangi selesai! Kartu akan muncul lagi sesuai jadwal.");
+          setReviewMode(false);
+          refreshDueCount();
+          // Reload full deck.
+          fetch("/api/flashcards").then((r) => r.json()).then((data) => Array.isArray(data) && setFlashcards(data));
+          setCurrentIdx(0);
+        }
+      }
+    }, 350);
+  };
+
   const currentCard = flashcards[currentIdx];
 
   return (
@@ -233,11 +304,11 @@ export default function ExamsPage() {
         <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-4">
-            <GraduationCap size={14} /> Siap Ujian
+            <GraduationCap size={14} /> Siap Ujian & Tugas
           </div>
-          <h1 className="font-display tracking-tight text-3xl sm:text-4xl font-black tracking-tight text-gradient">Persiapan Ujian</h1>
+          <h1 className="font-display tracking-tight text-3xl sm:text-4xl font-black tracking-tight text-gradient">Persiapan Ujian & Tugas</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
-            Susun flashcard dari materi kuliah Anda dan buat perkiraan topik yang berpeluang muncul saat ujian.
+            Selesaikan tugas kuliah, susun flashcard materi, dan buat prediksi topik yang berpeluang muncul saat ujian.
           </p>
         </div>
       </motion.div>
@@ -245,9 +316,9 @@ export default function ExamsPage() {
       {/* Tabs */}
       <motion.div variants={itemVariants} className="flex bg-muted p-1 rounded-2xl gap-1 max-w-md">
         {[
+          { id: "practice", label: "Mengerjakan Tugas", icon: ClipboardList },
           { id: "predict", label: "Prediksi Soal", icon: Sparkles },
           { id: "flashcard", label: "Flashcard", icon: LayoutGrid },
-          { id: "practice", label: "Latihan Soal", icon: ClipboardList },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -351,14 +422,26 @@ export default function ExamsPage() {
           {/* Flashcards */}
           {activeTab === "flashcard" && (
             <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground">Flashcard Anda</h2>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-foreground">Flashcard Anda</h2>
+                  {dueCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">{dueCount} perlu diulang</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {dueCount > 0 && (
+                    <button onClick={startReviewSession} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 rounded-xl text-xs font-bold transition-all">
+                      <RefreshCw size={14} /> Mulai Ulangi
+                    </button>
+                  )}
                 <button
                   onClick={() => setShowAddForm(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all"
                 >
                   <Plus size={14} /> Kartu baru
                 </button>
+                </div>
               </div>
 
               {/* Buat dari materi */}
@@ -400,9 +483,9 @@ export default function ExamsPage() {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
                     <span>{currentCard?.courseName || "Umum"}</span>
-                    <span>Kartu {currentIdx + 1} dari {flashcards.length}</span>
+                    <span>Kartu {currentIdx + 1} dari {flashcards.length}{reviewMode ? " (mode ulangi)" : ""}</span>
                   </div>
 
                   {/* Flip Card */}
@@ -429,7 +512,26 @@ export default function ExamsPage() {
                     </motion.div>
                   </AnimatePresence>
 
-                  {/* Navigation */}
+                  {/* Navigation: SRS rating when flipped, browse controls otherwise */}
+                  {isFlipped ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {([
+                        { r: 0 as const, label: "Lagi", cls: "bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25" },
+                        { r: 1 as const, label: "Sulit", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25" },
+                        { r: 2 as const, label: "Baik", cls: "bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-500/25" },
+                        { r: 3 as const, label: "Mudah", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25" },
+                      ]).map((btn) => (
+                        <button
+                          key={btn.label}
+                          onClick={() => handleRate(btn.r)}
+                          disabled={ratingCard}
+                          className={`py-2.5 rounded-2xl text-xs font-bold transition-all disabled:opacity-50 ${btn.cls} ${rating === btn.r ? "ring-2 ring-offset-1 ring-offset-card ring-current" : ""}`}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
                   <div className="flex items-center gap-3">
                     <button
                       onClick={goPrev}
@@ -452,6 +554,7 @@ export default function ExamsPage() {
                       Selanjutnya <ChevronRight size={16} />
                     </button>
                   </div>
+                  )}
                 </>
               )}
 
@@ -502,7 +605,7 @@ export default function ExamsPage() {
           )}
 
           {activeTab === "practice" && (
-            <ExamPractice courses={courses} documents={documents} />
+            <AssignmentSolver documents={documents} />
           )}
         </motion.div>
 

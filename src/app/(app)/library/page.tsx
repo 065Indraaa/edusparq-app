@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Bookmark, Search, Trash2, ExternalLink, CalendarDays, BookOpen, Quote } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bookmark, Search, Trash2, ExternalLink, CalendarDays, BookOpen, Quote, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 const containerVariants = {
@@ -20,6 +20,7 @@ export default function LibraryPage() {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   const fetchLibrary = async () => {
     try {
@@ -130,7 +131,7 @@ export default function LibraryPage() {
                   <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary border border-background">AI</div>
                 </div>
                 <button 
-                  onClick={() => alert('Fitur baca penuh sedang dikembangkan.')}
+                  onClick={() => setSelectedItem(item)}
                   className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
                 >
                   Baca Penuh <ExternalLink size={12} />
@@ -140,6 +141,52 @@ export default function LibraryPage() {
           ))
         )}
       </motion.div>
+
+      {/* Modal Baca Penuh */}
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+            onClick={() => setSelectedItem(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="w-full max-w-3xl max-h-[85vh] bg-card border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-border bg-muted/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <BookOpen size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground line-clamp-1">{selectedItem.title}</h3>
+                    <p className="text-xs text-muted-foreground">{new Date(selectedItem.savedAt).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedItem(null)} className="p-2 text-muted-foreground hover:bg-muted rounded-xl transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar prose prose-sm dark:prose-invert max-w-none">
+                <div className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
+                  {selectedItem.content || selectedItem.url || "Tidak ada isi dokumen."}
+                </div>
+              </div>
+              <div className="p-4 border-t border-border bg-muted/20 flex justify-end">
+                <button onClick={() => setSelectedItem(null)} className="px-5 py-2 bg-primary text-primary-foreground font-bold text-sm rounded-xl hover:bg-primary/90 transition-colors shadow-sm">
+                  Tutup
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

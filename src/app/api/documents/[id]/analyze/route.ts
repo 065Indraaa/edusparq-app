@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
@@ -6,6 +6,7 @@ import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { MaterialAnalysis } from "@/lib/db/models/MaterialAnalysis";
 import { aiComplete, parseLooseJSON, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -104,7 +105,7 @@ export async function POST(
     );
   }
 
-  const parsed = parseLooseJSON<AnalysisJSON>(rawResponse);
+  const parsed = parseLooseJSON<AnalysisJSON>(sanitizeOutput(rawResponse, { stripCodeFences: true }));
   if (!parsed) {
     return NextResponse.json(
       {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { Course } from "@/lib/db/models/Course";
@@ -6,6 +6,7 @@ import { MaterialAnalysis } from "@/lib/db/models/MaterialAnalysis";
 import { LearningRecommendation } from "@/lib/db/models/LearningRecommendation";
 import { aiComplete, parseLooseJSON } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -95,7 +96,7 @@ Nilai "prioritas" harus "tinggi" | "sedang" | "rendah". Semua teks dalam Bahasa 
   }
 
   const parsed = rawResponse
-    ? parseLooseJSON<RecommendationItem[]>(rawResponse)
+    ? parseLooseJSON<RecommendationItem[]>(sanitizeOutput(rawResponse, { stripCodeFences: true }))
     : null;
 
   // Graceful empty result if AI output can't be parsed

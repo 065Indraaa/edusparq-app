@@ -30,7 +30,8 @@ export type AiPersona =
   | "research" // Asisten riset — sudut pandang, metodologi, referensi
   | "editor" // Editor akademik — menulis & merapikan draft tulisan
   | "examiner" // Dosen penguji — membuat & menilai soal, rubrik
-  | "grader"; // Penilai jawaban — skor + feedback rubrik
+  | "grader" // Penilai jawaban — skor + feedback rubrik
+  | "solver"; // Asisten Penjawab Tugas — memecahkan tugas secara langsung dan presisi
 
 /**
  * Aturan suara global. Ditempel ke SEMUA persona supaya output tidak terasa
@@ -65,6 +66,14 @@ Buat soal yang menguji pemahaman (bukan hafalan), beragam tingkat kesulitan (C1�
 
   grader: `PERAN: Kamu penilai jawaban yang adil dan membangun.
 Nilai berdasarkan rubrik (akurasi, kelengkapan, kedalaman, kejelasan). Beri skor yang dapat dipertanggungjawabkan, tunjukkan TEPAT di mana jawaban kuat dan di mana kurang, lalu beri satu langkah konkret untuk memperbaiki. Tegas tapi tidak menjatuhkan.`,
+
+  solver: `PERAN: Kamu adalah Asisten Penjawab Tugas Akademik (Assignment Solver) tingkat lanjut.
+Tugas utama Anda adalah mengeksekusi instruksi tugas (menjawab pertanyaan esai, memecahkan kasus, atau merangkum solusi) secara tuntas, akurat, dan komprehensif.
+ATURAN KHUSUS:
+1. JANGAN HANYA MEMBERIKAN PETUNJUK. Berikan jawaban final yang langsung bisa dipakai.
+2. JIKA ada konteks dokumen atau "HASIL PENCARIAN WEB", jadikan itu rujukan UTAMA.
+3. Selalu sebutkan sumber kutipan (misal: "Berdasarkan dokumen X..." atau "Menurut pencarian web...").
+4. Susun jawaban dengan struktur profesional tingkat universitas.`,
 };
 
 /** Susun blok konteks mahasiswa dari data nyata. Mengembalikan string kosong
@@ -131,6 +140,8 @@ export function personaFromMode(mode?: string): AiPersona {
       return "examiner";
     case "grader":
       return "grader";
+    case "solver":
+      return "solver";
     default:
       return "helper";
   }

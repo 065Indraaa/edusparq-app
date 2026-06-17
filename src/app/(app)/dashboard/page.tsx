@@ -73,6 +73,7 @@ export default function DashboardPage() {
   const [classProgress, setClassProgress] = useState<CourseProgress[]>([]);
   const [userSemester, setUserSemester] = useState<string>("");
   const [todayClasses, setTodayClasses] = useState<{ courseName: string; jamMulai: string; jamSelesai: string; ruang: string }[]>([]);
+  const [recentDocs, setRecentDocs] = useState<any[]>([]);
 
   // Adaptive greeting — computed after mount to avoid hydration mismatch.
   const [timeGreeting, setTimeGreeting] = useState("Halo");
@@ -104,10 +105,11 @@ export default function DashboardPage() {
     const run = async () => {
       setLoading(true);
       try {
-        const [profileRes, deadlinesRes, coursesRes] = await Promise.all([
+        const [profileRes, deadlinesRes, coursesRes, docsRes] = await Promise.all([
           fetch("/api/user/profile").catch(() => null),
           fetch("/api/deadlines").catch(() => null),
           fetch("/api/courses").catch(() => null),
+          fetch("/api/writing/documents").catch(() => null),
         ]);
 
         // --- Stats from profile ---
@@ -163,6 +165,14 @@ export default function DashboardPage() {
               deadline: c.grade ? `Nilai: ${c.grade}` : "Lihat tenggat",
             }));
             setClassProgress(mapped);
+          }
+        }
+
+        // --- Recent Docs ---
+        if (docsRes?.ok) {
+          const rawDocs = await docsRes.json().catch(() => null);
+          if (rawDocs?.documents && Array.isArray(rawDocs.documents) && !cancelled) {
+            setRecentDocs(rawDocs.documents.slice(0, 2));
           }
         }
       } catch {
@@ -397,6 +407,42 @@ export default function DashboardPage() {
                </Link>
              );
            })}
+        </motion.div>
+
+        {/* Recent Documents */}
+        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-4 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+              <PenTool size={20} /> Lanjutkan Menulis
+            </h2>
+            <Link href="/writing" className="text-xs text-muted-foreground hover:text-foreground font-semibold inline-flex items-center transition-colors">
+              Buka Studio Menulis
+            </Link>
+          </div>
+          {recentDocs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recentDocs.map((doc, idx) => (
+                <Link key={idx} href={`/writing`} className="flex flex-col gap-2 p-4 rounded-2xl bg-muted/30 border border-border hover:bg-muted/50 hover:border-primary/40 transition-all group">
+                  <div className="flex justify-between items-start">
+                    <span className="px-2.5 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded">{doc.docType || "Dokumen"}</span>
+                    <span className="text-xs text-muted-foreground font-medium">{new Date(doc.updatedAt).toLocaleDateString("id-ID")}</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">{doc.title || "Tanpa Judul"}</h3>
+                  <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
+                    <span className="flex items-center gap-1"><BookOpen size={12}/> {doc.wordCount || 0} Kata</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center p-6 bg-muted/30 rounded-2xl border border-dashed border-border text-center justify-center">
+              <div>
+                <PenTool size={24} className="text-muted-foreground/50 mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-foreground">Belum Ada Dokumen</h3>
+                <p className="text-xs text-muted-foreground mt-1">Mulai menulis skripsi atau tugas Anda di Studio Menulis.</p>
+              </div>
+            </div>
+          )}
         </motion.div>
 
       </div>

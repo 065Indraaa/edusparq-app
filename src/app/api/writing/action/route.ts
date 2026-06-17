@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { aiComplete } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
 import { getUserPersonaContext } from "@/lib/ai-memory";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       temperature: 0.6,
       maxTokens: 2048,
     });
-    const cleaned = result.trim().replace(/^["“']|["”']$/g, "");
+    const cleaned = sanitizeOutput(result, { stripWrappingQuotes: true, stripCodeFences: true });
     if (!cleaned)
       return NextResponse.json(
         { error: "AI tidak menghasilkan hasil. Coba lagi." },

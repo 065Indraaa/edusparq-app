@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { AI_MODEL } from "@/lib/ai";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 import OpenAI from "openai";
 
 let kimiClient: OpenAI | null = null;
@@ -108,7 +109,8 @@ Berikan saran 3-5 sudut pandang penelitian umum terkait topik pengguna, namun TE
       async start(controller) {
         try {
           for await (const chunk of response) {
-            const content = chunk.choices[0]?.delta?.content || "";
+            const rawContent = chunk.choices[0]?.delta?.content || "";
+            const content = sanitizeOutput(rawContent, { collapseRuns: false });
             if (content) {
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ text: content })}\n\n`)

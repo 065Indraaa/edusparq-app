@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
@@ -6,6 +6,7 @@ import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { Quiz } from "@/lib/db/models/Quiz";
 import { aiComplete, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -125,7 +126,7 @@ Aturan: tepat 4 pilihan tiap soal; "correctIndex" 0-3; variasikan tingkat kesuli
     }>;
   };
   try {
-    const cleaned = rawText
+    const cleaned = sanitizeOutput(rawText, { stripCodeFences: true })
       .replace(/```json\s*/gi, "")
       .replace(/```\s*/g, "")
       .trim();

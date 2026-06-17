@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { AnswerEvaluation } from "@/lib/db/models/AnswerEvaluation";
 import { aiComplete, parseLooseJSON } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -86,7 +87,7 @@ Aturan: "score" wajib bilangan bulat 0-100. Jika jawaban kosong/ngawur, beri sko
     );
   }
 
-  const parsed = parseLooseJSON<Partial<GradeResult>>(raw);
+  const parsed = parseLooseJSON<Partial<GradeResult>>(sanitizeOutput(raw, { stripCodeFences: true }));
   if (!parsed || typeof parsed !== "object") {
     return NextResponse.json(
       { error: "AI mengembalikan format yang tidak terbaca. Coba lagi." },

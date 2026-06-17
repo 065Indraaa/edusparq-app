@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { ChatMessage } from "@/lib/db/models/ChatMessage";
@@ -9,6 +9,7 @@ import OpenAI from "openai";
 import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
 import { getUserPersonaContext, extractAndStorePersona } from "@/lib/ai-memory";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 let kimiClient: OpenAI | null = null;
 const getKimiClient = () => {
@@ -145,8 +146,8 @@ export async function POST(req: NextRequest) {
         });
 
         for await (const chunk of stream) {
-          const text = chunk.choices[0]?.delta?.content || "";
-          fullResponse += text;
+          const rawDelta = chunk.choices[0]?.delta?.content || "";
+          const text = sanitizeOutput(rawDelta, { collapseRuns: false });
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
         }
       } catch (err) {

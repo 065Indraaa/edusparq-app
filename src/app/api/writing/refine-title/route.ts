@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { aiComplete } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
 import { getUserPersonaContext } from "@/lib/ai-memory";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,7 @@ TIDAK BOLEH memberikan pengantar, tanda kutip, atau penjelasan apa pun. HANYA KE
       maxTokens: 200,
     });
     
-    const refinedTitle = result.trim().replace(/^["“']|["”']$/g, "");
+    const refinedTitle = sanitizeOutput(result, { stripWrappingQuotes: true });
     if (!refinedTitle)
       return NextResponse.json({ error: "AI gagal merumuskan judul." }, { status: 422 });
       

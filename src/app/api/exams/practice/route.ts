@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { Document } from "@/lib/db/models/Document";
@@ -6,6 +6,7 @@ import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { PracticePaper } from "@/lib/db/models/PracticePaper";
 import { aiComplete, parseLooseJSON, RAG_CONTEXT_CHARS, RAG_CHUNK_LIMIT } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
+import { sanitizeOutput } from "@/lib/sanitize-output";
 
 export const runtime = "nodejs";
 
@@ -113,7 +114,7 @@ Aturan: soal MC tepat 4 pilihan, correctIndex 0-3, distraktor masuk akal; soal e
     );
   }
 
-  const parsed = parseLooseJSON<{ questions: GenQuestion[] }>(raw);
+  const parsed = parseLooseJSON<{ questions: GenQuestion[] }>(sanitizeOutput(raw, { stripCodeFences: true }));
   if (!parsed || !Array.isArray(parsed.questions) || parsed.questions.length === 0)
     return NextResponse.json(
       { error: "AI mengembalikan format yang tidak terbaca. Coba lagi." },
