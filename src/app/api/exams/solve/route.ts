@@ -9,6 +9,7 @@ import { searchWeb } from "@/lib/web-search";
 import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
 import { sanitizeOutput } from "@/lib/sanitize-output";
+import { checkAndDeductQuota } from "@/lib/quota";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -56,6 +57,14 @@ export async function POST(req: NextRequest) {
     }
   } catch {
     /* keep empty profile */
+  }
+
+  const quota = await checkAndDeductQuota(session.user.id);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      { error: "Batas kuota bulanan Anda telah habis. Kuota akan di-reset otomatis bulan depan." },
+      { status: 402 }
+    );
   }
 
   const sourceParts: string[] = [];

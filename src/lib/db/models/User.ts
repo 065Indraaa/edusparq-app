@@ -16,6 +16,14 @@ const UserSchema = new Schema({
   googleRefreshToken: { type: String, default: "" },
   googleTokenExpiry: { type: Number, default: 0 },
   connectedGoogleCalendar: { type: Boolean, default: false },
+  aiQuota: { type: Number, default: 50 },
+  quotaResetAt: { type: Date, default: () => {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    nextMonth.setDate(1);
+    nextMonth.setHours(0, 0, 0, 0);
+    return nextMonth;
+  }},
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, FileText, Globe, Loader2, Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface DocOpt { _id: string; originalName: string; }
 
@@ -169,8 +171,8 @@ export default function AssignmentSolver({ documents }: { documents: DocOpt[] })
               )}
             </div>
             
-            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed whitespace-pre-wrap">
-              {result}
+            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
               {solving && (
                 <span className="inline-block w-1.5 h-4 align-middle bg-primary/60 animate-pulse ml-1" />
               )}

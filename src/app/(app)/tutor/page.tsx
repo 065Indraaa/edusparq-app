@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Sparkles, Search, BookOpen, GraduationCap, Send, Trash2, RefreshCw, Paperclip, X, FileText, FileUp, LayoutTemplate, CalendarClock } from "lucide-react";
 import { useSession } from "next-auth/react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ConfidenceBadge, ConfidenceLevel, SourceAttribution } from "@/components/ui/ConfidenceBadge";
 
 interface ChatMeta {
@@ -474,7 +476,13 @@ export default function TutorPage() {
                           : "bg-muted text-foreground rounded-tl-md border border-border"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      <div className={`prose prose-sm max-w-none break-words ${msg.role === "user" ? "text-primary-foreground prose-invert" : "text-foreground dark:prose-invert"}`}>
+                        {msg.role === "assistant" ? (
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        ) : (
+                          <p className="whitespace-pre-wrap m-0">{msg.content}</p>
+                        )}
+                      </div>
                       {msg.isStreaming && (
                         <span className="inline-flex gap-1 items-center ml-1 align-middle">
                           <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0ms] opacity-70" />

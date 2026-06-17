@@ -1,10 +1,11 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { ChatMessage } from "@/lib/db/models/ChatMessage";
 import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag";
 import { extractTextFromUrl } from "@/lib/server-extract";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { checkAndDeductQuota } from "@/lib/quota";
 import OpenAI from "openai";
 import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
@@ -43,11 +44,21 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Rate limit: 20 requests / minute / user.
-  const rl = checkRateLimit("chat:" + session.user.id, 20, 60_000);
-  if (!rl.allowed) {
+  const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+  const { allowed, retryAfterMs } = checkRateLimit(`chat_${ip}`, 15, 60_000);
+  if (!allowed) {
     return NextResponse.json(
-      { error: "Terlalu banyak permintaan. Coba lagi sebentar." },
+      { error: `Terlalu banyak request. Coba lagi dalam ${Math.ceil(retryAfterMs / 1000)} detik.` },
       { status: 429 }
+    );
+  }
+
+  // Pengecekan Quota Pengguna
+  const quota = await checkAndDeductQuota(session.user.id);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      { error: "Batas kuota bulanan Anda (50 Chat) telah habis. Kuota akan di-reset otomatis bulan depan." },
+      { status: 402 }
     );
   }
 
@@ -148,6 +159,7 @@ export async function POST(req: NextRequest) {
         for await (const chunk of stream) {
           const rawDelta = chunk.choices[0]?.delta?.content || "";
           const text = sanitizeOutput(rawDelta, { collapseRuns: false });
+          fullResponse += text;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
         }
       } catch (err) {
