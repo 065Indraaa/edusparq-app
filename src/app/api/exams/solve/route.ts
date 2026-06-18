@@ -6,10 +6,10 @@ import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
 import { User } from "@/lib/db/models/User";
 import { retrieveChunks, buildContextBlock } from "@/lib/rag";
 import { searchWeb } from "@/lib/web-search";
-import { AI_MODEL } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
 import { sanitizeOutput } from "@/lib/sanitize-output";
-import { checkAndDeductQuota } from "@/lib/quota";
+import { streamComplete, InsufficientCreditsError } from "@/lib/ai-client";
+import { getJurusanPromptForUser } from "@/lib/jurusan-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,10 +59,10 @@ export async function POST(req: NextRequest) {
     /* keep empty profile */
   }
 
-  const quota = await checkAndDeductQuota(session.user.id);
-  if (!quota.allowed) {
+  const quota = await (await import("@/lib/credit-billing")).getBalance(session.user.id);
+  if (quota <= 0) {
     return NextResponse.json(
-      { error: "Batas kuota bulanan Anda telah habis. Kuota akan di-reset otomatis bulan depan." },
+      { error: "Credit Anda habis. Isi ulang di /billing atau aktifkan BYOK di /settings/ai.", code: "INSUFFICIENT_CREDITS" },
       { status: 402 }
     );
   }
@@ -121,6 +121,14 @@ export async function POST(req: NextRequest) {
 
   const sourceBlock = sourceParts.join("\n\n");
 
+  // Jurusan-aware context (non-blocking).
+  let jurusanExtra = "";
+  try {
+    jurusanExtra = await getJurusanPromptForUser(session.user.id);
+  } catch {
+    /* non-fatal */
+  }
+
   const systemPrompt = buildSystemPrompt(
     "solver",
     {
@@ -135,91 +143,59 @@ export async function POST(req: NextRequest) {
       sourceBlock
         ? "Gunakan SUMBER yang dilampirkan sebagai rujukan UTAMA dan sebutkan sumbernya (misal: Berdasarkan dokumen X, atau Menurut hasil pencarian web)."
         : "Tidak ada sumber tambahan. Jawab dengan basis pengetahuan akademik valid; jika tidak yakin, nyatakan dengan jujur."
-    } Susun jawaban profesional tingkat universitas, terstruktur, dan bebas simbol dekoratif.`
+    } Susun jawaban profesional tingkat universitas, terstruktur, dan bebas simbol dekoratif.${jurusanExtra ? "\n\n" + jurusanExtra : ""}`
   );
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      try {
-        const res = await fetch(
-          "https://www.phanrouter.com/phanrouter/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.MOONSHOT_API_KEY}`,
-            },
-            body: JSON.stringify({
-              model: AI_MODEL,
-              messages: [
-                { role: "system", content: systemPrompt },
-                {
-                  role: "user",
-                  content: `Berikut adalah instruksi tugas saya:\n\n${question}`,
-                },
-              ],
-              temperature: 0.2, // low for factual, grounded answers
-              max_tokens: 3000,
-              stream: true,
-            }),
-          }
-        );
-
-        if (!res.ok || !res.body) {
-          const errText = await res.text().catch(() => "");
-          throw new Error(`Kimi HTTP ${res.status}: ${errText.slice(0, 200)}`);
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith("data:")) continue;
-            const payload = trimmed.slice(5).trim();
-            if (payload === "[DONE]") {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              controller.close();
-              return;
+      let streamed = false;
+      await streamComplete(
+        {
+          feature: "solver",
+          system: systemPrompt,
+          user: `Berikut adalah instruksi tugas saya:\n\n${question}`,
+          temperature: 0.2,
+          maxTokens: 3000,
+        },
+        {
+          onToken: (delta) => {
+            const clean = sanitizeOutput(delta, { collapseRuns: false });
+            if (clean) {
+              streamed = true;
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ text: clean })}\n\n`)
+              );
             }
-            try {
-              const json = JSON.parse(payload);
-              const delta = json?.choices?.[0]?.delta?.content || "";
-              if (delta) {
-                const clean = sanitizeOutput(delta, { collapseRuns: false });
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ text: clean })}\n\n`)
-                );
-              }
-            } catch {
-              /* skip malformed chunk */
+          },
+          onError: (err) => {
+            console.error("[exams/solve] stream error:", err);
+            let msg =
+              "Mohon maaf, asisten AI sedang mengalami kendala koneksi. Silakan coba kirim ulang tugas Anda dalam beberapa saat.";
+            if (err instanceof InsufficientCreditsError) {
+              msg =
+                "⚠️ Credit tidak cukup untuk menyelesaikan tugas ini. Isi ulang di /billing atau aktifkan BYOK.";
             }
-          }
-        }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      } catch (err) {
-        console.error("[exams/solve] stream error:", err);
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              text: "Mohon maaf, asisten AI sedang mengalami kendala koneksi. Silakan coba kirim ulang tugas Anda dalam beberapa saat.",
-            })}\n\n`
-          )
-        );
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      } finally {
-        controller.close();
-      }
+            if (!streamed) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ text: msg })}\n\n`)
+              );
+            }
+          },
+          onDone: () => {
+            if (!streamed) {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ text: "Tidak ada respons dari AI." })}\n\n`
+                )
+              );
+            }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          },
+        },
+        session.user.id
+      );
     },
   });
 

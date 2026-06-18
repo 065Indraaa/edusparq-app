@@ -2,7 +2,8 @@
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { extractTextFromUrl } from "@/lib/server-extract";
-import { getKimiClient, AI_MODEL } from "@/lib/ai";
+import { complete, InsufficientCreditsError } from "@/lib/ai-client";
+import { parseLooseJSON } from "@/lib/ai";
 import { sanitizeOutput } from "@/lib/sanitize-output";
 import { connectDB } from "@/lib/db/mongodb";
 import { Deadline } from "@/lib/db/models/Deadline";
@@ -13,7 +14,7 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -29,8 +30,8 @@ export async function POST(req: Request) {
     }
 
     // 1. Extract text from the uploaded syllabus
-    const text = await extractTextFromUrl(fileUrl, fileType);
-    if (!text.trim()) {
+    const syllabusText = await extractTextFromUrl(fileUrl, fileType);
+    if (!syllabusText.trim()) {
       return NextResponse.json({ error: "Gagal mengekstrak teks dari dokumen." }, { status: 400 });
     }
 
@@ -53,25 +54,40 @@ Aturan ketat:
 
 JSON murni tanpa markdown, tanpa penjelasan! DILARANG KERAS menggunakan simbol aneh atau emoji.`;
 
-    const kimiClient = await getKimiClient();
-    const response = await kimiClient.chat.completions.create({
-      model: AI_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Teks Silabus:\n\n${text.slice(0, 20000)}` }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-    });
+    // 2. Extract JSON from syllabus via AI (with metering).
+    let resultStr = "";
+    try {
+      const { text } = await complete(
+        {
+          feature: "extract",
+          system: systemPrompt,
+          user: `Teks Silabus:\n\n${syllabusText.slice(0, 20000)}`,
+          temperature: 0.1,
+          maxTokens: 2048,
+          json: true,
+        },
+        session.user.id
+      );
+      resultStr = text;
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: "Credit tidak cukup. Isi ulang di /billing atau aktifkan BYOK.", code: "INSUFFICIENT_CREDITS" },
+          { status: 402 }
+        );
+      }
+      return NextResponse.json({ error: "Gagal menghubungi AI." }, { status: 502 });
+    }
 
-    const resultStr = response.choices[0]?.message?.content || "";
     let extractedCourse: any = null;
     let deadlinesToSave: any[] = [];
-    
+
     try {
-      const parsed = JSON.parse(sanitizeOutput(resultStr, { stripCodeFences: true }));
-      extractedCourse = parsed.course;
-      deadlinesToSave = parsed.deadlines || [];
+      const parsed = parseLooseJSON<{ course?: any; deadlines?: any[] }>(
+        sanitizeOutput(resultStr, { stripCodeFences: true })
+      );
+      extractedCourse = parsed?.course || null;
+      deadlinesToSave = parsed?.deadlines || [];
     } catch (e) {
       return NextResponse.json({ error: "Gagal memproses JSON dari AI" }, { status: 500 });
     }
@@ -113,7 +129,7 @@ JSON murni tanpa markdown, tanpa penjelasan! DILARANG KERAS menggunakan simbol a
     const savedDeadlines = [];
     for (const dl of deadlinesToSave) {
       const newDl = await Deadline.create({
-        userEmail: session.user.email,
+        userId: session.user.id,
         courseName: actualCourseName,
         title: dl.title || "Tugas",
         dueDate: dl.dueDate || new Date().toISOString().split("T")[0],

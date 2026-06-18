@@ -2,9 +2,11 @@
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { AnswerEvaluation } from "@/lib/db/models/AnswerEvaluation";
-import { aiComplete, parseLooseJSON } from "@/lib/ai";
+import { complete, InsufficientCreditsError } from "@/lib/ai-client";
+import { parseLooseJSON } from "@/lib/ai";
 import { buildSystemPrompt } from "@/lib/ai-prompts";
 import { sanitizeOutput } from "@/lib/sanitize-output";
+import { buildJurusanAwareContext } from "@/lib/jurusan-context";
 
 export const runtime = "nodejs";
 
@@ -62,25 +64,49 @@ export async function POST(req: NextRequest) {
   "idealAnswer": "ringkasan jawaban ideal/kunci, maksimal 3 kalimat"
 }
 Aturan: "score" wajib bilangan bulat 0-100. Jika jawaban kosong/ngawur, beri skor rendah dan jelaskan jujur.`;
+  // Build jurusan-aware context for personalized grading.
+  let { studentContext, jurusanPromptExtra } = { studentContext: {} as any, jurusanPromptExtra: "" };
+  try {
+    const jc = await buildJurusanAwareContext(session.user.id, {
+      courseName: courseName || undefined,
+    });
+    studentContext = jc.studentContext;
+    jurusanPromptExtra = jc.jurusanPromptExtra;
+  } catch {
+    /* non-fatal */
+  }
   const system = buildSystemPrompt(
     "grader",
-    courseName ? { courses: [courseName] } : undefined,
-    jsonContract
+    studentContext,
+    jsonContract + (jurusanPromptExtra ? "\n\n" + jurusanPromptExtra : "")
   );
   const userMsg = `SOAL:\n${question}\n\nJAWABAN MAHASISWA:\n${userAnswer}`;
 
   let raw: string;
   try {
-    const { text } = await aiComplete({
-      task: "grade",
-      system,
-      user: userMsg,
-      temperature: 0.3,
-      maxTokens: 2048,
-      json: true,
-    });
+    const { text } = await complete(
+      {
+        feature: "grade",
+        system,
+        user: userMsg,
+        temperature: 0.3,
+        maxTokens: 2048,
+        json: true,
+      },
+      session.user.id
+    );
     raw = text;
-  } catch {
+  } catch (err) {
+    if (err instanceof InsufficientCreditsError) {
+      return NextResponse.json(
+        {
+          error:
+            "Credit tidak cukup untuk menilai jawaban ini. Isi ulang di /billing atau aktifkan BYOK.",
+          code: "INSUFFICIENT_CREDITS",
+        },
+        { status: 402 }
+      );
+    }
     return NextResponse.json(
       { error: "Gagal menghubungi AI. Coba lagi sebentar." },
       { status: 502 }

@@ -1,16 +1,22 @@
-import Groq from "groq-sdk";
+import { complete, type CompleteOptions, type CompleteResult } from "./ai-client";
+import { PLATFORM_AI } from "./credit-config";
+import type { FeatureName } from "./credit-config";
 
 /**
- * Centralized AI configuration.
+ * Centralized AI configuration (legacy compat layer).
  *
- * EduSparq is now configured to exclusively use Kimi (Moonshot)
- * via the Kimchi Dev base URL.
+ * ⚠️  File ini dipertahankan untuk kompatibilitas mundur. Semua panggilan baru
+ *     SEBAIKNYA pakai `complete()` / `streamComplete()` dari `@/lib/ai-client`
+ *     yang sudah terintegrasi metering + billing + BYOK.
+ *
+ * Fungsi `aiComplete()` di sini adalah thin wrapper: tetap memakai platform
+ * default (tidak BYOK) dan TIDAK memotong credit (untuk fitur lama yang belum
+ * migrasi). Fitur yang sudah migrasi wajib pakai `complete(opts, userId)`.
  */
-export const AI_MODEL = "kimi-k2.6";
 
-/**
- * Centralized token budget.
- */
+// Re-export agar import lama (`import { AI_MODEL } from "@/lib/ai"`) tetap jalan.
+export const AI_MODEL = PLATFORM_AI.model;
+
 export const RAG_CONTEXT_CHARS = 12000;
 export const RAG_CHUNK_LIMIT = 24;
 export const AI_MAX_TOKENS = {
@@ -22,22 +28,6 @@ export const AI_MAX_TOKENS = {
   recommend: 1536,
   grade: 1200,
 } as const;
-
-let kimiClient: Groq | null = null;
-
-/** Lazy Kimi client singleton (using Groq SDK wrapper for OpenAI compatibility). */
-export const getKimiClient = (): Groq => {
-  if (!kimiClient) {
-    if (!process.env.MOONSHOT_API_KEY) {
-      throw new Error("MOONSHOT_API_KEY belum diisi di environment.");
-    }
-    kimiClient = new Groq({ 
-      apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: "https://www.phanrouter.com/phanrouter/v1"
-    });
-  }
-  return kimiClient;
-};
 
 /**
  * Defensive JSON parse for LLM output: strips ```json fences and locates the
@@ -60,18 +50,8 @@ export function parseLooseJSON<T = unknown>(raw: string): T | null {
   }
 }
 
-/* =============================================================================
- * EXCLUSIVE KIMI ROUTER
- * -----------------------------------------------------------------------------
- * EduSparq sekarang eksklusif memakai Kimi (Moonshot) untuk semua jenis tugas.
- * Tidak ada fallback ke Groq atau Gemini.
- * ============================================================================= */
-
 export type AiProvider = "moonshot";
-
-export const PROVIDER_MODELS = {
-  moonshot: AI_MODEL,
-} as const;
+export const PROVIDER_MODELS = { moonshot: AI_MODEL } as const;
 
 export type AiTask =
   | "chat"
@@ -126,64 +106,39 @@ export interface AiCompleteResult {
   model: string;
 }
 
-function buildTurns(opts: AiCompleteOptions): ChatTurn[] {
-  const turns: ChatTurn[] = [];
-  if (opts.system) turns.push({ role: "system", content: opts.system });
-  if (opts.messages && opts.messages.length > 0) {
-    for (const m of opts.messages) {
-      if (m.role === "system") continue;
-      turns.push(m);
-    }
-  } else if (opts.user) {
-    turns.push({ role: "user", content: opts.user });
-  }
-  return turns;
-}
-
-async function kimiComplete(
-  turns: ChatTurn[],
-  opts: AiCompleteOptions
-): Promise<string> {
-  const body: Record<string, unknown> = {
-    model: AI_MODEL,
-    messages: turns,
-    temperature: opts.temperature ?? 0.3, // lowered temperature for professional/factual output
-    max_tokens: opts.maxTokens ?? TASK_MAX_TOKENS[opts.task],
-  };
-  if (opts.json) body.response_format = { type: "json_object" };
-
-  const res = await fetch("https://www.phanrouter.com/phanrouter/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.MOONSHOT_API_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`Kimi HTTP ${res.status}: ${errText.slice(0, 300)}`);
-  }
-  const data = await res.json();
-  const choice = data?.choices?.[0]?.message;
-  // Kimi K2.6 reasoning fallback
-  const text = (choice?.content || "").trim();
-  return text;
-}
-
+/**
+ * Legacy wrapper. Tidak menerima userId → selalu pakai platform default &
+ * TIDAK memotong credit (fitur lama). Untuk pemanggilan yang harus ter-bill,
+ * pakai `complete({feature, ...}, userId)` dari ai-client.
+ */
 export async function aiComplete(
   opts: AiCompleteOptions
 ): Promise<AiCompleteResult> {
-  const turns = buildTurns(opts);
-  if (!process.env.MOONSHOT_API_KEY) {
-    throw new Error("MOONSHOT_API_KEY belum dikonfigurasi.");
-  }
+  const feature = taskToFeature(opts.task);
+  const result = await complete({
+    feature,
+    system: opts.system,
+    messages: opts.messages as CompleteOptions["messages"],
+    user: opts.user,
+    temperature: opts.temperature,
+    maxTokens: opts.maxTokens,
+    json: opts.json,
+    // Tidak kirim userId → pakai platform, tidak billing.
+  });
+  return { text: result.text, provider: "moonshot", model: result.model };
+}
 
-  try {
-    const text = await kimiComplete(turns, opts);
-    if (text) return { text, provider: "moonshot", model: AI_MODEL };
-    throw new Error("Kimi mengembalikan respons kosong");
-  } catch (err) {
-    throw err instanceof Error ? err : new Error("Kimi gagal merespons.");
-  }
+/** Pemetaan AiTask (lama) → FeatureName (baru) untuk metering. */
+function taskToFeature(task: AiTask): FeatureName {
+  const map: Record<AiTask, FeatureName> = {
+    chat: "chat",
+    summarize: "summarize",
+    flashcards: "flashcards",
+    quiz: "quiz",
+    analyze: "analyze",
+    recommend: "recommend",
+    grade: "grade",
+    draft: "draft",
+  };
+  return map[task] || "chat";
 }

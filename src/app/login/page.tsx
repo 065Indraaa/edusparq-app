@@ -71,9 +71,8 @@ export default function LoginPage() {
         </div>
 
         <Link href="/" className="relative z-10 inline-flex items-center gap-3 w-fit">
-          <div className="bg-primary/20 text-primary p-2.5 rounded-xl border border-primary/30">
-            <Sparkles size={22} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="EduSparq" className="h-11 w-11 rounded-xl shadow-lg" />
           <span className="font-display tracking-tight font-extrabold text-2xl tracking-tight text-white">EduSparq</span>
         </Link>
 
@@ -122,9 +121,8 @@ export default function LoginPage() {
         >
           {/* Mobile logo */}
           <Link href="/" className="lg:hidden flex items-center gap-2 justify-center">
-            <div className="bg-primary/10 text-primary p-2 rounded-xl">
-              <Sparkles size={20} />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="EduSparq" className="h-9 w-9 rounded-xl shadow-sm" />
             <span className="font-extrabold text-xl text-foreground">EduSparq</span>
           </Link>
 

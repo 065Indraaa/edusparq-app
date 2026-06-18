@@ -1,10 +1,11 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { aiComplete } from "@/lib/ai";
+import { complete, InsufficientCreditsError } from "@/lib/ai-client";
 import { buildSystemPrompt, type StudentContext } from "@/lib/ai-prompts";
 import { getUserPersonaContext } from "@/lib/ai-memory";
 import { buildWritingGrounding } from "@/lib/rag-grounding";
 import { sanitizeDocumentBody } from "@/lib/sanitize-output";
+import { buildJurusanAwareContext } from "@/lib/jurusan-context";
 
 export const runtime = "nodejs";
 
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
 
-  const ctx: StudentContext = {
-    university: typeof body?.university === "string" ? body.university : undefined,
-    major: typeof body?.major === "string" ? body.major : undefined,
-  };
+  // Fetch real profile from DB + jurusan context (not from client body).
+  const { studentContext: ctx, jurusanPromptExtra } = await buildJurusanAwareContext(
+    session.user.id
+  );
 
   // Grounding: pull the student's own material + optional web context.
   const { sourceBlock, hasGrounding } = await buildWritingGrounding(
@@ -72,15 +73,21 @@ KELUARKAN HANYA HTML BERSIH (tanpa <html>, <head>, <body>, tanpa blok kode markd
   if (personaContext) {
     system = personaContext + system;
   }
+  if (jurusanPromptExtra) {
+    system += "\n\n" + jurusanPromptExtra;
+  }
 
   try {
-    const { text, provider, model } = await aiComplete({
-      task: "draft",
-      system,
-      user: `Topik/Judul: ${topic}`,
-      temperature: 0.7,
-      maxTokens: 4096,
-    });
+    const { text, model, source } = await complete(
+      {
+        feature: "draft",
+        system,
+        user: `Topik/Judul: ${topic}`,
+        temperature: 0.7,
+        maxTokens: 4096,
+      },
+      session.user.id
+    );
     // Sanitize: strip invisible/decorative chars, then strip accidental fences.
     let html = sanitizeDocumentBody(text).trim();
     html = html
@@ -93,8 +100,14 @@ KELUARKAN HANYA HTML BERSIH (tanpa <html>, <head>, <body>, tanpa blok kode markd
         { error: "AI tidak menghasilkan draft. Coba lagi." },
         { status: 422 }
       );
-    return NextResponse.json({ html, provider, model, grounded: hasGrounding });
-  } catch {
+    return NextResponse.json({ html, source, model, grounded: hasGrounding });
+  } catch (err) {
+    if (err instanceof InsufficientCreditsError) {
+      return NextResponse.json(
+        { error: "Credit tidak cukup untuk membuat draft. Isi ulang di /billing atau aktifkan BYOK.", code: "INSUFFICIENT_CREDITS" },
+        { status: 402 }
+      );
+    }
     return NextResponse.json(
       { error: "Gagal menghubungi AI. Coba lagi sebentar." },
       { status: 502 }

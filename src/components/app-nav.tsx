@@ -24,6 +24,11 @@ import {
   X,
   CalendarRange,
   NotebookPen,
+  Wallet,
+  KeyRound,
+  Cpu,
+  Send,
+  BookOpen,
 } from "lucide-react";
 
 export type NavItem = {
@@ -60,6 +65,8 @@ export const navGroups: NavGroup[] = [
       { name: "Latihan Ujian", desc: "Soal latihan dan evaluasi jawaban", href: "/exams", icon: GraduationCap },
       { name: "Dosen Virtual", desc: "Nilai jawaban esai dengan rubrik", href: "/dosen", icon: ClipboardCheck },
       { name: "Catatan", desc: "Rapikan coretan kuliah", href: "/catatan", icon: NotebookPen },
+      { name: "Agent AI", desc: "Multi-agen tugas kompleks & dokumen", href: "/agents", icon: Cpu },
+      { name: "Jurusan", desc: "Katalog jurusan & template matkul", href: "/jurusan", icon: GraduationCap },
     ],
   },
   {
@@ -78,7 +85,17 @@ export const navGroups: NavGroup[] = [
     label: "Akun",
     items: [
       { name: "Analitik", desc: "Lihat pola belajar dan progres", href: "/analytics", icon: BarChart3 },
+      { name: "Billing", desc: "Saldo credit, top up, pemakaian AI", href: "/billing", icon: Wallet },
+      { name: "Harga", desc: "Paket credit & BYOK", href: "/pricing", icon: Wallet },
+      { name: "Kunci AI", desc: "Pakai API key sendiri (BYOK)", href: "/settings/ai", icon: KeyRound },
+      { name: "Telegram", desc: "Hubungkan akun Telegram", href: "/settings/telegram", icon: Send },
       { name: "Profil", desc: "Data kampus dan pengaturan akun", href: "/profile", icon: UserCircle },
+    ],
+  },
+  {
+    label: "Informasi",
+    items: [
+      { name: "Dokumentasi", desc: "Panduan & dokumentasi fitur", href: "/docs", icon: BookOpen },
     ],
   },
 ];

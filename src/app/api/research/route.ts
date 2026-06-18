@@ -1,20 +1,8 @@
-﻿import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { AI_MODEL } from "@/lib/ai";
+import { streamComplete, InsufficientCreditsError } from "@/lib/ai-client";
 import { sanitizeOutput } from "@/lib/sanitize-output";
-import OpenAI from "openai";
-
-let kimiClient: OpenAI | null = null;
-const getClient = () => {
-  if (!kimiClient) {
-    kimiClient = new OpenAI({ 
-      apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: "https://www.phanrouter.com/phanrouter/v1"
-    });
-  }
-  return kimiClient;
-};
 
 export const maxDuration = 60;
 
@@ -45,17 +33,22 @@ export async function POST(req: Request) {
       if (crossRes.ok) {
         const json = await crossRes.json();
         const items = json.message?.items || [];
-        
+
         if (items.length > 0) {
           crossrefData = items.map((item: any, idx: number) => {
             const title = item.title?.[0] || "Tanpa Judul";
             const url = item.URL || "-";
-            const authors = (item.author || []).map((a: any) => `${a.given || ""} ${a.family || ""}`.trim()).join(", ") || "Penulis tidak diketahui";
-            
-            // Crossref abstracts sometimes have JATS XML tags. Strip them out roughly.
+            const authors =
+              (item.author || [])
+                .map(
+                  (a: any) =>
+                    `${a.given || ""} ${a.family || ""}`.trim()
+                )
+                .join(", ") || "Penulis tidak diketahui";
+
             let abstract = item.abstract || "Tidak ada abstrak tersedia.";
-            abstract = abstract.replace(/<[^>]*>/g, ""); 
-            
+            abstract = abstract.replace(/<[^>]*>/g, "");
+
             return `Jurnal ${idx + 1}:\nJudul: ${title}\nPenulis: ${authors}\nLink/DOI: ${url}\nAbstrak: ${abstract.slice(0, 1000)}`;
           }).join("\n\n");
         }
@@ -71,7 +64,7 @@ Gunakan Bahasa Indonesia yang baku dan formal.`;
 
     if (crossrefData) {
       systemMessage += `\n\n[PERHATIAN: DATA JURNAL ASLI DARI DATABASE CROSSREF]
-Berikut adalah 5 jurnal sungguhan yang berhasil ditarik dari database global berdasarkan kata kunci pengguna. 
+Berikut adalah 5 jurnal sungguhan yang berhasil ditarik dari database global berdasarkan kata kunci pengguna.
 JADIKAN INI SEBAGAI SUMBER UTAMA (TIDAK BOLEH MENGARANG REFERENSI LAIN):
 ---
 ${crossrefData}
@@ -91,41 +84,57 @@ Berikan saran 3-5 sudut pandang penelitian umum terkait topik pengguna, namun TE
       systemMessage += `\n\nPenanya adalah mahasiswa program studi ${prodi}. Sesuaikan sudut pandang agar relevan dengan bidang ini jika memungkinkan.`;
     }
 
-    const openai = getClient();
-
-    // 3. Request streaming completion
-    const response = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [
-        { role: "system", content: systemMessage },
-        { role: "user", content: `Kueri Riset: "${query}"` }
-      ],
-      stream: true,
-      temperature: 0.3,
-    });
-
+    // 3. Stream via metered AI client (supports BYOK + credit billing).
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        try {
-          for await (const chunk of response) {
-            const rawContent = chunk.choices[0]?.delta?.content || "";
-            const content = sanitizeOutput(rawContent, { collapseRuns: false });
-            if (content) {
+        let streamed = false;
+        await streamComplete(
+          {
+            feature: "research",
+            system: systemMessage,
+            user: `Kueri Riset: "${query}"`,
+            temperature: 0.3,
+            maxTokens: 2048,
+          },
+          {
+            onToken: (delta) => {
+              const content = sanitizeOutput(delta, {
+                collapseRuns: false,
+              });
+              if (content) {
+                streamed = true;
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ text: content })}\n\n`
+                  )
+                );
+              }
+            },
+            onError: (err) => {
+              console.error("Stream processing error:", err);
+              let msg = "\n[Sistem] Koneksi ke asisten terputus.";
+              if (err instanceof InsufficientCreditsError) {
+                msg =
+                  "\n⚠️ Credit tidak cukup. Isi ulang di /billing atau aktifkan BYOK.";
+              }
+              if (!streamed) {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ text: msg })}\n\n`
+                  )
+                );
+              }
+            },
+            onDone: () => {
               controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ text: content })}\n\n`)
+                encoder.encode("data: [DONE]\n\n")
               );
-            }
-          }
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        } catch (err) {
-          console.error("Stream processing error:", err);
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ text: "\n[Sistem] Koneksi ke asisten terputus." })}\n\n`)
-          );
-        } finally {
-          controller.close();
-        }
+              controller.close();
+            },
+          },
+          session.user.id
+        );
       },
     });
 
@@ -136,7 +145,6 @@ Berikan saran 3-5 sudut pandang penelitian umum terkait topik pengguna, namun TE
         Connection: "keep-alive",
       },
     });
-
   } catch (error: any) {
     console.error("[research] Route Error:", error);
     return NextResponse.json(

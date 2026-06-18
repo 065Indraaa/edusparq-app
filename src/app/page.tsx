@@ -6,7 +6,6 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
-  Sparkles,
   Bot,
   CalendarDays,
   PenTool,
@@ -73,13 +72,8 @@ export default function LandingPage() {
       >
         <header className="pointer-events-auto w-full max-w-5xl bg-card/70 backdrop-blur-3xl border border-border/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-4 md:px-6 h-14 md:h-16 flex items-center justify-between transition-all hover:bg-card/90">
           <Link href="/" className="flex items-center gap-2 md:gap-3 group">
-            <motion.div
-              whileHover={{ rotate: 180, scale: 1.1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 10 }}
-              className="bg-foreground text-background p-2 rounded-full flex items-center justify-center"
-            >
-              <Sparkles size={16} />
-            </motion.div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="EduSparq" className="h-9 w-9 md:h-10 md:w-10 rounded-full shadow-sm group-hover:scale-105 transition-transform" />
             <span className="font-display font-extrabold text-base md:text-lg tracking-tight">EduSparq</span>
           </Link>
 
@@ -341,9 +335,7 @@ export default function LandingPage() {
       <footer className="border-t border-border/50 py-12 px-4 md:px-6 mt-12 relative z-10 bg-background/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 md:gap-3">
-            <div className="bg-foreground text-background p-1.5 rounded-full flex items-center justify-center">
-              <Sparkles size={12} />
-            </div>
+            <img src="/logo.png" alt="EduSparq" className="w-7 h-7 rounded-full" />
             <span className="font-display font-extrabold text-sm tracking-tight">EduSparq</span>
           </div>
           <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">

@@ -2,29 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db/mongodb";
 import { ChatMessage } from "@/lib/db/models/ChatMessage";
+import { User } from "@/lib/db/models/User";
 import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag";
 import { extractTextFromUrl } from "@/lib/server-extract";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { checkAndDeductQuota } from "@/lib/quota";
-import OpenAI from "openai";
-import { AI_MODEL } from "@/lib/ai";
+import { streamComplete, InsufficientCreditsError } from "@/lib/ai-client";
 import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
 import { getUserPersonaContext, extractAndStorePersona } from "@/lib/ai-memory";
 import { sanitizeOutput } from "@/lib/sanitize-output";
-
-let kimiClient: OpenAI | null = null;
-const getKimiClient = () => {
-  if (!kimiClient) {
-    if (!process.env.MOONSHOT_API_KEY) {
-      throw new Error("MOONSHOT_API_KEY belum diisi di .env.local");
-    }
-    kimiClient = new OpenAI({ 
-      apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: "https://www.phanrouter.com/phanrouter/v1"
-    });
-  }
-  return kimiClient;
-};
+import { runOrchestrator, type OrchestratorResult } from "@/lib/agents/orchestrator";
+import { buildJurusanAwareContext } from "@/lib/jurusan-context";
 
 
 export async function GET() {
@@ -43,7 +30,7 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Rate limit: 20 requests / minute / user.
+  // Rate limit: 15 requests / minute / user.
   const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
   const { allowed, retryAfterMs } = checkRateLimit(`chat_${ip}`, 15, 60_000);
   if (!allowed) {
@@ -53,11 +40,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Pengecekan Quota Pengguna
-  const quota = await checkAndDeductQuota(session.user.id);
-  if (!quota.allowed) {
+  // Credit check.
+  const { getBalance } = await import("@/lib/credit-billing");
+  const balance = await getBalance(session.user.id);
+  if (balance <= 0) {
     return NextResponse.json(
-      { error: "Batas kuota bulanan Anda (50 Chat) telah habis. Kuota akan di-reset otomatis bulan depan." },
+      {
+        error:
+          "Credit Anda habis. Isi ulang di /billing atau aktifkan BYOK di /settings/ai untuk pakai kunci sendiri.",
+      },
       { status: 402 }
     );
   }
@@ -73,6 +64,10 @@ export async function POST(req: NextRequest) {
 
   await connectDB();
 
+  // Check user agent mode (auto = orchestrator, simple = langsung streaming).
+  const user = await User.findById(session.user.id).lean();
+  const agentMode = user?.agentMode || "auto";
+
   // Save user message
   await ChatMessage.create({
     userId: session.user.id,
@@ -82,29 +77,15 @@ export async function POST(req: NextRequest) {
     courseName: typeof courseName === "string" ? courseName : "",
   });
 
-  // Recent history for context (last 10 messages, newest first).
-  const history = await ChatMessage.find({ userId: session.user.id })
-    .sort({ createdAt: -1 })
-    .limit(10);
-
-  // `history` already includes the just-saved user message as its most recent
-  // item, so we do NOT append it again below (double-send would waste tokens).
-  const historyMessages = history.reverse().map((m) => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
-
-  // RAG: retrieve grounding chunks from the student's own documents.
+  // ─── RAG + Attachment (shared setup) ──────────────────────────────────────
   const chunks = await retrieveChunks(session.user.id, message, 4);
   const confidence = chunks.length > 0 ? computeConfidence(chunks) : "Unknown";
-
   const sources = chunks.slice(0, 3).map((c) => ({
     title: c.courseName || "Materi",
     exactQuote: (c.content || "").slice(0, 180),
     documentId: c.documentId,
   }));
 
-  // Handle direct file attachment extraction
   let attachmentContent = "";
   if (attachmentUrl && attachmentType) {
     try {
@@ -117,80 +98,223 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Persona akademik profesional + grounding ke materi mahasiswa (RAG).
   const sourceBlock = chunks.length > 0 ? buildContextBlock(chunks) : undefined;
-  
-  // Build system prompt, injecting attachment directly if present.
-  let systemPrompt = buildSystemPrompt(personaFromMode(mode), {
+
+  // ─── BRANCH: Orchestrator (mode auto) vs Simple streaming ─────────────────
+  if (agentMode === "auto" && !attachmentUrl) {
+    // Orchestrator handles non-attachment messages with multi-agent pipeline.
+    return handleOrchestratorChat(
+      session.user.id,
+      message,
+      mode,
+      courseName,
+      sourceBlock,
+      sources,
+      confidence
+    );
+  }
+
+  // Fallback: simple streaming (legacy path, also used for attachments).
+  return handleSimpleStreamingChat(
+    session.user.id,
+    message,
+    mode,
+    courseName,
     sourceBlock,
-    courses: courseName ? [String(courseName)] : undefined,
-  });
+    attachmentContent,
+    sources,
+    confidence
+  );
+}
 
-  // Inject user persona/memory context
-  const personaContext = await getUserPersonaContext(session.user.id);
-  if (personaContext) {
-    systemPrompt = personaContext + systemPrompt;
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// ORCHESTRATOR CHAT HANDLER — multi-agent pipeline for auto mode
+// ─────────────────────────────────────────────────────────────────────────────
 
-  if (attachmentContent) {
-    systemPrompt += attachmentContent;
-  }
-
+async function handleOrchestratorChat(
+  userId: string,
+  message: string,
+  mode: string,
+  courseName: string,
+  sourceBlock: string | undefined,
+  sources: { title: string; exactQuote: string; documentId: string }[],
+  confidence: string
+) {
   const encoder = new TextEncoder();
-  let fullResponse = "";
-
   const metaPayload = JSON.stringify({ text: "", meta: { sources, confidence } });
 
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        // Call Kimi SDK with streaming
-        const stream = await getKimiClient().chat.completions.create({
-          model: AI_MODEL,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...historyMessages,
-          ],
-          stream: true,
-          temperature: 0.3, // Lowered temperature for zero-hallucination professional output
-          max_tokens: 1024,
+        const result = await runOrchestrator({
+          userId,
+          request: message,
+          courseName: courseName || undefined,
+          tutorMode: mode,
+          sourceBlock,
         });
 
-        for await (const chunk of stream) {
-          const rawDelta = chunk.choices[0]?.delta?.content || "";
-          const text = sanitizeOutput(rawDelta, { collapseRuns: false });
-          fullResponse += text;
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+        // Stream the output as word-level chunks so UI still animates.
+        const words = result.output.split(/(\s+)/);
+        for (const word of words) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ text: sanitizeOutput(word, { collapseRuns: false }) })}\n\n`)
+          );
         }
+
+        // Save assistant response.
+        try {
+          await ChatMessage.create({
+            userId,
+            role: "assistant",
+            content: result.output,
+            mode,
+            courseName,
+            // Store trace as metadata in a hidden field for UI display.
+          });
+        } catch {}
+
+        // Emit agent metadata (tier, credit cost) for UI.
+        const agentMeta = JSON.stringify({
+          text: "",
+          meta: {
+            sources,
+            confidence,
+            agentTier: result.tier,
+            agentCost: result.totalCreditCost,
+            agentTrace: result.trace.map((t) => ({
+              agent: t.agent,
+              status: t.status,
+              summary: t.summary?.slice(0, 120) || "",
+              creditCost: t.creditCost || 0,
+            })),
+          },
+        });
+        controller.enqueue(encoder.encode(`data: ${agentMeta}\n\n`));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
       } catch (err) {
-        console.error("[chat streaming error]:", err);
-        // Degrade gracefully: stream a professional error token instead of 500-ing.
-        const errText = "Mohon maaf, sistem AI sedang mengalami kendala koneksi ke server pusat. Silakan coba kirim ulang pesan Anda dalam beberapa saat.";
-        fullResponse = fullResponse || errText;
-        if (fullResponse === errText) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: errText })}\n\n`));
+        console.error("[chat orchestrator error]:", err);
+        let errText = "Sistem agent sedang mengalami kendala. Silakan coba lagi.";
+        if (err instanceof InsufficientCreditsError) {
+          errText = "⚠️ Credit Anda tidak cukup. Isi ulang di menu Billing.";
         }
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ text: errText })}\n\n`)
+        );
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
       }
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIMPLE STREAMING HANDLER — legacy single-call path
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleSimpleStreamingChat(
+  userId: string,
+  message: string,
+  mode: string,
+  courseName: string,
+  sourceBlock: string | undefined,
+  attachmentContent: string,
+  sources: { title: string; exactQuote: string; documentId: string }[],
+  confidence: string
+) {
+  // Recent history for context (last 10 messages).
+  const history = await ChatMessage.find({ userId })
+    .sort({ createdAt: -1 })
+    .limit(10);
+  const historyMessages = history.reverse().map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
+
+  // Build system prompt — enriched with jurusan-aware context.
+  let { studentContext, jurusanPromptExtra } = { studentContext: {} as any, jurusanPromptExtra: "" };
+  try {
+    const jc = await buildJurusanAwareContext(userId, {
+      courseName: courseName ? String(courseName) : undefined,
+      sourceBlock,
+    });
+    studentContext = jc.studentContext;
+    jurusanPromptExtra = jc.jurusanPromptExtra;
+  } catch {
+    /* non-fatal */
+  }
+  let systemPrompt = buildSystemPrompt(personaFromMode(mode), studentContext);
+  const personaContext = await getUserPersonaContext(userId);
+  if (personaContext) systemPrompt = personaContext + systemPrompt;
+  if (jurusanPromptExtra) systemPrompt += "\n\n" + jurusanPromptExtra;
+  if (attachmentContent) systemPrompt += attachmentContent;
+
+  const encoder = new TextEncoder();
+  let fullResponse = "";
+  const metaPayload = JSON.stringify({ text: "", meta: { sources, confidence } });
+
+  const readable = new ReadableStream({
+    async start(controller) {
+      let streamed = false;
+      await streamComplete(
+        {
+          feature: "chat",
+          system: systemPrompt,
+          messages: historyMessages,
+          temperature: 0.3,
+          maxTokens: 1024,
+        },
+        {
+          onToken: (delta) => {
+            const text = sanitizeOutput(delta, { collapseRuns: false });
+            if (text) {
+              streamed = true;
+              fullResponse += text;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+            }
+          },
+          onError: (err) => {
+            console.error("[chat streaming error]:", err);
+            let errText =
+              "Mohon maaf, sistem AI sedang mengalami kendala koneksi ke server pusat. Silakan coba kirim ulang pesan Anda dalam beberapa saat.";
+            if (err instanceof InsufficientCreditsError) {
+              errText =
+                "⚠️ Credit Anda tidak cukup untuk operasi ini. Isi ulang di menu Billing, atau aktifkan BYOK (kunci sendiri) di Pengaturan AI untuk lanjut gratis.";
+            }
+            fullResponse = fullResponse || errText;
+            if (!streamed) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: errText })}\n\n`));
+            }
+          },
+        },
+        userId
+      );
 
       // Save complete AI response to DB (best-effort).
       try {
         await ChatMessage.create({
-          userId: session.user.id,
+          userId,
           role: "assistant",
           content: fullResponse,
           mode,
-          courseName: typeof courseName === "string" ? courseName : "",
+          courseName,
         });
       } catch {}
 
-      // Background worker: trigger persona extraction asynchronously 
-      // Fire-and-forget so it doesn't block the request.
-      extractAndStorePersona(session.user.id).catch(err => {
+      // Background: extract persona memory.
+      extractAndStorePersona(userId).catch((err) => {
         console.error("[Background Task] extractAndStorePersona failed:", err);
       });
 
-      // Emit metadata line (sources + confidence) right before [DONE].
-      // text:"" keeps other SSE readers (writing/research) backward-compatible.
       controller.enqueue(encoder.encode(`data: ${metaPayload}\n\n`));
       controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       controller.close();
