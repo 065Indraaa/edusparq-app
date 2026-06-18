@@ -6,7 +6,7 @@ import { Bot, Sparkles, Search, BookOpen, GraduationCap, Send, Trash2, RefreshCw
 import { useSession } from "next-auth/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ConfidenceBadge, ConfidenceLevel, SourceAttribution } from "@/components/ui/ConfidenceBadge";
+import { ConfidenceBadge, ConfidenceLevel, SourceAttribution } from "../../../components/ui/ConfidenceBadge";
 
 interface ChatMeta {
   sources: { title: string; exactQuote: string; documentId: string }[];

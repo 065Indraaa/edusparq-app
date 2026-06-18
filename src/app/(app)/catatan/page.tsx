@@ -17,7 +17,7 @@ import {
   Wand2,
   Layers3,
 } from "lucide-react";
-import { CourseSelect } from "@/components/course-select-dropdown";
+import { CourseSelect } from "../../../components/course-select-dropdown";
 
 interface Note {
   _id: string;

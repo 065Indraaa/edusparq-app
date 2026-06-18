@@ -4,10 +4,10 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { UserCircle, Save, RefreshCw, GraduationCap, Building2, BookOpen, Hash, CheckCircle2 } from "lucide-react";
-import { UniversityPicker } from "@/components/university-picker";
-import { GoogleConnectCard } from "@/components/google-connect-card";
-import { ProdiPicker } from "@/components/prodi-picker";
-import { PddiktiAutofill, PddiktiFill } from "@/components/pddikti-autofill";
+import { UniversityPicker } from "../../../components/university-picker";
+import { GoogleConnectCard } from "../../../components/google-connect-card";
+import { ProdiPicker } from "../../../components/prodi-picker";
+import { PddiktiAutofill, PddiktiFill } from "../../../components/pddikti-autofill";
 
 interface ProfileForm {
   name: string;

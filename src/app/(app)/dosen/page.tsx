@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
-import { CourseSelect } from "@/components/course-select-dropdown";
+import { CourseSelect } from "../../../components/course-select-dropdown";
 
 interface Evaluation {
   _id?: string;
