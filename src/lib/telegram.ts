@@ -29,46 +29,55 @@ interface SendOptions {
   disableWebPagePreview?: boolean;
 }
 
-// ─── OTP Store (in-memory, TTL 5 menit) ─────────────────────────────────────
+// ─── OTP Store (MongoDB-backed) ─────────────────────────────────────────────
 
-interface OtpEntry {
-  otp: string;
-  userId: string;
-  expiresAt: number; // epoch ms
-}
-
-const otpStore = new Map<string, OtpEntry>();
+import { connectDB } from "./db/mongodb";
+import mongoose from "mongoose";
 
 const OTP_TTL_MS = 5 * 60 * 1000; // 5 menit
 
+// Gunakan Mongoose Schema agar lebih stabil di Next.js Serverless/cPanel
+const OtpSchema = new mongoose.Schema({
+  otp: { type: String, required: true, index: true },
+  userId: { type: String, required: true },
+  expiresAt: { type: Date, required: true, index: { expires: 0 } }
+});
+const OtpModel = mongoose.models.TelegramOtp || mongoose.model("TelegramOtp", OtpSchema);
+
 /** Simpan OTP untuk user tertentu. Menghapus OTP lama bila ada. */
-export function storeOtp(userId: string): string {
+export async function storeOtp(userId: string): Promise<string> {
+  await connectDB();
   const otp = generateOtp();
-  // Hapus OTP lama user ini bila ada.
-  for (const [key, entry] of otpStore.entries()) {
-    if (entry.userId === userId) otpStore.delete(key);
-  }
-  otpStore.set(otp, { otp, userId, expiresAt: Date.now() + OTP_TTL_MS });
+  const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+
+  await OtpModel.deleteMany({ userId });
+  await OtpModel.create({ otp, userId, expiresAt });
+
   return otp;
 }
 
 /** Verifikasi OTP & kembalikan userId. Hapus OTP setelah dipakai. */
-export function verifyOtp(otp: string): string | null {
-  const entry = otpStore.get(otp);
+export async function verifyOtp(otp: string): Promise<string | null> {
+  await connectDB();
+  const entry = await OtpModel.findOne({ otp });
+
   if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    otpStore.delete(otp);
+  if (new Date() > entry.expiresAt) {
+    await OtpModel.deleteOne({ _id: entry._id });
     return null; // expired
   }
-  otpStore.delete(otp);
+
+  await OtpModel.deleteOne({ _id: entry._id });
   return entry.userId;
 }
 
 /** Cleanup expired OTP secara berkala (dipanggil dari webhook). */
-export function cleanupOtpStore(): void {
-  const now = Date.now();
-  for (const [key, entry] of otpStore.entries()) {
-    if (now > entry.expiresAt) otpStore.delete(key);
+export async function cleanupOtpStore(): Promise<void> {
+  try {
+    await connectDB();
+    await OtpModel.deleteMany({ expiresAt: { $lt: new Date() } });
+  } catch (err) {
+    // abaikan error cleanup background
   }
 }
 

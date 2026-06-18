@@ -47,7 +47,7 @@ export default async function AppLayout({
       {/* Top Header for Mobile */}
       <header className="sticky top-0 z-40 w-full mobile-topbar px-4 py-3 flex items-center justify-between md:hidden shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          // eslint-disable-next-line @next/next/no-img-element
+
           <img src="/logo.png" alt="EduSparq" className="h-10 w-10 rounded-2xl object-cover shadow-sm" />
           <div className="leading-tight">
             <span className="font-black text-base tracking-tight text-foreground block">EduSparq</span>
@@ -58,7 +58,7 @@ export default async function AppLayout({
           <ThemeToggle />
           <NotificationBell />
           {user?.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
+
             <img src={user.image} alt={user.name || "Pengguna"} className="w-9 h-9 rounded-full border border-border object-cover" />
           ) : (
             <div className="w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center font-bold text-xs shadow-sm border border-border select-none">
@@ -99,7 +99,7 @@ export default async function AppLayout({
           </div>
           <div className="user-dock flex items-center gap-3 px-3 py-3">
             {user?.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
+
               <img src={user.image} alt={user.name || ""} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-bold text-sm shadow-sm select-none shrink-0">

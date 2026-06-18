@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     const update: TelegramUpdate = await req.json();
 
     // Cleanup OTP store periodically.
-    cleanupOtpStore();
+    cleanupOtpStore().catch(console.error);
 
     // Handle callback queries (inline keyboard buttons).
     if (update.callback_query) {
@@ -218,7 +218,7 @@ async function handleLink(
   chatId: number,
   from?: TelegramFrom
 ) {
-  const userId = verifyOtp(otp);
+  const userId = await verifyOtp(otp);
   if (!userId) {
     await sendTelegram(chatId, "❌ Kode OTP tidak valid atau sudah kadaluarsa.\nCoba generate ulang di web.");
     return;

@@ -1005,7 +1005,7 @@ export default function WorkspacePage() {
               <div className="flex-1 bg-muted/20 min-h-0 relative flex items-center justify-center">
                 {viewerFile.fileUrl ? (
                   viewerFile.type === "image" ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+
                     <img src={viewerFile.fileUrl} alt={viewerFile.name} className="max-w-full max-h-full object-contain p-4" />
                   ) : viewerFile.type === "video" ? (
                     <video src={viewerFile.fileUrl} controls className="max-w-full max-h-full p-4" />

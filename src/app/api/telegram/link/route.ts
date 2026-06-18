@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const otp = storeOtp(session.user.id);
+  const otp = await storeOtp(session.user.id);
 
   return NextResponse.json({
     otp,
