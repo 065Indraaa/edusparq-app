@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { connectDB } from "../../../../lib/db/mongodb";
 import { Document } from "../../../../lib/db/models/Document";
@@ -107,6 +107,7 @@ Aturan: tepat 4 pilihan tiap soal; "correctIndex" 0-3; variasikan tingkat kesuli
       temperature: 0.6,
       maxTokens: 4096,
       json: true,
+      userId: session.user.id,
     });
     rawText = text;
   } catch {

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { connectDB } from "../../../../lib/db/mongodb";
 import { Document } from "../../../../lib/db/models/Document";
@@ -82,6 +82,7 @@ Aturan: "difficulty" hanya "easy" | "medium" | "hard" sesuai kompleksitas konsep
       system,
       user: `Buat ${cardCount} flashcard sekarang berdasarkan materi di atas.`,
       temperature: 0.6,
+      userId: session.user.id,
     });
     rawText = text;
   } catch {

@@ -1,6 +1,7 @@
 import { complete, type CompleteOptions, type CompleteResult } from "./ai-client";
 import { PLATFORM_AI } from "./credit-config";
 import type { FeatureName } from "./credit-config";
+import { getUserPersonaContext } from "./ai-memory";
 
 /**
  * Centralized AI configuration (legacy compat layer).
@@ -98,6 +99,8 @@ export interface AiCompleteOptions {
   temperature?: number;
   maxTokens?: number;
   json?: boolean;
+  /** Pass userId to inject UserPersona memory into the system prompt. */
+  userId?: string;
 }
 
 export interface AiCompleteResult {
@@ -115,9 +118,25 @@ export async function aiComplete(
   opts: AiCompleteOptions
 ): Promise<AiCompleteResult> {
   const feature = taskToFeature(opts.task);
+
+  // Inject UserPersona memory when userId is provided (Fase 7.2).
+  let system = opts.system;
+  if (opts.userId) {
+    try {
+      const personaContext = await getUserPersonaContext(opts.userId);
+      if (personaContext && system) {
+        system = personaContext + system;
+      } else if (personaContext) {
+        system = personaContext;
+      }
+    } catch {
+      /* non-fatal: persona lookup must not break AI calls */
+    }
+  }
+
   const result = await complete({
     feature,
-    system: opts.system,
+    system,
     messages: opts.messages as CompleteOptions["messages"],
     user: opts.user,
     temperature: opts.temperature,

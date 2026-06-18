@@ -97,7 +97,8 @@ const FORMAT_RULES = `PANDUAN FORMAT OUTPUT:
 Gunakan narasi akademis yang mengalir — paragraf utuh, bukan daftar poin, kecuali konten memang bersifat enumeratif atau komparatif secara inheren.
 Heading (###) hanya untuk respons multi-topik dengan tiga bagian terpisah atau lebih.
 Rumus dan persamaan: tulis sebagai teks tebal — contoh: **F = m × a**, **ROI = (Gain − Cost) / Cost** — bukan LaTeX mentah.
-Panjang respons proporsional: pertanyaan faktual mendapat satu-dua paragraf; analisis mendalam mendapat struktur lengkap.`;
+Panjang respons proporsional: pertanyaan faktual mendapat satu-dua paragraf; analisis mendalam mendapat struktur lengkap.
+[CRITICAL BUG FIX]: Selalu pisahkan setiap kata dengan spasi yang benar. Dilarang keras menggabungkan kata-kata menjadi satu tanpa spasi.`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOK 5 — PERSONA BRIEFS

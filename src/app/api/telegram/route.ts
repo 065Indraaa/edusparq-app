@@ -11,6 +11,11 @@ import {
   verifyOtp,
   cleanupOtpStore,
   buildMainMenu,
+  buildOnboardingMenu,
+  buildAkademikMenu,
+  buildTugasMenu,
+  buildJadwalMenu,
+  buildAkunMenu,
   buildModeKeyboard,
   formatCreditBalance,
   formatTrace,
@@ -125,21 +130,35 @@ async function handleCommand(
   const arg = parts.slice(1).join(" ");
 
   switch (cmd) {
-    case "/start":
-      await sendTelegram(
-        chatId,
-        "👋 Halo! Saya *EduSparq AI* — asisten akademik untuk mahasiswa Indonesia.\n\n" +
-          "Saya bisa membantu Anda:\n" +
-          "• Menjawab pertanyaan materi kuliah\n" +
-          "• Menyelesaikan tugas \\& soal studi kasus\n" +
-          "• Membuat makalah, ERD, kode program\n" +
-          "• Mengingatkan tugas \\& tenggat\n\n" +
-          "Hubungkan akun EduSparq Anda dengan:\n" +
-          "`/link <kode OTP>`\n\n" +
-          "Ketik `/help` untuk daftar lengkap command.",
-        { replyMarkup: buildMainMenu(from?.id ? String(from.id) : "unknown") }
-      );
+    case "/start": {
+      // Cek apakah user sudah linked.
+      const linked = await resolveUserId(from);
+      if (!linked) {
+        // BELUM LOGIN — tampilkan onboarding popup.
+        await sendTelegram(
+          chatId,
+          "👋 *Selamat datang di EduSparq AI!*\n\n" +
+            "Saya asisten akademik AI untuk mahasiswa Indonesia. Untuk mulai mengobrol \\& menggunakan semua fitur, Anda perlu *menghubungkan akun EduSparq* Anda dulu.\n\n" +
+            "💡 *Belum punya akun?* Daftar gratis — dapat 1.000 credit percobaan!\n\n" +
+            "Setelah login di web, buka *Pengaturan → Telegram* untuk dapatkan kode OTP, lalu kirim:\n" +
+            "`/link <kode-otp>`",
+          { replyMarkup: buildOnboardingMenu() }
+        );
+      } else {
+        // SUDAH LINKED — menu utama kategori.
+        await connectDB();
+        const user = await User.findById(linked).lean();
+        const name = user?.name || "Pengguna";
+        await sendTelegram(
+          chatId,
+          "👋 Halo *" + name + "*! 👋\n\n" +
+            "Pilih kategori menu di bawah ini, atau langsung *ketik pertanyaan* apapun untuk chat dengan AI.\n\n" +
+            "🤖 Orchestrator otomatis pilih jalur terbaik (Simple/Medium/Complex).",
+          { replyMarkup: buildMainMenu(from?.id ? String(from.id) : "unknown") }
+        );
+      }
       break;
+    }
 
     case "/help":
       await sendTelegram(
@@ -432,6 +451,18 @@ async function handleCallback(callback: TelegramCallbackQuery) {
     await sendTelegram(chatId, "🏠 *Menu Utama* — pilih aksi:", {
       replyMarkup: buildMainMenu(cbUserId),
     });
+  } else if (callbackType === "cat") {
+    // Kategori menu: cat_<akademik|tugas|jadwal|akun>_<telegramId>
+    const sub = segments[1];
+    if (sub === "akademik") {
+      await sendTelegram(chatId, "📚 *Akademik* — pilih fitur:", { replyMarkup: buildAkademikMenu(cbUserId) });
+    } else if (sub === "tugas") {
+      await sendTelegram(chatId, "📋 *Tugas & Tenggat* — pilih aksi:", { replyMarkup: buildTugasMenu(cbUserId) });
+    } else if (sub === "jadwal") {
+      await sendTelegram(chatId, "🗓️ *Jadwal* — pilih aksi:", { replyMarkup: buildJadwalMenu(cbUserId) });
+    } else if (sub === "akun") {
+      await sendTelegram(chatId, "💰 *Akun* — pilih aksi:", { replyMarkup: buildAkunMenu(cbUserId) });
+    }
   } else if (callbackType === "saldo") {
     await handleSaldo(chatId, { id: Number(cbUserId) });
   } else if (callbackType === "deadline") {

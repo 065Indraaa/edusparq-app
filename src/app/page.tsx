@@ -13,7 +13,10 @@ import {
   Users,
   ArrowRight,
   Globe,
-  LayoutDashboard
+  LayoutDashboard,
+  Cloud,
+  MessageCircle,
+  Calendar,
 } from "lucide-react";
 
 const fadeUp = {
@@ -290,6 +293,41 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* ===== How It Works Section ===== */}
+      <section className="py-16 px-4 md:px-6 max-w-[1400px] mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <h2 className="font-display text-3xl md:text-4xl font-black tracking-tight mb-3">Cara Kerja</h2>
+          <p className="text-muted-foreground font-medium">Tiga langkah mulai dari nol hingga produktif.</p>
+        </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[
+            { step: "1", title: "Buat Akun", desc: "Daftar gratis dan dapatkan credit awal untuk mulai." },
+            { step: "2", title: "Atur Profil Kampus", desc: "Isi universitas, prodi, semester, dan mata kuliah." },
+            { step: "3", title: "Pakai Semua Fitur", desc: "Tanya AI, kelola tugas, kolaborasi, dan organisasi." },
+          ].map((s, i) => (
+            <motion.div
+              key={s.step}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              viewport={{ once: true }}
+              className="bg-card border border-border/60 rounded-[2rem] p-6 md:p-8 text-center"
+            >
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-black mb-4">
+                {s.step}
+              </span>
+              <h3 className="font-display text-xl font-black tracking-tight mb-2">{s.title}</h3>
+              <p className="text-muted-foreground font-medium text-sm">{s.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* ===== Big CTA Section ===== */}
       <section className="py-24 px-4 md:px-6 relative z-10">
         <motion.div
@@ -331,6 +369,39 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* ===== Coming Soon Section ===== */}
+      <section className="py-16 px-4 md:px-6 max-w-[1400px] mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <h2 className="font-display text-3xl md:text-4xl font-black tracking-tight mb-3">Segera Hadir</h2>
+          <p className="text-muted-foreground font-medium">Integrasi baru yang sedang kami persiapkan.</p>
+        </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[
+            { icon: Cloud, title: "Google Drive", desc: "Sinkronisasi dokumen kuliah langsung dari Drive." },
+            { icon: MessageCircle, title: "WhatsApp", desc: "Akses fitur EduSparq melalui chat WhatsApp." },
+            { icon: Calendar, title: "Google Calendar", desc: "Sinkron deadline & jadwal ke Google Calendar." },
+          ].map((s, i) => (
+            <motion.div
+              key={s.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              viewport={{ once: true }}
+              className="bg-muted/30 border border-border/60 border-dashed rounded-[2rem] p-6 md:p-8 text-center"
+            >
+              <s.icon size={28} className="mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-display text-lg font-black tracking-tight mb-2">{s.title}</h3>
+              <p className="text-muted-foreground font-medium text-sm">{s.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* ===== Minimal Footer ===== */}
       <footer className="border-t border-border/50 py-12 px-4 md:px-6 mt-12 relative z-10 bg-background/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
@@ -339,11 +410,12 @@ export default function LandingPage() {
             <span className="font-display font-extrabold text-sm tracking-tight">EduSparq</span>
           </div>
           <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">
-            © 2026 EduSparq Studio. Hak Cipta Dilindungi.
+            © 2026 EduSparq. Created by <span className="text-foreground">@chaoho554</span>.
           </p>
           <div className="flex items-center gap-6 text-sm font-semibold text-muted-foreground">
+            <Link href="/docs" className="hover:text-foreground transition-colors">Docs</Link>
+            <Link href="/pricing" className="hover:text-foreground transition-colors">Harga</Link>
             <a href="#" className="hover:text-foreground transition-colors">Privasi</a>
-            <a href="#" className="hover:text-foreground transition-colors">Ketentuan</a>
             <a href="https://github.com/edusparq" className="hover:text-foreground transition-colors" aria-label="GitHub">
               <Globe size={18} />
             </a>

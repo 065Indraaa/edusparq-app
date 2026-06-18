@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -29,6 +30,7 @@ import {
   Cpu,
   Send,
   BookOpen,
+  ChevronDown,
 } from "lucide-react";
 
 export type NavItem = {
@@ -79,7 +81,7 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Organisasi",
-    items: [{ name: "HIMA", desc: "Kelola program kerja organisasi", href: "/hima", icon: Building2 }],
+    items: [{ name: "Organisasi", desc: "Kelola struktur, divisi & program kerja", href: "/hima", icon: Building2 }],
   },
   {
     label: "Akun",
@@ -120,55 +122,83 @@ function isActive(pathname: string, href: string) {
 /** Desktop sidebar navigation with grouped command-center sections. */
 export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (label: string) => {
+    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   return (
     <nav className="flex-1 px-3 py-3 space-y-3 overflow-y-auto no-scrollbar">
-      {groups.map((group, groupIndex) => (
-        <div key={group.label} className="nav-group-card p-2.5" style={{ animationDelay: `${groupIndex * 55}ms` }}>
-          <div className="flex items-center justify-between px-2 pb-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/75 select-none">
-              {group.label}
-            </span>
-            <span className="h-px flex-1 ml-3 bg-gradient-to-r from-border to-transparent" />
-          </div>
-          <div className="space-y-1">
-            {group.items.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`nav-command group relative flex items-start gap-3 px-2.5 py-2.5 text-sm font-bold rounded-2xl min-h-[58px] overflow-hidden ${
-                    active ? "is-active text-primary" : "text-muted-foreground hover:text-foreground"
-                  }`}
+      {groups.map((group, groupIndex) => {
+        const isOpen = !collapsed[group.label];
+        return (
+          <div key={group.label} className="nav-group-card p-2.5" style={{ animationDelay: `${groupIndex * 55}ms` }}>
+            <button
+              type="button"
+              onClick={() => toggleGroup(group.label)}
+              className="w-full flex items-center justify-between px-2 pb-2 group"
+              aria-expanded={isOpen}
+            >
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/75 select-none">
+                {group.label}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`text-muted-foreground/60 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`}
+              />
+            </button>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
                 >
-                  {active && (
-                    <motion.span
-                      layoutId="sidebar-active-glow"
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/14 via-primary/8 to-transparent"
-                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
-                    />
-                  )}
-                  <span className={`relative grid h-9 w-9 place-items-center rounded-xl border transition-all ${
-                    active
-                      ? "border-primary/25 bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary))]"
-                      : "border-border/70 bg-background/70 text-muted-foreground group-hover:border-primary/25 group-hover:text-primary group-hover:bg-primary/8"
-                  }`}>
-                    <Icon size={17} strokeWidth={active ? 2.8 : 2.2} />
-                  </span>
-                  <span className="relative min-w-0 flex-1 leading-tight">
-                    <span className="block truncate tracking-tight">{item.name}</span>
-                    {item.desc && <span className="mt-0.5 block truncate text-[10px] font-medium tracking-normal text-muted-foreground group-hover:text-foreground/70">{item.desc}</span>}
-                  </span>
-                  {active && <span className="relative ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]" />}
-                </Link>
-              );
-            })}
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(pathname, item.href);
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          aria-current={active ? "page" : undefined}
+                          className={`nav-command group relative flex items-start gap-3 px-2.5 py-2.5 text-sm font-bold rounded-2xl min-h-[58px] overflow-hidden ${
+                            active ? "is-active text-primary" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {active && (
+                            <motion.span
+                              layoutId="sidebar-active-glow"
+                              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/14 via-primary/8 to-transparent"
+                              transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                            />
+                          )}
+                          <span className={`relative grid h-9 w-9 place-items-center rounded-xl border transition-all ${
+                            active
+                              ? "border-primary/25 bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary))]"
+                              : "border-border/70 bg-background/70 text-muted-foreground group-hover:border-primary/25 group-hover:text-primary group-hover:bg-primary/8"
+                          }`}>
+                            <Icon size={17} strokeWidth={active ? 2.8 : 2.2} />
+                          </span>
+                          <span className="relative min-w-0 flex-1 leading-tight">
+                            <span className="block truncate tracking-tight">{item.name}</span>
+                            {item.desc && <span className="mt-0.5 block truncate text-[10px] font-medium tracking-normal text-muted-foreground group-hover:text-foreground/70">{item.desc}</span>}
+                          </span>
+                          {active && <span className="relative ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]" />}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }

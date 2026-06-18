@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { connectDB } from "../../../../lib/db/mongodb";
 import { AnswerEvaluation } from "../../../../lib/db/models/AnswerEvaluation";
@@ -7,6 +7,7 @@ import { parseLooseJSON } from "../../../../lib/ai";
 import { buildSystemPrompt } from "../../../../lib/ai-prompts";
 import { sanitizeOutput } from "../../../../lib/sanitize-output";
 import { buildJurusanAwareContext } from "../../../../lib/jurusan-context";
+import { getUserPersonaContext } from "../../../../lib/ai-memory";
 
 export const runtime = "nodejs";
 
@@ -80,6 +81,8 @@ Aturan: "score" wajib bilangan bulat 0-100. Jika jawaban kosong/ngawur, beri sko
     studentContext,
     jsonContract + (jurusanPromptExtra ? "\n\n" + jurusanPromptExtra : "")
   );
+  const personaContext = await getUserPersonaContext(session.user.id);
+  const finalSystem = personaContext ? personaContext + system : system;
   const userMsg = `SOAL:\n${question}\n\nJAWABAN MAHASISWA:\n${userAnswer}`;
 
   let raw: string;
@@ -87,7 +90,7 @@ Aturan: "score" wajib bilangan bulat 0-100. Jika jawaban kosong/ngawur, beri sko
     const { text } = await complete(
       {
         feature: "grade",
-        system,
+        system: finalSystem,
         user: userMsg,
         temperature: 0.3,
         maxTokens: 2048,

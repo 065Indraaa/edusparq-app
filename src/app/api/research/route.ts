@@ -3,6 +3,7 @@ import { auth } from "../../../lib/auth";
 import { checkRateLimit } from "../../../lib/rate-limit";
 import { streamComplete, InsufficientCreditsError } from "../../../lib/ai-client";
 import { sanitizeOutput } from "../../../lib/sanitize-output";
+import { getUserPersonaContext } from "../../../lib/ai-memory";
 
 export const maxDuration = 60;
 
@@ -83,6 +84,9 @@ Berikan saran 3-5 sudut pandang penelitian umum terkait topik pengguna, namun TE
     if (prodi) {
       systemMessage += `\n\nPenanya adalah mahasiswa program studi ${prodi}. Sesuaikan sudut pandang agar relevan dengan bidang ini jika memungkinkan.`;
     }
+
+    const personaContext = await getUserPersonaContext(session.user.id);
+    if (personaContext) systemMessage = personaContext + systemMessage;
 
     // 3. Stream via metered AI client (supports BYOK + credit billing).
     const encoder = new TextEncoder();

@@ -214,6 +214,11 @@ revisedOutput berisi output final lengkap yang sudah diperbaiki (jika revisi). i
 function buildContextSuffix(ctx: SessionContext): string {
   const parts: string[] = [];
 
+  // Persona memory — injected for all agents that use this suffix.
+  if (ctx.personaMemory) {
+    parts.push(ctx.personaMemory.trim());
+  }
+
   // Profil kampus user
   if (ctx.studentProfile) {
     const p = ctx.studentProfile;

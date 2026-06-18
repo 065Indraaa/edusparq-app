@@ -6,6 +6,7 @@ import { Deadline } from "../../../../lib/db/models/Deadline";
 import { Course } from "../../../../lib/db/models/Course";
 import { Document } from "../../../../lib/db/models/Document";
 import { computeIpk, totalSks } from "../../../../lib/gpa";
+import { ADMIN_USER_IDS } from "../../../../lib/credit-config";
 
 // GET /api/user/profile - get current user profile + summary stats
 export async function GET() {
@@ -35,6 +36,8 @@ export async function GET() {
       ipk,        // number | null
       sks,        // total credits across all courses
     },
+    // Admin flag untuk UI (tampilkan menu webhook, approve invoice, dll).
+    isAdmin: ADMIN_USER_IDS.includes(session.user.id),
   });
 }
 

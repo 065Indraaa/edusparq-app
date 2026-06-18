@@ -1,25 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "../../../../lib/auth";
+import { auth } from "@/lib/auth";
+import { ADMIN_USER_IDS } from "@/lib/credit-config";
 
 /**
  * GET /api/telegram/setup?action=set|delete|status
  *
- * Mengelola webhook Telegram bot. Hanya admin (yang sudah login) yang bisa akses.
+ * Mengelola webhook Telegram bot. HANYA ADMIN yang bisa akses.
+ * User biasa tidak perlu setup webhook — webhook adalah konfigurasi global
+ * satu kali oleh admin/dev. User cukup paste OTP untuk connect.
  *
  * - action=set&url=<WEBHOOK_URL>    → daftarkan webhook
  * - action=delete                   → hapus webhook (bot pakai polling mode)
  * - action=status                   → cek info webhook saat ini
- *
- * Webhook URL HARUS HTTPS publik. Contoh:
- *   https://edusparq-namamu.wasmer.app/api/telegram
- *
- * Setelah deploy, panggil endpoint ini sekali untuk mendaftarkan webhook.
  */
 export async function GET(req: NextRequest) {
-  // Hanya user yang sudah login (admin) yang boleh setup webhook.
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized — login diperlukan." }, { status: 401 });
+  }
+
+  // Hanya admin yang boleh kelola webhook.
+  if (!ADMIN_USER_IDS.includes(session.user.id)) {
+    return NextResponse.json(
+      { error: "Forbidden — hanya admin yang bisa mengelola webhook." },
+      { status: 403 }
+    );
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;

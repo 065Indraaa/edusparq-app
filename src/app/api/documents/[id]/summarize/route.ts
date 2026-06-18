@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../../lib/auth";
 import { connectDB } from "../../../../../lib/db/mongodb";
 import { Document } from "../../../../../lib/db/models/Document";
@@ -98,6 +98,7 @@ Dasarkan HANYA pada materi yang diberikan; jangan menambah informasi di luar mat
       system,
       user: "Buatkan catatan belajar terstruktur dari materi di atas sekarang.",
       temperature: 0.5,
+      userId: session.user.id,
     });
     content = sanitizeOutput(text);
   } catch {

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../lib/auth";
 import { connectDB } from "../../../lib/db/mongodb";
 import { Course } from "../../../lib/db/models/Course";
@@ -85,6 +85,7 @@ Nilai "prioritas" harus "tinggi" | "sedang" | "rendah". Semua teks dalam Bahasa 
       system,
       user: userMsg,
       temperature: 0.5,
+      userId: session.user.id,
     });
     rawResponse = text;
   } catch (err) {

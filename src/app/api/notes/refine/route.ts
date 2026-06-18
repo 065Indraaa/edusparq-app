@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
       user: buildPrompt(formatType, raw.slice(0, 8000), courseName),
       temperature: 0.5,
       maxTokens: 2048,
+      userId: session.user.id,
     });
     content = (text ?? "").trim();
   } catch {

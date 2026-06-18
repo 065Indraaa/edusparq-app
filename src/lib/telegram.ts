@@ -175,21 +175,95 @@ export function formatTrace(
 
 // ─── Keyboard Builders ───────────────────────────────────────────────────────
 
+/**
+ * Menu utama untuk user BELUM login/linked.
+ * Tampilkan popup onboarding dengan tombol login/daftar.
+ */
+export function buildOnboardingMenu(): InlineKeyboardMarkup {
+  const webAppUrl = process.env.NEXTAUTH_URL || "https://edusparq.app";
+  return {
+    inline_keyboard: [
+      [
+        { text: "🔐 Masuk / Login", url: `${webAppUrl}/login` },
+        { text: "✨ Daftar Baru", url: `${webAppUrl}/login` },
+      ],
+      [
+        { text: "📚 Pelajari EduSparq", url: `${webAppUrl}/docs` },
+        { text: "💰 Lihat Harga", url: `${webAppUrl}/pricing` },
+      ],
+      [{ text: "🔗 Cara Hubungkan Akun", callback_data: "howto_link" }],
+    ],
+  };
+}
+
+/**
+ * Menu utama kategori — user linked.
+ * Tiap kategori expandable (klik → submenu detail).
+ */
 export function buildMainMenu(userId: string): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
       [
-        { text: "💬 Tanya AI (Agent)", callback_data: "chat_" + userId },
-        { text: "💰 Cek Saldo", callback_data: "saldo_" + userId },
+        { text: "💬 Tanya AI", callback_data: "chat_" + userId },
+        { text: "📚 Akademik", callback_data: "cat_akademik_" + userId },
       ],
       [
-        { text: "📋 Tugas & Tenggat", callback_data: "deadline_" + userId },
-        { text: "🗓️ Jadwal Kuliah", callback_data: "schedule_" + userId },
+        { text: "📋 Tugas", callback_data: "cat_tugas_" + userId },
+        { text: "🗓️ Jadwal", callback_data: "cat_jadwal_" + userId },
       ],
       [
-        { text: "⚙️ Mode Agent", callback_data: "mode_" + userId },
+        { text: "💰 Akun", callback_data: "cat_akun_" + userId },
         { text: "❓ Bantuan", callback_data: "help_" + userId },
       ],
+    ],
+  };
+}
+
+/** Submenu kategori: Akademik (mata kuliah, materi, tutor). */
+export function buildAkademikMenu(userId: string): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [{ text: "🤖 Tanya Tutor AI", callback_data: "chat_" + userId }],
+      [{ text: "📖 Mata Kuliah Saya", callback_data: "matkul_" + userId }],
+      [{ text: "🧠 Agent AI (Tugas Kompleks)", callback_data: "agent_" + userId }],
+      [{ text: "🔙 Menu Utama", callback_data: "menu_" + userId }],
+    ],
+  };
+}
+
+/** Submenu kategori: Tugas & Tenggat. */
+export function buildTugasMenu(userId: string): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [{ text: "📋 Lihat Tugas Mendatang", callback_data: "deadline_" + userId }],
+      [{ text: "➕ Tambah Tugas Baru", callback_data: "addtugas_" + userId }],
+      [{ text: "🔙 Menu Utama", callback_data: "menu_" + userId }],
+    ],
+  };
+}
+
+/** Submenu kategori: Jadwal. */
+export function buildJadwalMenu(userId: string): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [{ text: "📅 Jadwal Hari Ini", callback_data: "schedule_" + userId }],
+      [{ text: "📆 Jadwal Minggu Ini", callback_data: "week_" + userId }],
+      [{ text: "🔙 Menu Utama", callback_data: "menu_" + userId }],
+    ],
+  };
+}
+
+/** Submenu kategori: Akun (saldo, byok, mode, profile). */
+export function buildAkunMenu(userId: string): InlineKeyboardMarkup {
+  const webAppUrl = process.env.NEXTAUTH_URL || "https://edusparq.app";
+  return {
+    inline_keyboard: [
+      [{ text: "💰 Cek Saldo Credit", callback_data: "saldo_" + userId }],
+      [{ text: "⚡ Atur Mode Agent", callback_data: "mode_" + userId }],
+      [{ text: "🔑 Pengaturan BYOK", url: `${webAppUrl}/settings/ai` }],
+      [{ text: "👤 Profil Saya", url: `${webAppUrl}/profile` }],
+      [{ text: "🔓 Putuskan Akun", callback_data: "unlink_" + userId }],
+      [{ text: "🔙 Menu Utama", callback_data: "menu_" + userId }],
     ],
   };
 }
@@ -199,7 +273,7 @@ export function buildModeKeyboard(userId: string): InlineKeyboardMarkup {
     inline_keyboard: [
       [{ text: "🤖 Auto (Orchestrator)", callback_data: "setmode_auto_" + userId }],
       [{ text: "⚡ Simple (Langsung)", callback_data: "setmode_simple_" + userId }],
-      [{ text: "🔙 Kembali", callback_data: "menu_" + userId }],
+      [{ text: "🔙 Kembali", callback_data: "cat_akun_" + userId }],
     ],
   };
 }

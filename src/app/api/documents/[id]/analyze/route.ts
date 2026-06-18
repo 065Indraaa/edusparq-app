@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../../lib/auth";
 import { connectDB } from "../../../../../lib/db/mongodb";
 import { Document } from "../../../../../lib/db/models/Document";
@@ -88,6 +88,7 @@ export async function POST(
       user: "Ekstrak informasi penting dari materi di atas sekarang.",
       temperature: 0.3,
       json: true,
+      userId: session.user.id,
     });
     rawResponse = text;
   } catch (err) {

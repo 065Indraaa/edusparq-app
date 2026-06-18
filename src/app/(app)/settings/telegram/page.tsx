@@ -35,11 +35,22 @@ export default function TelegramSettingsPage() {
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [error, setError] = useState("");
 
-  // Webhook setup state.
+  // Webhook setup state (admin-only).
+  const [isAdmin, setIsAdmin] = useState(false);
   const [webhookInfo, setWebhookInfo] = useState<any>(null);
   const [webhookLoading, setWebhookLoading] = useState(false);
   const [webhookUrlInput, setWebhookUrlInput] = useState("");
   const [webhookMsg, setWebhookMsg] = useState<{ type: "ok" | "error" | "warn"; text: string } | null>(null);
+
+  // Cek apakah user admin (untuk tampilkan webhook card).
+  useEffect(() => {
+    fetch("/api/user/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.isAdmin) setIsAdmin(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchStatus = async () => {
     setIsLoadingStatus(true);
@@ -319,80 +330,6 @@ export default function TelegramSettingsPage() {
         </motion.div>
       )}
 
-      {/* Webhook Setup (admin) */}
-      <motion.div variants={itemVariants} className="bg-card border border-border rounded-3xl p-6 shadow-sm">
-        <h2 className="font-bold text-foreground mb-1 flex items-center gap-2">
-          <Webhook size={18} className="text-primary" />
-          Konfigurasi Webhook Bot
-        </h2>
-        <p className="text-xs text-muted-foreground mb-4">
-          Daftarkan URL webhook agar Telegram mengirim pesan ke server EduSparq. Wajib setelah deploy.
-        </p>
-
-        {webhookMsg && (
-          <div className={`mb-4 p-3 rounded-xl text-xs font-medium flex items-start gap-2 ${
-            webhookMsg.type === "ok"
-              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-              : webhookMsg.type === "warn"
-              ? "bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300"
-              : "bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400"
-          }`}>
-            {webhookMsg.type === "error" ? <AlertTriangle size={14} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={14} className="mt-0.5 shrink-0" />}
-            <span className="flex-1 break-words">{webhookMsg.text}</span>
-          </div>
-        )}
-
-        {webhookInfo?.bot && (
-          <div className="mb-4 p-3 rounded-xl bg-muted/30 border border-border text-xs space-y-1">
-            <p className="font-bold text-foreground">@{webhookInfo.bot.username} (ID: {webhookInfo.bot.id})</p>
-            {webhookInfo.webhook?.url && (
-              <p className="text-muted-foreground break-all">URL: {webhookInfo.webhook.url}</p>
-            )}
-            {webhookInfo.webhook?.pending_update_count > 0 && (
-              <p className="text-amber-600 dark:text-amber-400">
-                ⚠️ {webhookInfo.webhook.pending_update_count} update pending
-                {webhookInfo.webhook.last_error_message ? ` — error: ${webhookInfo.webhook.last_error_message}` : ""}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <input
-            type="url"
-            value={webhookUrlInput}
-            onChange={(e) => setWebhookUrlInput(e.target.value)}
-            placeholder="https://domain-anda.com/api/telegram"
-            className="w-full px-4 py-3 rounded-xl bg-muted/40 border border-border text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
-          />
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={setWebhook}
-              disabled={webhookLoading}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-all disabled:opacity-50"
-            >
-              {webhookLoading ? <Loader2 size={13} className="animate-spin" /> : <Webhook size={13} />}
-              Daftarkan Webhook
-            </button>
-            <button
-              onClick={checkWebhook}
-              disabled={webhookLoading}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-muted/60 hover:bg-muted text-foreground text-xs font-bold transition-all disabled:opacity-50"
-            >
-              <RefreshCw size={13} className={webhookLoading ? "animate-spin" : ""} />
-              Cek Status
-            </button>
-            <button
-              onClick={deleteWebhook}
-              disabled={webhookLoading}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold border border-red-500/20 transition-all disabled:opacity-50"
-            >
-              <XCircle size={13} />
-              Hapus
-            </button>
-          </div>
-        </div>
-      </motion.div>
 
       {/* Features */}
       <motion.div variants={itemVariants} className="bg-card border border-border rounded-3xl p-6 shadow-sm">

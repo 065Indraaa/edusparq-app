@@ -10,6 +10,7 @@ import { buildSystemPrompt } from "../../../../lib/ai-prompts";
 import { sanitizeOutput } from "../../../../lib/sanitize-output";
 import { streamComplete, InsufficientCreditsError } from "../../../../lib/ai-client";
 import { getJurusanPromptForUser } from "../../../../lib/jurusan-context";
+import { getUserPersonaContext } from "../../../../lib/ai-memory";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -129,7 +130,15 @@ export async function POST(req: NextRequest) {
     /* non-fatal */
   }
 
-  const systemPrompt = buildSystemPrompt(
+  // AI memory: persona profile dari riwayat chat user.
+  let personaMemory = "";
+  try {
+    personaMemory = await getUserPersonaContext(session.user.id);
+  } catch {
+    /* non-fatal */
+  }
+
+  let systemPrompt = buildSystemPrompt(
     "solver",
     {
       name: profile.name,
@@ -145,6 +154,7 @@ export async function POST(req: NextRequest) {
         : "Tidak ada sumber tambahan. Jawab dengan basis pengetahuan akademik valid; jika tidak yakin, nyatakan dengan jujur."
     } Susun jawaban profesional tingkat universitas, terstruktur, dan bebas simbol dekoratif.${jurusanExtra ? "\n\n" + jurusanExtra : ""}`
   );
+  if (personaMemory) systemPrompt = personaMemory + systemPrompt;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
