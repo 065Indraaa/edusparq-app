@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Plus, RefreshCw, X } from "lucide-react";
-import { CourseSelect } from "@/components/course-select";
+import { CourseSelect } from "@/components/course-select-dropdown";
 
 /**
  * Compact "Tambah Mata Kuliah" form. Posts a real Course to /api/courses so the

@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, Sparkles, BookOpen, LayoutGrid, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Wand2, ClipboardList } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { CourseSelect } from "@/components/course-select";
+import { CourseSelect } from "@/components/course-select-dropdown";
 import AssignmentSolver from "./AssignmentSolver";
 
 interface Flashcard {

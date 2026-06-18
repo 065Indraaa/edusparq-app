@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw, Pencil, Bell, BellRing, Wand2, FileText } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { CourseSelect } from "@/components/course-select";
+import { CourseSelect } from "@/components/course-select-dropdown";
 
 interface Deadline {
   _id: string;

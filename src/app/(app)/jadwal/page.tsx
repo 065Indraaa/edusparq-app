@@ -13,7 +13,7 @@ import {
   Clock3,
   LayoutGrid,
 } from "lucide-react";
-import { CourseSelect } from "@/components/course-select";
+import { CourseSelect } from "@/components/course-select-dropdown";
 
 interface ClassItem {
   _id: string;
