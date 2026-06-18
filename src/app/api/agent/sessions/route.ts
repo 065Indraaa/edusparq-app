@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { AgentSession } from "@/lib/db/models/AgentSession";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { AgentSession } from "../../../../lib/db/models/AgentSession";
 
 /**
  * GET /api/agent/sessions

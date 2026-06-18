@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { JURUSAN, FAKULTAS, matchJurusan, getJurusanByFakultas } from "@/lib/jurusan-catalog";
+import { JURUSAN, FAKULTAS, matchJurusan, getJurusanByFakultas } from "../../../lib/jurusan-catalog";
 
 /**
  * GET /api/jurusan

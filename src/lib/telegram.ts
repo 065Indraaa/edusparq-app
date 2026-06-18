@@ -1,5 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
-import { generateOtp } from "@/lib/crypto";
+import { generateOtp } from "../lib/crypto";
 
 /**
  * Telegram helper — fungsi kirim pesan, format, & OTP store.

@@ -1,5 +1,5 @@
 import { registerAgent } from "./registry";
-import { parseLooseJSON } from "@/lib/ai";
+import { parseLooseJSON } from "../../lib/ai";
 import type { SessionContext, AgentName } from "./context";
 
 /**

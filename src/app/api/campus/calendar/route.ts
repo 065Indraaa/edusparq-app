@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { CampusCalendar } from "@/lib/db/models/CampusCalendar";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { CampusCalendar } from "../../../../lib/db/models/CampusCalendar";
 
 export const runtime = "nodejs";
 

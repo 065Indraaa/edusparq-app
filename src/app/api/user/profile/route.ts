@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
-import { Deadline } from "@/lib/db/models/Deadline";
-import { Course } from "@/lib/db/models/Course";
-import { Document } from "@/lib/db/models/Document";
-import { computeIpk, totalSks } from "@/lib/gpa";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { User } from "../../../../lib/db/models/User";
+import { Deadline } from "../../../../lib/db/models/Deadline";
+import { Course } from "../../../../lib/db/models/Course";
+import { Document } from "../../../../lib/db/models/Document";
+import { computeIpk, totalSks } from "../../../../lib/gpa";
 
 // GET /api/user/profile - get current user profile + summary stats
 export async function GET() {

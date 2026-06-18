@@ -1,10 +1,10 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { MentoringSession } from "@/lib/db/models/MentoringSession";
-import { requireMembership } from "@/lib/hima";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { MentoringSession } from "../../../../lib/db/models/MentoringSession";
+import { requireMembership } from "../../../../lib/hima";
 import { Types } from "mongoose";
 
 export async function GET(req: NextRequest) {

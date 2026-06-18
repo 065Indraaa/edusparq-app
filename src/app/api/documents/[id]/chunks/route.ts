@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Document } from "@/lib/db/models/Document";
-import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
+import { auth } from "../../../../../lib/auth";
+import { connectDB } from "../../../../../lib/db/mongodb";
+import { Document } from "../../../../../lib/db/models/Document";
+import { DocumentChunk } from "../../../../../lib/db/models/DocumentChunk";
 
 // GET /api/documents/[id]/chunks - real indexed chunks for a document, used by
 // the workspace "indexing inspector" so the preview reflects actual RAG content

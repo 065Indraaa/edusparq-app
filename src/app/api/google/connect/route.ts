@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { isGoogleConfigured, buildAuthUrl } from "@/lib/google";
+import { auth } from "../../../../lib/auth";
+import { isGoogleConfigured, buildAuthUrl } from "../../../../lib/google";
 
 export const runtime = "nodejs";
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Document } from "@/lib/db/models/Document";
-import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
-import { chunkText } from "@/lib/rag";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { Document } from "../../../lib/db/models/Document";
+import { DocumentChunk } from "../../../lib/db/models/DocumentChunk";
+import { chunkText } from "../../../lib/rag";
 import { z } from "zod";
-import { extractTextFromUrl } from "@/lib/server-extract";
+import { extractTextFromUrl } from "../../../lib/server-extract";
 
 export const runtime = "nodejs";
 const CreateSchema = z.object({

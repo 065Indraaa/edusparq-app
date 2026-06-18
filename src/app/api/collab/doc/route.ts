@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { CollabDoc } from "@/lib/db/models/Collab";
-import { getMemberGroup, broadcastToGroup } from "@/lib/collab";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { CollabDoc } from "../../../../lib/db/models/Collab";
+import { getMemberGroup, broadcastToGroup } from "../../../../lib/collab";
 
 // GET /api/collab/doc?groupId=... - fetch the shared document content for a group.
 export async function GET(req: NextRequest) {

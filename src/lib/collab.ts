@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import { CollabGroup } from "@/lib/db/models/Collab";
-import { isPusherConfigured, getPusherServer } from "@/lib/pusher";
+import { CollabGroup } from "../lib/db/models/Collab";
+import { isPusherConfigured, getPusherServer } from "../lib/pusher";
 
 /** Stable Pusher channel name for a group. */
 export function groupChannel(groupId: string): string {

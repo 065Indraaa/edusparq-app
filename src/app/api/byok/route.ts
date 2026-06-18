@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { ApiKey } from "@/lib/db/models/ApiKey";
-import { User } from "@/lib/db/models/User";
-import { encryptSecret, keyHint } from "@/lib/crypto";
-import { BYOK_PROVIDERS, getProvider } from "@/lib/byok-providers";
-import { testByokConnection } from "@/lib/ai-client";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { ApiKey } from "../../../lib/db/models/ApiKey";
+import { User } from "../../../lib/db/models/User";
+import { encryptSecret, keyHint } from "../../../lib/crypto";
+import { BYOK_PROVIDERS, getProvider } from "../../../lib/byok-providers";
+import { testByokConnection } from "../../../lib/ai-client";
 
 /** GET /api/byok — daftar provider preset + kunci milik user. */
 export async function GET() {

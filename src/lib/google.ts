@@ -1,5 +1,5 @@
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
+import { connectDB } from "../lib/db/mongodb";
+import { User } from "../lib/db/models/User";
 
 /**
  * Google Calendar integration via plain OAuth 2.0 + REST (no SDK dependency).

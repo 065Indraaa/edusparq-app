@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { DefaultCourse } from "@/lib/db/models/DefaultCourse";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { DefaultCourse } from "../../../../lib/db/models/DefaultCourse";
 
 export const runtime = "nodejs";
 

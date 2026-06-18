@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { auth } from "../../../../lib/auth";
 import {
   searchUniversities,
   searchProdi,
@@ -7,7 +7,7 @@ import {
   getMahasiswaDetail,
   estimateSemester,
   inferFakultas,
-} from "@/lib/pddikti";
+} from "../../../../lib/pddikti";
 
 export const runtime = "nodejs";
 

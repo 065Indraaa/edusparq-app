@@ -7,10 +7,10 @@ import {
   parseTaskerOutput,
   parseReviewerOutput,
 } from "./definitions";
-import { complete } from "@/lib/ai-client";
-import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
-import { getUserPersonaContext } from "@/lib/ai-memory";
-import { buildJurusanAwareContext } from "@/lib/jurusan-context";
+import { complete } from "../../lib/ai-client";
+import { buildSystemPrompt, personaFromMode } from "../../lib/ai-prompts";
+import { getUserPersonaContext } from "../../lib/ai-memory";
+import { buildJurusanAwareContext } from "../../lib/jurusan-context";
 import type { SessionContext, ComplexityTier } from "./context";
 import { createSession } from "./context";
 

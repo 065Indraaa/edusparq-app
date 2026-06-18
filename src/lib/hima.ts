@@ -1,4 +1,4 @@
-import { OrganizationMember } from "@/lib/db/models/OrganizationMember";
+import { OrganizationMember } from "../lib/db/models/OrganizationMember";
 
 /**
  * Generates a 6-character uppercase alphanumeric join code,

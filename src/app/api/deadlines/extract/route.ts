@@ -1,13 +1,13 @@
 ﻿import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { extractTextFromUrl } from "@/lib/server-extract";
-import { complete, InsufficientCreditsError } from "@/lib/ai-client";
-import { parseLooseJSON } from "@/lib/ai";
-import { sanitizeOutput } from "@/lib/sanitize-output";
-import { connectDB } from "@/lib/db/mongodb";
-import { Deadline } from "@/lib/db/models/Deadline";
-import { Course } from "@/lib/db/models/Course";
+import { auth } from "../../../../lib/auth";
+import { checkRateLimit } from "../../../../lib/rate-limit";
+import { extractTextFromUrl } from "../../../../lib/server-extract";
+import { complete, InsufficientCreditsError } from "../../../../lib/ai-client";
+import { parseLooseJSON } from "../../../../lib/ai";
+import { sanitizeOutput } from "../../../../lib/sanitize-output";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { Deadline } from "../../../../lib/db/models/Deadline";
+import { Course } from "../../../../lib/db/models/Course";
 
 export const maxDuration = 60;
 

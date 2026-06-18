@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db/mongodb";
-import { TelegramLink } from "@/lib/db/models/TelegramLink";
-import { User } from "@/lib/db/models/User";
-import { Deadline } from "@/lib/db/models/Deadline";
-import { ClassSchedule } from "@/lib/db/models/ClassSchedule";
+import { connectDB } from "../../../lib/db/mongodb";
+import { TelegramLink } from "../../../lib/db/models/TelegramLink";
+import { User } from "../../../lib/db/models/User";
+import { Deadline } from "../../../lib/db/models/Deadline";
+import { ClassSchedule } from "../../../lib/db/models/ClassSchedule";
 import {
   sendTelegram,
   sendLongMessage,
@@ -14,9 +14,9 @@ import {
   buildModeKeyboard,
   formatCreditBalance,
   formatTrace,
-} from "@/lib/telegram";
-import { getBalance } from "@/lib/credit-billing";
-import { InsufficientCreditsError } from "@/lib/ai-client";
+} from "../../../lib/telegram";
+import { getBalance } from "../../../lib/credit-billing";
+import { InsufficientCreditsError } from "../../../lib/ai-client";
 
 /**
  * POST /api/telegram — Webhook handler untuk Telegram Bot.
@@ -373,7 +373,7 @@ async function handleMessage(
 
   try {
     // Call orchestrator directly (internal, no HTTP overhead).
-    const { runOrchestrator } = await import("@/lib/agents/orchestrator");
+    const { runOrchestrator } = await import("../../../lib/agents/orchestrator");
     const result = await runOrchestrator({ userId, request: text });
 
     // Build response with trace summary.

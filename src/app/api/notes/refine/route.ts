@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { CatatanRapi } from "@/lib/db/models/CatatanRapi";
-import { aiComplete } from "@/lib/ai";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { CatatanRapi } from "../../../../lib/db/models/CatatanRapi";
+import { aiComplete } from "../../../../lib/ai";
 
 export const runtime = "nodejs";
 

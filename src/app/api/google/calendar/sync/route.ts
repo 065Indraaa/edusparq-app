@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Deadline } from "@/lib/db/models/Deadline";
-import { getValidAccessToken, createCalendarEvent } from "@/lib/google";
+import { auth } from "../../../../../lib/auth";
+import { connectDB } from "../../../../../lib/db/mongodb";
+import { Deadline } from "../../../../../lib/db/models/Deadline";
+import { getValidAccessToken, createCalendarEvent } from "../../../../../lib/google";
 
 export const runtime = "nodejs";
 

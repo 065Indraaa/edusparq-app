@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Document } from "@/lib/db/models/Document";
-import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
-import { destroyAsset, isCloudinaryConfigured } from "@/lib/cloudinary";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { Document } from "../../../../lib/db/models/Document";
+import { DocumentChunk } from "../../../../lib/db/models/DocumentChunk";
+import { destroyAsset, isCloudinaryConfigured } from "../../../../lib/cloudinary";
 
 export async function DELETE(
   req: NextRequest,

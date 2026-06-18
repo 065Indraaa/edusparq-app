@@ -1,11 +1,11 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { complete, InsufficientCreditsError } from "@/lib/ai-client";
-import { buildSystemPrompt, type StudentContext } from "@/lib/ai-prompts";
-import { getUserPersonaContext } from "@/lib/ai-memory";
-import { buildWritingGrounding } from "@/lib/rag-grounding";
-import { sanitizeDocumentBody } from "@/lib/sanitize-output";
-import { buildJurusanAwareContext } from "@/lib/jurusan-context";
+import { auth } from "../../../../lib/auth";
+import { complete, InsufficientCreditsError } from "../../../../lib/ai-client";
+import { buildSystemPrompt, type StudentContext } from "../../../../lib/ai-prompts";
+import { getUserPersonaContext } from "../../../../lib/ai-memory";
+import { buildWritingGrounding } from "../../../../lib/rag-grounding";
+import { sanitizeDocumentBody } from "../../../../lib/sanitize-output";
+import { buildJurusanAwareContext } from "../../../../lib/jurusan-context";
 
 export const runtime = "nodejs";
 

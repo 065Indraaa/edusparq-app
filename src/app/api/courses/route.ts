@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Course } from "@/lib/db/models/Course";
-import { User } from "@/lib/db/models/User";
-import { DefaultCourse } from "@/lib/db/models/DefaultCourse";
-import { courseSchema } from "@/lib/validations";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { Course } from "../../../lib/db/models/Course";
+import { User } from "../../../lib/db/models/User";
+import { DefaultCourse } from "../../../lib/db/models/DefaultCourse";
+import { courseSchema } from "../../../lib/validations";
 
 export async function GET() {
   const session = await auth();

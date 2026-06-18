@@ -1,8 +1,8 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Flashcard } from "@/lib/db/models/Flashcard";
-import { flashcardSchema } from "@/lib/validations";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { Flashcard } from "../../../lib/db/models/Flashcard";
+import { flashcardSchema } from "../../../lib/validations";
 
 // GET /api/flashcards[?due=true] — list all, or only cards due for review.
 export async function GET(req: NextRequest) {

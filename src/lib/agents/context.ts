@@ -1,4 +1,4 @@
-import type { FeatureName } from "@/lib/credit-config";
+import type { FeatureName } from "../../lib/credit-config";
 
 /**
  * SessionContext — state bersama yang mengalir antar agen.

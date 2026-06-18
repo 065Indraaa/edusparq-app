@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
-import { matchJurusan } from "@/lib/jurusan-catalog";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { User } from "../../../../lib/db/models/User";
+import { matchJurusan } from "../../../../lib/jurusan-catalog";
 
 /**
  * GET /api/jurusan/courses?semester=3

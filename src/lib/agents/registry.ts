@@ -1,6 +1,6 @@
-import { complete } from "@/lib/ai-client";
-import { PLATFORM_AI } from "@/lib/credit-config";
-import type { FeatureName } from "@/lib/credit-config";
+import { complete } from "../../lib/ai-client";
+import { PLATFORM_AI } from "../../lib/credit-config";
+import type { FeatureName } from "../../lib/credit-config";
 import type { SessionContext, AgentName, TraceStep } from "./context";
 
 /**

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { streamComplete, InsufficientCreditsError } from "@/lib/ai-client";
-import { sanitizeOutput } from "@/lib/sanitize-output";
+import { auth } from "../../../lib/auth";
+import { checkRateLimit } from "../../../lib/rate-limit";
+import { streamComplete, InsufficientCreditsError } from "../../../lib/ai-client";
+import { sanitizeOutput } from "../../../lib/sanitize-output";
 
 export const maxDuration = 60;
 

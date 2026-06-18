@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Lightweight route gate (Edge middleware).
  *
- * IMPORTANT: This intentionally does NOT import `@/lib/auth` because that module
+ * IMPORTANT: This intentionally does NOT import `./lib/auth` because that module
  * pulls in mongoose/bcrypt, which are not Edge-runtime compatible and would break
  * middleware. Instead we only check for the *presence* of the NextAuth v5 session
  * cookie. This is a cheap gate to bounce obviously-unauthenticated visitors to the

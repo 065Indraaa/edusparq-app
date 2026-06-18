@@ -1,5 +1,5 @@
-﻿import { connectDB } from "@/lib/db/mongodb";
-import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
+﻿import { connectDB } from "../lib/db/mongodb";
+import { DocumentChunk } from "../lib/db/models/DocumentChunk";
 
 export interface RetrievedChunk {
   content: string;

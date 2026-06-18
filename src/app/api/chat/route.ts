@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { ChatMessage } from "@/lib/db/models/ChatMessage";
-import { User } from "@/lib/db/models/User";
-import { retrieveChunks, computeConfidence, buildContextBlock } from "@/lib/rag";
-import { extractTextFromUrl } from "@/lib/server-extract";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { streamComplete, InsufficientCreditsError } from "@/lib/ai-client";
-import { buildSystemPrompt, personaFromMode } from "@/lib/ai-prompts";
-import { getUserPersonaContext, extractAndStorePersona } from "@/lib/ai-memory";
-import { sanitizeOutput } from "@/lib/sanitize-output";
-import { runOrchestrator, type OrchestratorResult } from "@/lib/agents/orchestrator";
-import { buildJurusanAwareContext } from "@/lib/jurusan-context";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { ChatMessage } from "../../../lib/db/models/ChatMessage";
+import { User } from "../../../lib/db/models/User";
+import { retrieveChunks, computeConfidence, buildContextBlock } from "../../../lib/rag";
+import { extractTextFromUrl } from "../../../lib/server-extract";
+import { checkRateLimit } from "../../../lib/rate-limit";
+import { streamComplete, InsufficientCreditsError } from "../../../lib/ai-client";
+import { buildSystemPrompt, personaFromMode } from "../../../lib/ai-prompts";
+import { getUserPersonaContext, extractAndStorePersona } from "../../../lib/ai-memory";
+import { sanitizeOutput } from "../../../lib/sanitize-output";
+import { runOrchestrator, type OrchestratorResult } from "../../../lib/agents/orchestrator";
+import { buildJurusanAwareContext } from "../../../lib/jurusan-context";
 
 
 export async function GET() {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Credit check.
-  const { getBalance } = await import("@/lib/credit-billing");
+  const { getBalance } = await import("../../../lib/credit-billing");
   const balance = await getBalance(session.user.id);
   if (balance <= 0) {
     return NextResponse.json(

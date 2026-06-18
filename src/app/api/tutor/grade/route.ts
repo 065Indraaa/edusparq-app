@@ -1,12 +1,12 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { AnswerEvaluation } from "@/lib/db/models/AnswerEvaluation";
-import { complete, InsufficientCreditsError } from "@/lib/ai-client";
-import { parseLooseJSON } from "@/lib/ai";
-import { buildSystemPrompt } from "@/lib/ai-prompts";
-import { sanitizeOutput } from "@/lib/sanitize-output";
-import { buildJurusanAwareContext } from "@/lib/jurusan-context";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { AnswerEvaluation } from "../../../../lib/db/models/AnswerEvaluation";
+import { complete, InsufficientCreditsError } from "../../../../lib/ai-client";
+import { parseLooseJSON } from "../../../../lib/ai";
+import { buildSystemPrompt } from "../../../../lib/ai-prompts";
+import { sanitizeOutput } from "../../../../lib/sanitize-output";
+import { buildJurusanAwareContext } from "../../../../lib/jurusan-context";
 
 export const runtime = "nodejs";
 

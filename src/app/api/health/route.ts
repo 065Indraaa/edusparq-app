@@ -41,7 +41,7 @@ export async function GET() {
   if (process.env.MONGODB_URI) {
     (report.database as Record<string, unknown>).attempted = true;
     try {
-      const { connectDB } = await import("@/lib/db/mongodb");
+      const { connectDB } = await import("../../../lib/db/mongodb");
       await connectDB();
       (report.database as Record<string, unknown>).connected = true;
     } catch (err) {

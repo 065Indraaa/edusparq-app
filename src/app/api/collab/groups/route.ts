@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { CollabGroup, CollabDoc } from "@/lib/db/models/Collab";
-import { generateJoinCode } from "@/lib/collab";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { CollabGroup, CollabDoc } from "../../../../lib/db/models/Collab";
+import { generateJoinCode } from "../../../../lib/collab";
 
 // GET /api/collab/groups - list groups the current user belongs to.
 export async function GET() {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { PracticePaper } from "@/lib/db/models/PracticePaper";
+import { auth } from "../../../../../lib/auth";
+import { connectDB } from "../../../../../lib/db/mongodb";
+import { PracticePaper } from "../../../../../lib/db/models/PracticePaper";
 
 export const runtime = "nodejs";
 

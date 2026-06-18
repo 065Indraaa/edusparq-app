@@ -20,9 +20,9 @@ import {
   Database as DatabaseIcon,
   RefreshCw as RefreshIcon
 } from "lucide-react";
-import { extractText, isExtractable } from "@/lib/extract-text";
+import { extractText, isExtractable } from "../../../lib/extract-text";
 import { CourseSelect } from "../../../components/course-select-dropdown";
-import { AddCourseForm } from "@/components/add-course-form";
+import { AddCourseForm } from "../../../components/add-course-form";
 
 interface DocumentFile {
   id: string;

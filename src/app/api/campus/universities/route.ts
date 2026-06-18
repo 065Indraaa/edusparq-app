@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { searchUniversities } from "@/lib/campus";
+import { auth } from "../../../../lib/auth";
+import { searchUniversities } from "../../../../lib/campus";
 
 export const runtime = "nodejs";
 

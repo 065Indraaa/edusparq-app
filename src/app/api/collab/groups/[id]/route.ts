@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { CollabTask, CollabDoc, CollabPoll } from "@/lib/db/models/Collab";
-import { getMemberGroup } from "@/lib/collab";
+import { auth } from "../../../../../lib/auth";
+import { connectDB } from "../../../../../lib/db/mongodb";
+import { CollabTask, CollabDoc, CollabPoll } from "../../../../../lib/db/models/Collab";
+import { getMemberGroup } from "../../../../../lib/collab";
 
 // GET /api/collab/groups/[id] - full state (group, tasks, doc, poll) for a member.
 export async function GET(

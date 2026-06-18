@@ -8,8 +8,8 @@
  * Both are best-effort and never throw. Centralized so the Writing Studio's
  * draft generator and outline generator share one grounding pipeline.
  */
-import { retrieveChunks, buildContextBlock } from "@/lib/rag";
-import { searchWeb } from "@/lib/web-search";
+import { retrieveChunks, buildContextBlock } from "../lib/rag";
+import { searchWeb } from "../lib/web-search";
 
 export async function retrieveUserMaterial(
   userId: string,

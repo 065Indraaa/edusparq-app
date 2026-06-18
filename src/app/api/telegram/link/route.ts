@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { TelegramLink } from "@/lib/db/models/TelegramLink";
-import { storeOtp, sendTelegram } from "@/lib/telegram";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { TelegramLink } from "../../../../lib/db/models/TelegramLink";
+import { storeOtp, sendTelegram } from "../../../../lib/telegram";
 
 /**
  * POST /api/telegram/link

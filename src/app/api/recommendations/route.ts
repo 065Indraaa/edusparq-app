@@ -1,12 +1,12 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Course } from "@/lib/db/models/Course";
-import { MaterialAnalysis } from "@/lib/db/models/MaterialAnalysis";
-import { LearningRecommendation } from "@/lib/db/models/LearningRecommendation";
-import { aiComplete, parseLooseJSON } from "@/lib/ai";
-import { buildSystemPrompt } from "@/lib/ai-prompts";
-import { sanitizeOutput } from "@/lib/sanitize-output";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { Course } from "../../../lib/db/models/Course";
+import { MaterialAnalysis } from "../../../lib/db/models/MaterialAnalysis";
+import { LearningRecommendation } from "../../../lib/db/models/LearningRecommendation";
+import { aiComplete, parseLooseJSON } from "../../../lib/ai";
+import { buildSystemPrompt } from "../../../lib/ai-prompts";
+import { sanitizeOutput } from "../../../lib/sanitize-output";
 
 export const runtime = "nodejs";
 

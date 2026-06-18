@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { connectDB } from "@/lib/db/mongodb";
+import { connectDB } from "../../../../lib/db/mongodb";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

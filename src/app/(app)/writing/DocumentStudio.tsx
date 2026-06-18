@@ -7,7 +7,7 @@ import {
   Printer, Bold, Italic, Underline, List, ListOrdered, Heading1, Heading2,
   Wand2, Languages, Scissors, Expand, FileEdit, BookOpen, Quote, ChevronDown, Copy, PenTool, ImageIcon, FileWarning, Bookmark, ShieldCheck, Search
 } from "lucide-react";
-import { formatCitation as formatCitationLib, CITATION_STYLES, type CitationStyle } from "@/lib/citation-format";
+import { formatCitation as formatCitationLib, CITATION_STYLES, type CitationStyle } from "../../../lib/citation-format";
 
 interface Citation {
   _id: string; type: string; author: string; title: string; year: string; doi?: string;

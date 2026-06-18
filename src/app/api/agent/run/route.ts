@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { AgentSession } from "@/lib/db/models/AgentSession";
-import { getBalance } from "@/lib/credit-billing";
-import { InsufficientCreditsError } from "@/lib/ai-client";
-import { runOrchestrator, type OrchestratorInput, type OrchestratorResult } from "@/lib/agents/orchestrator";
-import type { ComplexityTier, TraceStep } from "@/lib/agents/context";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { AgentSession } from "../../../../lib/db/models/AgentSession";
+import { getBalance } from "../../../../lib/credit-billing";
+import { InsufficientCreditsError } from "../../../../lib/ai-client";
+import { runOrchestrator, type OrchestratorInput, type OrchestratorResult } from "../../../../lib/agents/orchestrator";
+import type { ComplexityTier, TraceStep } from "../../../../lib/agents/context";
 
 /**
  * POST /api/agent/run

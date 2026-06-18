@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { AcademicCalendarWidget } from "@/components/academic-calendar-widget";
-import { RecommendationsWidget } from "@/components/recommendations-widget";
+import { AcademicCalendarWidget } from "../../../components/academic-calendar-widget";
+import { RecommendationsWidget } from "../../../components/recommendations-widget";
 import {
   CalendarDays,
   BookOpen,

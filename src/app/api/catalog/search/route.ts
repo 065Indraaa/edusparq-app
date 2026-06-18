@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { searchCatalog, CatalogType } from "@/lib/catalog";
+import { auth } from "../../../../lib/auth";
+import { searchCatalog, CatalogType } from "../../../../lib/catalog";
 
 export const runtime = "nodejs";
 

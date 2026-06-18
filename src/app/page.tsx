@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "../components/theme-toggle";
 import {
   Bot,
   CalendarDays,

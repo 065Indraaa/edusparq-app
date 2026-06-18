@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Invoice } from "@/lib/db/models/Invoice";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { Invoice } from "../../../../lib/db/models/Invoice";
 
 /**
  * POST /api/billing/proof — user upload bukti transfer untuk invoice (via nomor).

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
-import { UsageLog } from "@/lib/db/models/UsageLog";
-import { CreditTransaction } from "@/lib/db/models/CreditTransaction";
-import { Invoice } from "@/lib/db/models/Invoice";
-import { ApiKey } from "@/lib/db/models/ApiKey";
-import { getBalance } from "@/lib/credit-billing";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { User } from "../../../lib/db/models/User";
+import { UsageLog } from "../../../lib/db/models/UsageLog";
+import { CreditTransaction } from "../../../lib/db/models/CreditTransaction";
+import { Invoice } from "../../../lib/db/models/Invoice";
+import { ApiKey } from "../../../lib/db/models/ApiKey";
+import { getBalance } from "../../../lib/credit-billing";
 
 /** GET /api/billing — ringkasan saldo, usage bulan ini, & transaksi terakhir. */
 export async function GET() {
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     const { packageId, method } = await req.json();
     await connectDB();
 
-    const pkg = await import("@/lib/credit-config").then((m) => m.getPackage(packageId));
+    const pkg = await import("../../../lib/credit-config").then((m) => m.getPackage(packageId));
     if (!pkg) {
       return NextResponse.json({ error: "Paket tidak ditemukan" }, { status: 400 });
     }

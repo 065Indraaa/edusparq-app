@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
-import { exchangeCode } from "@/lib/google";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { User } from "../../../../lib/db/models/User";
+import { exchangeCode } from "../../../../lib/google";
 
 export const runtime = "nodejs";
 

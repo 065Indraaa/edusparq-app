@@ -1,12 +1,12 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Organization } from "@/lib/db/models/Organization";
-import { OrganizationMember } from "@/lib/db/models/OrganizationMember";
-import { OrganizationSection } from "@/lib/db/models/OrganizationSection";
-import { requireMembership } from "@/lib/hima";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { Organization } from "../../../../lib/db/models/Organization";
+import { OrganizationMember } from "../../../../lib/db/models/OrganizationMember";
+import { OrganizationSection } from "../../../../lib/db/models/OrganizationSection";
+import { requireMembership } from "../../../../lib/hima";
 
 export async function GET(
   _req: NextRequest,

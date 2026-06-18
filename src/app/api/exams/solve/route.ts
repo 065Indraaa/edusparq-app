@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Document } from "@/lib/db/models/Document";
-import { DocumentChunk } from "@/lib/db/models/DocumentChunk";
-import { User } from "@/lib/db/models/User";
-import { retrieveChunks, buildContextBlock } from "@/lib/rag";
-import { searchWeb } from "@/lib/web-search";
-import { buildSystemPrompt } from "@/lib/ai-prompts";
-import { sanitizeOutput } from "@/lib/sanitize-output";
-import { streamComplete, InsufficientCreditsError } from "@/lib/ai-client";
-import { getJurusanPromptForUser } from "@/lib/jurusan-context";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { Document } from "../../../../lib/db/models/Document";
+import { DocumentChunk } from "../../../../lib/db/models/DocumentChunk";
+import { User } from "../../../../lib/db/models/User";
+import { retrieveChunks, buildContextBlock } from "../../../../lib/rag";
+import { searchWeb } from "../../../../lib/web-search";
+import { buildSystemPrompt } from "../../../../lib/ai-prompts";
+import { sanitizeOutput } from "../../../../lib/sanitize-output";
+import { streamComplete, InsufficientCreditsError } from "../../../../lib/ai-client";
+import { getJurusanPromptForUser } from "../../../../lib/jurusan-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     /* keep empty profile */
   }
 
-  const quota = await (await import("@/lib/credit-billing")).getBalance(session.user.id);
+  const quota = await (await import("../../../../lib/credit-billing")).getBalance(session.user.id);
   if (quota <= 0) {
     return NextResponse.json(
       { error: "Credit Anda habis. Isi ulang di /billing atau aktifkan BYOK di /settings/ai.", code: "INSUFFICIENT_CREDITS" },

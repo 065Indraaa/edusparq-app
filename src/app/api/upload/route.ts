@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { isCloudinaryConfigured, uploadBuffer } from "@/lib/cloudinary";
+import { auth } from "../../../lib/auth";
+import { isCloudinaryConfigured, uploadBuffer } from "../../../lib/cloudinary";
 
 const MAX_BYTES = 25 * 1024 * 1024; // ~25MB
 

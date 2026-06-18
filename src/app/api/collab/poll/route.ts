@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { CollabPoll } from "@/lib/db/models/Collab";
-import { getMemberGroup, broadcastToGroup } from "@/lib/collab";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { CollabPoll } from "../../../../lib/db/models/Collab";
+import { getMemberGroup, broadcastToGroup } from "../../../../lib/collab";
 
 // GET /api/collab/poll?groupId=... - fetch the active poll for a group.
 export async function GET(req: NextRequest) {
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
   if (!poll) return NextResponse.json({ error: "Voting tidak ditemukan." }, { status: 404 });
 
   // Verify the user is a member of the poll's group
-  const { getMemberGroup: _get } = await import("@/lib/collab");
+  const { getMemberGroup: _get } = await import("../../../../lib/collab");
   const group = await _get(String(poll.groupId), session.user.id);
   if (!group) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 

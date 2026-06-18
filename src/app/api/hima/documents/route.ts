@@ -1,10 +1,10 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { OrganizationDocument } from "@/lib/db/models/OrganizationDocument";
-import { requireMembership } from "@/lib/hima";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { OrganizationDocument } from "../../../../lib/db/models/OrganizationDocument";
+import { requireMembership } from "../../../../lib/hima";
 
 export async function GET(req: NextRequest) {
   const session = await auth();

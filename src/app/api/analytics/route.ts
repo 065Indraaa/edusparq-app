@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { ChatMessage } from "@/lib/db/models/ChatMessage";
-import { Document } from "@/lib/db/models/Document";
-import { Deadline } from "@/lib/db/models/Deadline";
-import { Flashcard } from "@/lib/db/models/Flashcard";
-import { Citation } from "@/lib/db/models/Citation";
-import { Course } from "@/lib/db/models/Course";
+import { auth } from "../../../lib/auth";
+import { connectDB } from "../../../lib/db/mongodb";
+import { ChatMessage } from "../../../lib/db/models/ChatMessage";
+import { Document } from "../../../lib/db/models/Document";
+import { Deadline } from "../../../lib/db/models/Deadline";
+import { Flashcard } from "../../../lib/db/models/Flashcard";
+import { Citation } from "../../../lib/db/models/Citation";
+import { Course } from "../../../lib/db/models/Course";
 
 // Safe empty payload returned on any DB error so the page never gets a 500.
 function emptyPayload() {

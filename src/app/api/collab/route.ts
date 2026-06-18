@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { isPusherConfigured, getPusherServer } from "@/lib/pusher";
+import { auth } from "../../../lib/auth";
+import { isPusherConfigured, getPusherServer } from "../../../lib/pusher";
 
 interface CollabBody {
   channel?: unknown;

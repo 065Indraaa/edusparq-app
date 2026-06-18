@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { User } from "../../../../lib/db/models/User";
 import bcrypt from "bcryptjs";
 
 // MongoDB + bcrypt require the full Node.js runtime (raw TCP/TLS, crypto).

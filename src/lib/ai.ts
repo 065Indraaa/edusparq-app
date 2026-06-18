@@ -6,7 +6,7 @@ import type { FeatureName } from "./credit-config";
  * Centralized AI configuration (legacy compat layer).
  *
  * ⚠️  File ini dipertahankan untuk kompatibilitas mundur. Semua panggilan baru
- *     SEBAIKNYA pakai `complete()` / `streamComplete()` dari `@/lib/ai-client`
+ *     SEBAIKNYA pakai `complete()` / `streamComplete()` dari `../lib/ai-client`
  *     yang sudah terintegrasi metering + billing + BYOK.
  *
  * Fungsi `aiComplete()` di sini adalah thin wrapper: tetap memakai platform
@@ -14,7 +14,7 @@ import type { FeatureName } from "./credit-config";
  * migrasi). Fitur yang sudah migrasi wajib pakai `complete(opts, userId)`.
  */
 
-// Re-export agar import lama (`import { AI_MODEL } from "@/lib/ai"`) tetap jalan.
+// Re-export agar import lama (`import { AI_MODEL } from "../lib/ai"`) tetap jalan.
 export const AI_MODEL = PLATFORM_AI.model;
 
 export const RAG_CONTEXT_CHARS = 12000;

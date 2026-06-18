@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db/mongodb";
-import { TelegramLink } from "@/lib/db/models/TelegramLink";
-import { User } from "@/lib/db/models/User";
-import { Deadline } from "@/lib/db/models/Deadline";
-import { sendTelegram } from "@/lib/telegram";
-import { getBalance } from "@/lib/credit-billing";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { TelegramLink } from "../../../../lib/db/models/TelegramLink";
+import { User } from "../../../../lib/db/models/User";
+import { Deadline } from "../../../../lib/db/models/Deadline";
+import { sendTelegram } from "../../../../lib/telegram";
+import { getBalance } from "../../../../lib/credit-billing";
 
 /**
  * GET /api/telegram/notify?token=<CRON_SECRET>

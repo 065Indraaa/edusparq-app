@@ -1,6 +1,6 @@
-import { connectDB } from "@/lib/db/mongodb";
-import { UniversityCache } from "@/lib/db/models/UniversityCache";
-import { searchUniversities as searchUniversitiesPddikti } from "@/lib/pddikti";
+import { connectDB } from "../lib/db/mongodb";
+import { UniversityCache } from "../lib/db/models/UniversityCache";
+import { searchUniversities as searchUniversitiesPddikti } from "../lib/pddikti";
 
 /**
  * Indonesia University Data API integration (https://use.api.co.id).

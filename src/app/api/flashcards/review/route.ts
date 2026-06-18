@@ -1,8 +1,8 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { Flashcard } from "@/lib/db/models/Flashcard";
-import { applySrs, type SrsRating } from "@/lib/srs";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { Flashcard } from "../../../../lib/db/models/Flashcard";
+import { applySrs, type SrsRating } from "../../../../lib/srs";
 
 export const runtime = "nodejs";
 

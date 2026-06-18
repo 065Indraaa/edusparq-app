@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { SidebarNav, BottomNav } from "@/components/app-nav";
-import { OnboardingGate } from "@/components/onboarding-gate";
-import { NotificationBell } from "@/components/notification-bell";
-import { PageTransition } from "@/components/page-transition";
-import { auth, signOut } from "@/lib/auth";
-import { User } from "@/lib/db/models/User";
-import { matchJurusan } from "@/lib/jurusan-catalog";
+import { ThemeToggle } from "../../components/theme-toggle";
+import { SidebarNav, BottomNav } from "../../components/app-nav";
+import { OnboardingGate } from "../../components/onboarding-gate";
+import { NotificationBell } from "../../components/notification-bell";
+import { PageTransition } from "../../components/page-transition";
+import { auth, signOut } from "../../lib/auth";
+import { User } from "../../lib/db/models/User";
+import { matchJurusan } from "../../lib/jurusan-catalog";
 import {
   Sparkles,
   LogOut,

@@ -1,5 +1,5 @@
-import { connectDB } from "@/lib/db/mongodb";
-import { CampusLookupCache } from "@/lib/db/models/CampusLookupCache";
+import { connectDB } from "../lib/db/mongodb";
+import { CampusLookupCache } from "../lib/db/models/CampusLookupCache";
 
 /**
  * PDDIKTI (Pangkalan Data Pendidikan Tinggi) public data integration.

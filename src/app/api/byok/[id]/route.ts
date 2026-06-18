@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { ApiKey } from "@/lib/db/models/ApiKey";
-import { User } from "@/lib/db/models/User";
-import { decryptSecret } from "@/lib/crypto";
-import { testByokConnection } from "@/lib/ai-client";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { ApiKey } from "../../../../lib/db/models/ApiKey";
+import { User } from "../../../../lib/db/models/User";
+import { decryptSecret } from "../../../../lib/crypto";
+import { testByokConnection } from "../../../../lib/ai-client";
 
 /**
  * PATCH /api/byok/[id] — aktifkan/nonaktifkan/validasi ulang/hapus kunci.

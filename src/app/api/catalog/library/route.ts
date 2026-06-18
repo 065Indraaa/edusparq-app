@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { SavedReference } from "@/lib/db/models/SavedReference";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { SavedReference } from "../../../../lib/db/models/SavedReference";
 
 export const runtime = "nodejs";
 

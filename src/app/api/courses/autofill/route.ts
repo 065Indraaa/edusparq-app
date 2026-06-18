@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
-import { Course } from "@/lib/db/models/Course";
-import { DefaultCourse } from "@/lib/db/models/DefaultCourse";
+import { auth } from "../../../../lib/auth";
+import { connectDB } from "../../../../lib/db/mongodb";
+import { User } from "../../../../lib/db/models/User";
+import { Course } from "../../../../lib/db/models/Course";
+import { DefaultCourse } from "../../../../lib/db/models/DefaultCourse";
 
 export const runtime = "nodejs";
 

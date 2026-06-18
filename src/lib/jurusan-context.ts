@@ -6,11 +6,11 @@
  * personalisasi berbasis jurusan.
  */
 
-import { connectDB } from "@/lib/db/mongodb";
-import { User } from "@/lib/db/models/User";
-import { Course } from "@/lib/db/models/Course";
-import { matchJurusan } from "@/lib/jurusan-catalog";
-import type { StudentContext } from "@/lib/ai-prompts";
+import { connectDB } from "../lib/db/mongodb";
+import { User } from "../lib/db/models/User";
+import { Course } from "../lib/db/models/Course";
+import { matchJurusan } from "../lib/jurusan-catalog";
+import type { StudentContext } from "../lib/ai-prompts";
 
 /**
  * Build full StudentContext from user ID.
