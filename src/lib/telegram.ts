@@ -5,8 +5,11 @@ import { generateOtp } from "../lib/crypto";
  * Telegram helper — fungsi kirim pesan, format, & OTP store.
  *
  * Semua komunikasi bot ke Telegram lewat fungsi-fungsi ini supaya konsisten.
- * OTP store (in-memory) untuk linking akun Telegram ↔ EduSparq.
+ * OTP store menggunakan MongoDB untuk kompatibilitas multi-worker / stateless.
  */
+
+import { connectDB } from "./db/mongodb";
+import { TelegramOtp } from "./db/models/TelegramOtp";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -29,56 +32,54 @@ interface SendOptions {
   disableWebPagePreview?: boolean;
 }
 
-// ─── OTP Store (MongoDB-backed) ─────────────────────────────────────────────
-
-import { connectDB } from "./db/mongodb";
-import mongoose from "mongoose";
+// ─── OTP Store (MongoDB) ──────────────────────────────────────────────────
 
 const OTP_TTL_MS = 5 * 60 * 1000; // 5 menit
-
-// Gunakan Mongoose Schema agar lebih stabil di Next.js Serverless/cPanel
-const OtpSchema = new mongoose.Schema({
-  otp: { type: String, required: true, index: true },
-  userId: { type: String, required: true },
-  expiresAt: { type: Date, required: true, index: { expires: 0 } }
-});
-const OtpModel = mongoose.models.TelegramOtp || mongoose.model("TelegramOtp", OtpSchema);
 
 /** Simpan OTP untuk user tertentu. Menghapus OTP lama bila ada. */
 export async function storeOtp(userId: string): Promise<string> {
   await connectDB();
+
+  // Hapus OTP lama untuk user ini.
+  await TelegramOtp.deleteMany({ userId });
+
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
-  await OtpModel.deleteMany({ userId });
-  await OtpModel.create({ otp, userId, expiresAt });
+  await TelegramOtp.create({
+    otp,
+    userId,
+    expiresAt,
+  });
 
   return otp;
 }
 
 /** Verifikasi OTP & kembalikan userId. Hapus OTP setelah dipakai. */
-export async function verifyOtp(otp: string): Promise<string | null> {
-  await connectDB();
-  const entry = await OtpModel.findOne({ otp });
+export async function verifyOtp(rawOtp: string): Promise<string | null> {
+  const otp = rawOtp.trim();
+  if (!otp) return null;
 
+  await connectDB();
+
+  const entry = await TelegramOtp.findOne({ otp });
   if (!entry) return null;
-  if (new Date() > entry.expiresAt) {
-    await OtpModel.deleteOne({ _id: entry._id });
-    return null; // expired
+
+  if (Date.now() > entry.expiresAt.getTime()) {
+    // Already expired (if TTL hasn't kicked in yet)
+    await TelegramOtp.deleteOne({ _id: entry._id });
+    return null;
   }
 
-  await OtpModel.deleteOne({ _id: entry._id });
+  // Valid, delete and return userId
+  await TelegramOtp.deleteOne({ _id: entry._id });
   return entry.userId;
 }
 
-/** Cleanup expired OTP secara berkala (dipanggil dari webhook). */
+/** Cleanup expired OTP secara berkala (MongoDB TTL otomatis, tapi bisa dipanggil bila perlu). */
 export async function cleanupOtpStore(): Promise<void> {
-  try {
-    await connectDB();
-    await OtpModel.deleteMany({ expiresAt: { $lt: new Date() } });
-  } catch (err) {
-    // abaikan error cleanup background
-  }
+  await connectDB();
+  await TelegramOtp.deleteMany({ expiresAt: { $lt: new Date() } });
 }
 
 // ─── Bot Instance ─────────────────────────────────────────────────────────────

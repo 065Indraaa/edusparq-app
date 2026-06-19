@@ -31,6 +31,7 @@ import {
   Send,
   BookOpen,
   ChevronDown,
+  Scale,
 } from "lucide-react";
 
 export type NavItem = {
@@ -69,6 +70,7 @@ export const navGroups: NavGroup[] = [
       { name: "Catatan", desc: "Rapikan coretan kuliah", href: "/catatan", icon: NotebookPen },
       { name: "Agent AI", desc: "Multi-agen tugas kompleks & dokumen", href: "/agents", icon: Cpu },
       { name: "Jurusan", desc: "Katalog jurusan & template matkul", href: "/jurusan", icon: GraduationCap },
+      { name: "Kamus Hukum", desc: "100.000+ Pasal Indonesia", href: "/hukum", icon: Scale },
     ],
   },
   {

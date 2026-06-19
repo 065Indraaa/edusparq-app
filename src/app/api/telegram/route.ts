@@ -125,9 +125,9 @@ async function handleCommand(
   chatId: number,
   from?: TelegramFrom
 ) {
-  const parts = text.split(/\s+/);
+  const parts = text.trim().split(/\s+/);
   const cmd = parts[0].toLowerCase();
-  const arg = parts.slice(1).join(" ");
+  const arg = parts.slice(1).join(" ").trim();
 
   switch (cmd) {
     case "/start": {
