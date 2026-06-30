@@ -4,38 +4,18 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { AcademicCalendarWidget } from "../../../components/academic-calendar-widget";
-import { RecommendationsWidget } from "../../../components/recommendations-widget";
 import {
-  CalendarDays,
-  BookOpen,
-  ChevronRight,
-  Info,
-  Users,
-  PenTool,
   Bot,
-  GraduationCap,
+  Upload,
+  Calendar,
+  BookOpen,
+  TrendingUp,
   Clock,
-  Sparkles
+  ArrowRight,
 } from "lucide-react";
+import WorkspaceChat from "@/components/workspace-chat";
 
-type ApiDeadline = {
-  _id: string;
-  courseName: string;
-  title: string;
-  dueDate: string;
-  dueTime?: string;
-  status?: string;
-};
-
-type DeadlineView = {
-  title: string;
-  course: string;
-  date: string;
-  daysLeft: number;
-};
-
-type ApiCourse = {
+interface ApiCourse {
   _id: string;
   name: string;
   instructor?: string;
@@ -43,136 +23,206 @@ type ApiCourse = {
   semester?: string;
   grade?: string;
   credits?: number;
-};
+}
 
-type CourseProgress = {
+interface CourseCard {
+  _id: string;
   name: string;
-  progress: number;
   instructor: string;
-  deadline: string;
-};
+  progress: number;
+  credits: number;
+}
+
+interface ApiDeadline {
+  _id: string;
+  courseName: string;
+  title: string;
+  dueDate: string;
+  dueTime?: string;
+  priority?: string;
+  status?: string;
+}
+
+interface DeadlineItem {
+  _id: string;
+  title: string;
+  course: string;
+  date: string;
+  daysLeft: number;
+  priority: "tinggi" | "sedang" | "rendah";
+}
+
+interface StudentContext {
+  gpa?: number | null;
+  totalCredits?: number;
+  semester?: number;
+}
+
+interface ActivityItem {
+  _id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+}
+
+interface ScheduleItem {
+  _id: string;
+  courseName: string;
+  hari: number;
+  jamMulai: string;
+  jamSelesai: string;
+  ruang?: string;
+  dosen?: string;
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-
-  // Sample/fallback stats — used when not logged in or fetch fails/empty.
-  const fallbackStats = [
-    { label: "IPK Kumulatif", value: "-" },
-    { label: "SKS Diambil", value: "0" },
-    { label: "Mata Kuliah", value: "0" },
-    { label: "Dokumen", value: "0" },
-  ];
-
-  // No fabricated deadlines. When logged in we only ever show the user's real
-  // tenggat (or an empty state) — keep this empty so nothing mock leaks in.
-  const fallbackDeadlines: DeadlineView[] = [];
-
-  const [stats, setStats] = useState(fallbackStats);
-  const [deadlines, setDeadlines] = useState<DeadlineView[]>(fallbackDeadlines);
-  const [loading, setLoading] = useState(false);
-  const [classProgress, setClassProgress] = useState<CourseProgress[]>([]);
-  const [userSemester, setUserSemester] = useState<string>("");
-  const [todayClasses, setTodayClasses] = useState<{ courseName: string; jamMulai: string; jamSelesai: string; ruang: string }[]>([]);
-  const [recentDocs, setRecentDocs] = useState<any[]>([]);
-
-  // Adaptive greeting — computed after mount to avoid hydration mismatch.
-  const [timeGreeting, setTimeGreeting] = useState("Halo");
-  const firstName =
+  const studentName =
     session?.user?.name?.trim().split(/\s+/)[0] || "Mahasiswa";
 
-  useEffect(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 11) setTimeGreeting("Selamat pagi");
-    else if (h >= 11 && h < 15) setTimeGreeting("Selamat siang");
-    else if (h >= 15 && h < 18) setTimeGreeting("Selamat sore");
-    else setTimeGreeting("Selamat malam");
-  }, []);
+  const [courses, setCourses] = useState<CourseCard[]>([]);
+  const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
+  const [studentContext, setStudentContext] = useState<StudentContext | null>(
+    null,
+  );
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch real profile + deadlines on mount when a session exists.
+  const container = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 16 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring" as const, stiffness: 300, damping: 24 },
+    },
+  };
+
+  const formatDate = (iso: string, time?: string) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+      "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+    ];
+    const base = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    return time ? `${base}, ${time}` : base;
+  };
+
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
-
-    const formatDate = (iso: string, time?: string) => {
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return iso;
-      const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      const base = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-      return time ? `${base}, ${time} WIB` : base;
-    };
 
     const run = async () => {
       setLoading(true);
       try {
-        const [profileRes, deadlinesRes, coursesRes, docsRes] = await Promise.all([
-          fetch("/api/user/profile").catch(() => null),
-          fetch("/api/deadlines").catch(() => null),
-          fetch("/api/courses").catch(() => null),
-          fetch("/api/writing/documents").catch(() => null),
-        ]);
+        const [coursesRes, deadlinesRes, ctxRes, scheduleRes] =
+          await Promise.all([
+            fetch("/api/courses").catch(() => null),
+            fetch("/api/deadlines").catch(() => null),
+            fetch("/api/student/context").catch(() => null),
+            fetch("/api/schedule").catch(() => null),
+          ]);
 
-        // --- Stats from profile ---
-        if (profileRes?.ok) {
-          const profile = await profileRes.json().catch(() => null);
-          const s = profile?.stats;
-          if (s) {
-            if (!cancelled) {
-              setStats([
-                { label: "IPK Kumulatif", value: s.ipk !== null && s.ipk !== undefined ? Number(s.ipk).toFixed(2) : "-" },
-                { label: "SKS Diambil", value: String(s.sks ?? 0) },
-                { label: "Mata Kuliah", value: String(s.courseCount ?? 0) },
-                { label: "Dokumen", value: String(s.documentCount ?? 0) },
-              ]);
-              if (profile?.user?.semester) setUserSemester(`Semester ${profile.user.semester}`);
-            }
+        if (coursesRes?.ok) {
+          const raw = await coursesRes.json().catch(() => null);
+          if (Array.isArray(raw) && !cancelled) {
+            const mapped: CourseCard[] = (raw as ApiCourse[]).slice(0, 6).map(
+              (c) => ({
+                _id: c._id,
+                name: c.name,
+                instructor: c.instructor || "Dosen",
+                progress:
+                  typeof c.progress === "number" ? c.progress : 0,
+                credits: c.credits ?? 0,
+              }),
+            );
+            setCourses(mapped);
           }
         }
 
-        // --- Deadlines panel ---
         if (deadlinesRes?.ok) {
           const raw = await deadlinesRes.json().catch(() => null);
-          if (Array.isArray(raw) && raw.length > 0) {
+          if (Array.isArray(raw) && !cancelled) {
             const now = new Date();
-            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-            const view: DeadlineView[] = (raw as ApiDeadline[])
+            const startOfToday = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate(),
+            ).getTime();
+            const mapped: DeadlineItem[] = (raw as ApiDeadline[])
               .filter((d) => d?.dueDate)
-              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-              .slice(0, 4)
+              .sort(
+                (a, b) =>
+                  new Date(a.dueDate).getTime() -
+                  new Date(b.dueDate).getTime(),
+              )
+              .slice(0, 5)
               .map((d) => {
                 const due = new Date(d.dueDate);
-                const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
-                const daysLeft = Math.ceil((dueDay - startOfToday) / 86400000);
+                const dueDay = new Date(
+                  due.getFullYear(),
+                  due.getMonth(),
+                  due.getDate(),
+                ).getTime();
+                const daysLeft = Math.ceil(
+                  (dueDay - startOfToday) / 86400000,
+                );
+                const p = (d.priority || "").toLowerCase();
+                const priority: DeadlineItem["priority"] =
+                  p === "tinggi" || p === "high"
+                    ? "tinggi"
+                    : p === "rendah" || p === "low"
+                      ? "rendah"
+                      : "sedang";
                 return {
+                  _id: d._id,
                   title: d.title,
                   course: d.courseName,
                   date: formatDate(d.dueDate, d.dueTime),
                   daysLeft,
+                  priority,
                 };
               });
-            if (!cancelled && view.length > 0) setDeadlines(view);
+            setDeadlines(mapped);
           }
         }
 
-        // --- Course progress from real courses ---
-        if (coursesRes?.ok) {
-          const rawCourses = await coursesRes.json().catch(() => null);
-          if (Array.isArray(rawCourses) && rawCourses.length > 0 && !cancelled) {
-            const mapped: CourseProgress[] = (rawCourses as ApiCourse[]).slice(0, 4).map((c) => ({
-              name: c.name,
-              progress: typeof c.progress === "number" ? c.progress : 0,
-              instructor: c.instructor || "Dosen",
-              deadline: c.grade ? `Nilai: ${c.grade}` : "Lihat tenggat",
-            }));
-            setClassProgress(mapped);
+        if (ctxRes?.ok) {
+          const ctx = await ctxRes.json().catch(() => null);
+          if (ctx && !cancelled) {
+            setStudentContext({
+              gpa: ctx.gpa ?? ctx.stats?.ipk ?? null,
+              totalCredits: ctx.totalCredits ?? ctx.stats?.sks ?? undefined,
+              semester: ctx.semester ?? ctx.user?.semester ?? undefined,
+            });
+            const activity = Array.isArray(ctx.recentActivity)
+              ? ctx.recentActivity
+              : [];
+            setRecentActivity(activity.slice(0, 5));
           }
         }
 
-        // --- Recent Docs ---
-        if (docsRes?.ok) {
-          const rawDocs = await docsRes.json().catch(() => null);
-          if (rawDocs?.documents && Array.isArray(rawDocs.documents) && !cancelled) {
-            setRecentDocs(rawDocs.documents.slice(0, 2));
+        if (scheduleRes?.ok) {
+          const raw = await scheduleRes.json().catch(() => null);
+          if (raw && !cancelled) {
+            const jsDay = new Date().getDay();
+            const today = jsDay === 0 ? 7 : jsDay;
+            const items = Array.isArray(raw.items) ? raw.items : [];
+            const todays: ScheduleItem[] = items
+              .filter((s: ScheduleItem) => s.hari === today)
+              .sort((a: ScheduleItem, b: ScheduleItem) =>
+                a.jamMulai.localeCompare(b.jamMulai),
+              );
+            setSchedule(todays);
           }
         }
       } catch {
@@ -189,262 +239,408 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user]);
 
-  // Today's class schedule for the "Kelas Hari Ini" widget.
-  useEffect(() => {
-    if (!session?.user) return;
-    let cancelled = false;
-    fetch("/api/schedule")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled || !d || !Array.isArray(d.items)) return;
-        const js = new Date().getDay();
-        const today = js === 0 ? 7 : js;
-        setTodayClasses(
-          d.items
-            .filter((i: { hari?: number }) => i.hari === today)
-            .map((i: { courseName?: string; jamMulai?: string; jamSelesai?: string; ruang?: string }) => ({
-              courseName: i.courseName || "",
-              jamMulai: i.jamMulai || "",
-              jamSelesai: i.jamSelesai || "",
-              ruang: i.ruang || "",
-            }))
-        );
-      })
-      .catch(() => { });
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.user]);
-
-  // Render a "days left" badge label from daysLeft.
-  const dueLabel = (daysLeft: number) =>
-    daysLeft < 0 ? "Terlambat" : daysLeft === 0 ? "Hari ini" : `H-${daysLeft}`;
-
-
-  const quickFeatures = [
-    { name: "Tutor", desc: "Bahas konsep sulit berdasarkan mata kuliah yang sedang kamu ambil.", icon: Bot, href: "/tutor" },
-    { name: "Menulis", desc: "Susun dokumen akademik, perbaiki paragraf, dan kelola sitasi.", icon: PenTool, href: "/writing" },
-    { name: "Latihan Ujian", desc: "Buat soal latihan, jawab esai, lalu lihat penilaiannya.", icon: GraduationCap, href: "/exams" },
-    { name: "Kelompok", desc: "Catat dokumen bersama, ulasan anggota, dan progres tugas kelompok.", icon: Users, href: "/collab" },
+  const quickActions = [
+    {
+      title: "Tanya AI",
+      desc: "Chat dengan Tutor AI untuk memahami materi.",
+      icon: Bot,
+      href: "/tutor",
+      accent: "bg-primary/10 text-primary",
+    },
+    {
+      title: "Upload Materi",
+      desc: "Unggah catatan atau dokumen kuliah.",
+      icon: Upload,
+      href: "/workspace",
+      accent: "bg-amber-500/10 text-amber-500",
+    },
+    {
+      title: "Lihat Tugas",
+      desc: "Pantau tenggat dan tugas mendatang.",
+      icon: Calendar,
+      href: "/deadlines",
+      accent: "bg-blue-500/10 text-blue-500",
+    },
   ];
 
-  // Framer motion variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+  const priorityStyles: Record<
+    DeadlineItem["priority"],
+    { dot: string; badge: string }
+  > = {
+    tinggi: {
+      dot: "bg-red-500",
+      badge: "bg-red-500/10 text-red-500",
+    },
+    sedang: {
+      dot: "bg-amber-500",
+      badge: "bg-amber-500/10 text-amber-500",
+    },
+    rendah: {
+      dot: "bg-emerald-500",
+      badge: "bg-emerald-500/10 text-emerald-500",
+    },
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
-  };
+  const dueLabel = (daysLeft: number) =>
+    daysLeft < 0
+      ? "Terlambat"
+      : daysLeft === 0
+        ? "Hari ini"
+        : `H-${daysLeft}`;
 
   return (
     <motion.div
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-5 flex-1 flex flex-col justify-between w-full mx-auto max-w-full"
+      className="space-y-6 w-full mx-auto max-w-6xl"
     >
-      {/* Top Welcome Banner (Spans Full Width on Desktop) */}
-      <motion.section variants={item} className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm flex flex-col md:flex-row items-center justify-between min-h-[180px]">
-        {/* Background Accent */}
-        <div className="absolute -right-10 -top-10 opacity-[0.03] pointer-events-none hidden md:block">
-          <Sparkles size={300} className="text-foreground" />
+      {/* Greeting Card */}
+      <motion.section
+        variants={item}
+        className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm p-6 md:p-8"
+      >
+        <div className="absolute -right-8 -top-8 opacity-[0.04] pointer-events-none">
+          <TrendingUp size={200} className="text-foreground" />
         </div>
-
-        <div className="p-6 md:p-7 z-10 flex-1">
+        <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground uppercase tracking-[0.18em] mb-4">
             <Clock size={13} /> Dashboard Akademik
           </div>
-          <h1 className="font-display tracking-tight text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
-            {timeGreeting}, {firstName}.
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-tight">
+            Selamat datang, {studentName}.
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base mt-3 max-w-xl leading-relaxed">
-            {userSemester ? userSemester + '. ' : ''}Hari ini adalah hari yang baik untuk merangkum catatan, memeriksa tenggat tugas, atau bertanya pada Tutor AI.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/tutor" className="px-6 py-3 bg-foreground hover:bg-foreground/90 text-background font-semibold rounded-2xl text-sm transition-transform hover:scale-[1.02] inline-flex items-center gap-2 shadow-sm">
-              <Bot size={18} /> Chat Tutor AI
-            </Link>
-            <Link href="/workspace" className="px-6 py-3 bg-card hover:bg-muted text-foreground font-semibold rounded-2xl text-sm transition-colors border border-border inline-flex items-center gap-2 shadow-sm">
-              <BookOpen size={18} /> Buka Ruang Kerja
-            </Link>
-          </div>
-        </div>
-
-        {/* Small Daily Quote/Tip Card on the right of banner */}
-        <div className="hidden lg:flex flex-col p-5 z-10 w-[300px] shrink-0 border-l border-border bg-muted/20 h-full justify-center">
-          <GraduationCap size={24} className="text-muted-foreground mb-3 opacity-50" />
-          <p className="text-sm font-medium text-foreground italic leading-relaxed">
-            "Konsistensi mengalahkan intensitas. Satu halaman hari ini lebih baik dari sepuluh halaman esok hari."
+          <p className="text-muted-foreground text-sm md:text-base mt-2 max-w-xl leading-relaxed">
+            Mari lanjutkan belajar hari ini. Pilih salah satu aksi cepat di
+            bawah untuk memulai.
           </p>
         </div>
       </motion.section>
 
-      {/* Main Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-
-        {/* Statistics (4 mini blocks) */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 grid grid-cols-2 gap-4">
-          {stats.map((stat, idx) => {
-            const meta = [GraduationCap, BookOpen, CalendarDays, PenTool][idx] || BookOpen;
-            const Icon = meta;
-            return (
-              <div key={idx} className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-center items-center text-center hover:bg-muted/30 transition-colors">
-                <div className="w-12 h-12 rounded-2xl bg-muted text-foreground flex items-center justify-center mb-4">
-                  <Icon size={22} strokeWidth={2} />
-                </div>
-                <div>
-                  {loading ? (
-                    <span className="skeleton h-10 w-20 rounded-md block mb-1 mx-auto" />
-                  ) : (
-                    <span className="font-display tracking-tight text-4xl font-black text-foreground block leading-none tracking-tight mb-2">{stat.value}</span>
-                  )}
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest block">{stat.label}</span>
-                </div>
+      {/* Quick Action Cards */}
+      <motion.section
+        variants={item}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link
+              key={action.title}
+              href={action.href}
+              className="group bg-card border border-border rounded-xl shadow-sm p-5 hover:-translate-y-1 hover:shadow-md transition-all flex items-start gap-4"
+            >
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${action.accent}`}
+              >
+                <Icon size={22} strokeWidth={2} />
               </div>
-            );
-          })}
-        </motion.div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-sm text-foreground flex items-center gap-1">
+                  {action.title}
+                  <ArrowRight
+                    size={14}
+                    className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                  />
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {action.desc}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </motion.section>
 
-        {/* Upcoming Deadlines Bento */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm flex flex-col">
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Active Courses */}
+        <motion.section
+          variants={item}
+          className="lg:col-span-2 bg-card border border-border rounded-xl shadow-sm p-5 md:p-6"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-2">
-              <CalendarDays size={20} /> Tenggat Terdekat
+            <h2 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+              <BookOpen size={20} /> Mata Kuliah Aktif
             </h2>
-            <Link href="/deadlines" className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors">
-              <ChevronRight size={18} />
+            <Link
+              href="/courses"
+              className="text-xs text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-1 transition-colors"
+            >
+              Lihat semua <ArrowRight size={12} />
             </Link>
           </div>
-          <div className="space-y-4 flex-1 overflow-y-auto pr-2 no-scrollbar">
-            {loading ? [0, 1].map((i) => (
-              <div key={i} className="p-5 rounded-2xl bg-muted/50 border border-transparent space-y-3">
-                <span className="skeleton block h-3 w-32 rounded" />
-                <span className="skeleton block h-5 w-48 rounded" />
-              </div>
-            )) : deadlines.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-border rounded-2xl">
-                <CalendarDays size={32} className="text-muted-foreground/40 mb-3" />
-                <p className="text-sm text-muted-foreground font-medium">Hore! Tidak ada tenggat tugas terdekat.</p>
-              </div>
-            ) : deadlines.map((dl, idx) => (
-              <div key={idx} className="p-4 rounded-2xl border border-border bg-background hover:bg-muted/30 transition-colors flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block truncate mb-1">{dl.course}</span>
-                  <span className="font-bold text-sm text-foreground block leading-tight truncate">{dl.title}</span>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="skeleton h-24 rounded-xl bg-muted/50"
+                />
+              ))}
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-border rounded-xl">
+              <BookOpen
+                size={32}
+                className="text-muted-foreground/40 mb-3"
+              />
+              <p className="text-sm text-muted-foreground font-medium">
+                Belum ada mata kuliah terdaftar.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {courses.map((course) => (
+                <div
+                  key={course._id}
+                  className="p-4 rounded-xl border border-border bg-background hover:bg-muted/30 transition-colors"
+                >
+                  <h3 className="font-bold text-sm text-foreground truncate">
+                    {course.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {course.instructor}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${course.progress}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
+                      {course.progress}%
+                    </span>
+                  </div>
+                  {course.credits > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      {course.credits} SKS
+                    </p>
+                  )}
                 </div>
-                <span className={`text-[10px] font-extrabold px-3 py-1.5 rounded-xl uppercase shrink-0 ${dl.daysLeft <= 1
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground"
-                  }`}>
-                  {dueLabel(dl.daysLeft)}
+              ))}
+            </div>
+          )}
+        </motion.section>
+
+        {/* Right Column: GPA + Deadlines */}
+        <div className="space-y-4">
+          {/* GPA Widget */}
+          <motion.section
+            variants={item}
+            className="bg-card border border-border rounded-xl shadow-sm p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-black tracking-tight text-foreground flex items-center gap-2">
+                <TrendingUp size={18} /> IPK
+              </h2>
+            </div>
+            <div className="flex items-end gap-2">
+              {loading ? (
+                <span className="skeleton h-10 w-24 rounded-md block" />
+              ) : (
+                <span className="text-4xl font-black text-foreground leading-none tabular-nums">
+                  {studentContext?.gpa != null
+                    ? Number(studentContext.gpa).toFixed(2)
+                    : "-"}
                 </span>
+              )}
+              <span className="text-xs text-muted-foreground mb-1">
+                / 4.00
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <BookOpen size={12} />
+                {studentContext?.totalCredits ?? 0} SKS
+              </span>
+              {studentContext?.semester != null && (
+                <span className="flex items-center gap-1">
+                  <Calendar size={12} />
+                  Semester {studentContext.semester}
+                </span>
+              )}
+            </div>
+          </motion.section>
+
+          {/* Today's Schedule */}
+          <motion.section
+            variants={item}
+            className="bg-card border border-border rounded-xl shadow-sm p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-black tracking-tight text-foreground flex items-center gap-2">
+                <Calendar size={18} /> Jadwal Hari Ini
+              </h2>
+            </div>
+            {loading ? (
+              <div className="space-y-3">
+                {[0, 1].map((i) => (
+                  <div
+                    key={i}
+                    className="skeleton h-16 rounded-lg bg-muted/50"
+                  />
+                ))}
+              </div>
+            ) : schedule.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-border rounded-xl">
+                <Calendar
+                  size={28}
+                  className="text-muted-foreground/40 mb-2"
+                />
+                <p className="text-xs text-muted-foreground font-medium">
+                  Tidak ada kelas hari ini.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {schedule.map((s) => (
+                  <div
+                    key={s._id}
+                    className="p-3 rounded-lg border border-border bg-background hover:bg-muted/30 transition-colors"
+                  >
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {s.courseName}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock size={11} />
+                        {s.jamMulai} – {s.jamSelesai}
+                      </span>
+                      {s.ruang && (
+                        <span className="truncate">{s.ruang}</span>
+                      )}
+                    </div>
+                    {s.dosen && (
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                        {s.dosen}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.section>
+
+          {/* Upcoming Deadlines */}
+          <motion.section
+            variants={item}
+            className="bg-card border border-border rounded-xl shadow-sm p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-black tracking-tight text-foreground flex items-center gap-2">
+                <Calendar size={18} /> Tenggat Terdekat
+              </h2>
+              <Link
+                href="/deadlines"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+            {loading ? (
+              <div className="space-y-3">
+                {[0, 1].map((i) => (
+                  <div
+                    key={i}
+                    className="skeleton h-16 rounded-lg bg-muted/50"
+                  />
+                ))}
+              </div>
+            ) : deadlines.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-border rounded-xl">
+                <Calendar
+                  size={28}
+                  className="text-muted-foreground/40 mb-2"
+                />
+                <p className="text-xs text-muted-foreground font-medium">
+                  Tidak ada tenggat terdekat.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {deadlines.map((dl) => {
+                  const styles = priorityStyles[dl.priority];
+                  return (
+                    <div
+                      key={dl._id}
+                      className="p-3 rounded-lg border border-border bg-background hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${styles.dot}`}
+                          />
+                          <span className="truncate">{dl.course}</span>
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase shrink-0 ${styles.badge}`}
+                        >
+                          {dueLabel(dl.daysLeft)}
+                        </span>
+                      </div>
+                      <p className="font-semibold text-sm text-foreground mt-1 truncate">
+                        {dl.title}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Clock size={11} /> {dl.date}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.section>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <motion.section
+        variants={item}
+        className="bg-card border border-border rounded-xl shadow-sm p-5 md:p-6 mb-8"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+            <Clock size={20} /> Aktivitas Terbaru
+          </h2>
+        </div>
+        {recentActivity.length === 0 ? (
+          <div className="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-border rounded-xl">
+            <Clock size={28} className="text-muted-foreground/40 mb-2" />
+            <p className="text-sm text-muted-foreground font-medium">
+              Belum ada aktivitas terbaru.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Mulai chat, upload materi, atau kerjakan tugas untuk melihat
+              riwayat di sini.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentActivity.map((act) => (
+              <div
+                key={act._id}
+                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background hover:bg-muted/30 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <Clock size={14} className="text-muted-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {act.description}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {new Date(act.timestamp).toLocaleString("id-ID")}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-        </motion.div>
+        )}
+      </motion.section>
 
-        {/* Classes Today */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-2">
-              <Clock size={20} /> Kelas Hari Ini
-            </h2>
-            <Link href="/jadwal" className="text-xs text-muted-foreground hover:text-foreground font-semibold inline-flex items-center transition-colors">
-              Lihat jadwal lengkap
-            </Link>
-          </div>
-          {todayClasses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {todayClasses.map((c, i) => (
-                <div key={i} className="flex items-stretch gap-4 p-4 rounded-2xl bg-muted/40 border border-border">
-                  <div className="flex flex-col items-center justify-center min-w-[4rem] text-center">
-                    <span className="block text-lg font-black text-foreground leading-none">{c.jamMulai}</span>
-                    <span className="block text-[10px] text-muted-foreground font-bold mt-1">{c.jamSelesai}</span>
-                  </div>
-                  <div className="w-[2px] bg-border rounded-full" />
-                  <div className="flex flex-col justify-center min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">{c.courseName}</p>
-                    {c.ruang && <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center gap-1.5"><Info size={12} /> {c.ruang}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center p-6 bg-muted/30 rounded-2xl border border-border">
-              <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center mr-4 shrink-0 shadow-sm">
-                <Bot size={24} className="text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Jadwal Kosong</h3>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed">Tidak ada jadwal hari ini. Mungkin saat yang tepat untuk mereview materi kuliah sebelumnya.</p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Quick Access Menu / Widgets */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-2 grid grid-cols-2 gap-4">
-          {quickFeatures.map((feat, idx) => {
-            const Icon = feat.icon;
-            return (
-              <Link
-                key={idx}
-                href={feat.href}
-                className="group bg-card border border-border hover:bg-muted/20 rounded-2xl p-5 flex flex-col justify-center items-center text-center transition-all min-h-[140px] shadow-sm hover:-translate-y-1"
-              >
-                <div className="bg-background shadow-sm border border-border text-foreground w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 mb-4">
-                  <Icon size={24} strokeWidth={2} />
-                </div>
-                <h3 className="font-bold text-sm text-foreground">{feat.name}</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">Akses cepat</p>
-              </Link>
-            );
-          })}
-        </motion.div>
-
-        {/* Recent Documents */}
-        <motion.div variants={item} className="col-span-1 md:col-span-3 lg:col-span-4 rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-2">
-              <PenTool size={20} /> Lanjutkan Menulis
-            </h2>
-            <Link href="/writing" className="text-xs text-muted-foreground hover:text-foreground font-semibold inline-flex items-center transition-colors">
-              Buka Studio Menulis
-            </Link>
-          </div>
-          {recentDocs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {recentDocs.map((doc, idx) => (
-                <Link key={idx} href={`/writing`} className="flex flex-col gap-2 p-4 rounded-2xl bg-muted/30 border border-border hover:bg-muted/50 hover:border-primary/40 transition-all group">
-                  <div className="flex justify-between items-start">
-                    <span className="px-2.5 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded">{doc.docType || "Dokumen"}</span>
-                    <span className="text-xs text-muted-foreground font-medium">{new Date(doc.updatedAt).toLocaleDateString("id-ID")}</span>
-                  </div>
-                  <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">{doc.title || "Tanpa Judul"}</h3>
-                  <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
-                    <span className="flex items-center gap-1"><BookOpen size={12} /> {doc.wordCount || 0} Kata</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center p-6 bg-muted/30 rounded-2xl border border-dashed border-border text-center justify-center">
-              <div>
-                <PenTool size={24} className="text-muted-foreground/50 mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-foreground">Belum Ada Dokumen</h3>
-                <p className="text-xs text-muted-foreground mt-1">Mulai menulis skripsi atau tugas Anda di Studio Menulis.</p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-      </div>
+      <WorkspaceChat />
     </motion.div>
   );
 }

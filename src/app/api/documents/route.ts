@@ -3,7 +3,7 @@ import { auth } from "../../../lib/auth";
 import { connectDB } from "../../../lib/db/mongodb";
 import { Document } from "../../../lib/db/models/Document";
 import { DocumentChunk } from "../../../lib/db/models/DocumentChunk";
-import { chunkText } from "../../../lib/rag";
+import { chunkText, getEmbedding } from "../../../lib/rag";
 import { z } from "zod";
 import { extractTextFromUrl } from "../../../lib/server-extract";
 
@@ -64,46 +64,52 @@ export async function POST(req: NextRequest) {
     publicId: publicId || "",
     fileType,
     fileSize: fileSize || "",
-    // NOTE: real PDF/audio binary text extraction is out of scope. Chunks are
-    // only created when the client provides extracted textContent.
-    // TODO: server-side text extraction (pdf-parse / Whisper / OCR).
     status: "indexed",
     uploadedAt: new Date(),
   });
 
-  if (typeof textContent === "string" && textContent.trim().length > 0) {
-    const chunks = chunkText(textContent);
-    if (chunks.length > 0) {
-      await DocumentChunk.insertMany(
-        chunks.map((content, chunkIndex) => ({
-          userId: session.user.id,
-          documentId: doc._id,
-          courseName,
-          content,
-          chunkIndex,
-        }))
-      );
-    }
+  // Helper function to process chunks and generate vector embeddings
+  async function processAndSaveChunks(rawText: string) {
+    const chunks = chunkText(rawText);
+    if (chunks.length === 0) return;
+
+    // Generate embeddings for each chunk in parallel safely
+    const chunksWithEmbeddings = await Promise.all(
+      chunks.map(async (content, chunkIndex) => {
+        try {
+          const embedding = await getEmbedding(content);
+          return {
+            userId: session!.user.id,
+            documentId: doc._id,
+            courseName,
+            content,
+            chunkIndex,
+            embedding: embedding || [],
+          };
+        } catch (err) {
+          console.error(`[documents/route] Failed to embed chunk ${chunkIndex}:`, err);
+          return {
+            userId: session!.user.id,
+            documentId: doc._id,
+            courseName,
+            content,
+            chunkIndex,
+            embedding: [],
+          };
+        }
+      })
+    );
+
+    await DocumentChunk.insertMany(chunksWithEmbeddings);
   }
 
-  // Server-side PDF/DOCX extraction when no textContent was provided by the client
-  if (!(typeof textContent === "string" && textContent.trim().length > 0) &&
-      (fileType === "pdf" || fileType === "docx")) {
+  if (typeof textContent === "string" && textContent.trim().length > 0) {
+    await processAndSaveChunks(textContent);
+  } else if (fileType === "pdf" || fileType === "docx") {
     try {
       const extracted = await extractTextFromUrl(fileUrl, fileType);
       if (extracted.length > 0) {
-        const extractedChunks = chunkText(extracted);
-        if (extractedChunks.length > 0) {
-          await DocumentChunk.insertMany(
-            extractedChunks.map((content, chunkIndex) => ({
-              userId: session.user.id,
-              documentId: doc._id,
-              courseName,
-              content,
-              chunkIndex,
-            }))
-          );
-        }
+        await processAndSaveChunks(extracted);
       }
     } catch (err) {
       console.error("[documents/route] server extraction error:", err);

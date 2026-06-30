@@ -12,6 +12,7 @@ import {
   FolderOpen,
   CalendarDays,
   Bot,
+  Brain,
   PenTool,
   Users,
   GraduationCap,
@@ -52,57 +53,43 @@ export type NavGroup = {
 //
 // Grouping keeps the sidebar scannable: a handful of labelled sections instead
 // of one long flat list of buttons.
-export const navGroups: NavGroup[] = [
+// Full nav (all features) — kept for reference; navGroupsCore is what's shown.
+export const navGroupsFull: NavGroup[] = [
   {
-    label: "Utama",
-    items: [{ name: "Beranda", desc: "Ringkasan kegiatan kuliah hari ini", href: "/dashboard", icon: LayoutDashboard }],
-  },
-  {
-    label: "Belajar",
+    label: "Omni-Chat",
     items: [
-      { name: "Materi", desc: "Unggah dan kelola bahan kuliah", href: "/workspace", icon: FolderOpen },
-      { name: "Tutor", desc: "Bahas konsep per mata kuliah", href: "/tutor", icon: Bot },
-      { name: "Menulis", desc: "Draft, sitasi, dan dokumen akademik", href: "/writing", icon: PenTool },
-      { name: "Riset", desc: "Cari sudut pandang penelitian", href: "/research", icon: Search },
-      { name: "Katalog", desc: "Temukan referensi terbuka", href: "/katalog", icon: Library },
-      { name: "Latihan Ujian", desc: "Soal latihan dan evaluasi jawaban", href: "/exams", icon: GraduationCap },
-      { name: "Dosen Virtual", desc: "Nilai jawaban esai dengan rubrik", href: "/dosen", icon: ClipboardCheck },
-      { name: "Catatan", desc: "Rapikan coretan kuliah", href: "/catatan", icon: NotebookPen },
-      { name: "Agent AI", desc: "Multi-agen tugas kompleks & dokumen", href: "/agents", icon: Cpu },
-      { name: "Jurusan", desc: "Katalog jurusan & template matkul", href: "/jurusan", icon: GraduationCap },
-      { name: "Kamus Hukum", desc: "100.000+ Pasal Indonesia", href: "/hukum", icon: Scale },
+      { name: "Copilot", desc: "Asisten AI & Tutor Akademik", href: "/dashboard", icon: Bot },
     ],
   },
   {
-    label: "Produktivitas",
+    label: "EduVault",
     items: [
-      { name: "Jadwal", desc: "Susun jadwal kuliah mingguan", href: "/jadwal", icon: CalendarRange },
-      { name: "Tugas & Tenggat", desc: "Pantau tugas dan tanggal penting", href: "/deadlines", icon: CalendarDays },
-      { name: "Kelompok", desc: "Atur kerja kelompok", href: "/collab", icon: Users },
+      { name: "Materi Kuliah", desc: "Basis pengetahuan pintar", href: "/workspace", icon: FolderOpen },
+      { name: "Catatan Cerdas", desc: "Rapikan coretan dengan AI", href: "/catatan", icon: NotebookPen },
+      { name: "Memori", desc: "Basis pengetahuan yang dipelajari AI", href: "/memory", icon: Brain },
+      { name: "Literature Matrix", desc: "Perbandingan matriks jurnal", href: "/research/matrix", icon: BookOpen },
+      { name: "Pustaka Jurusan", desc: "Katalog referensi & template", href: "/jurusan", icon: Library },
     ],
   },
   {
-    label: "Organisasi",
-    items: [{ name: "Organisasi", desc: "Kelola struktur, divisi & program kerja", href: "/hima", icon: Building2 }],
-  },
-  {
-    label: "Akun",
+    label: "Command Center",
     items: [
-      { name: "Analitik", desc: "Lihat pola belajar dan progres", href: "/analytics", icon: BarChart3 },
-      { name: "Billing", desc: "Saldo credit, top up, pemakaian AI", href: "/billing", icon: Wallet },
-      { name: "Harga", desc: "Paket credit & BYOK", href: "/pricing", icon: Wallet },
-      { name: "Kunci AI", desc: "Pakai API key sendiri (BYOK)", href: "/settings/ai", icon: KeyRound },
-      { name: "Telegram", desc: "Hubungkan akun Telegram", href: "/settings/telegram", icon: Send },
-      { name: "Profil", desc: "Data kampus dan pengaturan akun", href: "/profile", icon: UserCircle },
+      { name: "Jadwal & Tenggat", desc: "Kalender dan manajemen tugas", href: "/deadlines", icon: CalendarDays },
+      { name: "Studio Menulis", desc: "Penelitian, sitasi, dan draf", href: "/writing", icon: PenTool },
+      { name: "Persiapan Ujian", desc: "Soal latihan dan evaluasi", href: "/exams", icon: GraduationCap },
     ],
   },
   {
-    label: "Informasi",
+    label: "Pengaturan",
     items: [
-      { name: "Dokumentasi", desc: "Panduan & dokumentasi fitur", href: "/docs", icon: BookOpen },
+      { name: "Analitik Belajar", desc: "Lihat pola dan progres", href: "/analytics", icon: BarChart3 },
+      { name: "Billing & Paket", desc: "Saldo credit & langganan", href: "/billing", icon: Wallet },
+      { name: "Profil & Keamanan", desc: "Data diri, Telegram & BYOK", href: "/profile", icon: UserCircle },
     ],
   },
 ];
+
+export const navGroups: NavGroup[] = navGroupsFull;
 
 // Flat list (kept for compatibility / any consumer that wants every item).
 export const navigation: NavItem[] = navGroups.flatMap((g) => g.items);
@@ -111,7 +98,7 @@ export const navigation: NavItem[] = navGroups.flatMap((g) => g.items);
 const mobileNav: NavItem[] = [
   { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
   { name: "Materi", href: "/workspace", icon: FolderOpen },
-  { name: "Tutor", href: "/tutor", icon: Bot },
+  { name: "AI", href: "/ai", icon: Bot },
   { name: "Tenggat", href: "/deadlines", icon: CalendarDays },
   { name: "Profil", href: "/profile", icon: UserCircle },
 ];

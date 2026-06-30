@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { UserCircle, Save, RefreshCw, GraduationCap, Building2, BookOpen, Hash, CheckCircle2 } from "lucide-react";
+import { UserCircle, Save, RefreshCw, GraduationCap, Building2, BookOpen, Hash, CheckCircle2, Send, KeyRound, ArrowRight } from "lucide-react";
 import { UniversityPicker } from "../../../components/university-picker";
 import { GoogleConnectCard } from "../../../components/google-connect-card";
+import Link from "next/link";
 import { ProdiPicker } from "../../../components/prodi-picker";
 import { PddiktiAutofill, PddiktiFill } from "../../../components/pddikti-autofill";
 
@@ -258,6 +259,30 @@ export default function ProfilePage() {
       </motion.form>
 
         <div className="space-y-6">
+          <motion.div variants={itemVariants} className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div>
+              <h3 className="text-sm font-black flex items-center gap-2 mb-1">
+                <Send size={16} className="text-[#0088cc]" /> Notifikasi Telegram
+              </h3>
+              <p className="text-xs text-muted-foreground">Hubungkan akun untuk menerima pengingat tugas & info kelas.</p>
+            </div>
+            <Link href="/settings/telegram" className="text-xs font-bold bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl border flex items-center justify-between transition-colors">
+              Atur Telegram <ArrowRight size={14} className="text-muted-foreground" />
+            </Link>
+
+            <div className="h-px bg-border my-2" />
+
+            <div>
+              <h3 className="text-sm font-black flex items-center gap-2 mb-1">
+                <KeyRound size={16} className="text-amber-500" /> Kunci AI (BYOK)
+              </h3>
+              <p className="text-xs text-muted-foreground">Gunakan API Key OpenAI/Gemini/Claude Anda sendiri secara gratis.</p>
+            </div>
+            <Link href="/settings/ai" className="text-xs font-bold bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl border flex items-center justify-between transition-colors">
+              Kelola BYOK <ArrowRight size={14} className="text-muted-foreground" />
+            </Link>
+          </motion.div>
+
           <GoogleConnectCard />
         </div>
       </div>

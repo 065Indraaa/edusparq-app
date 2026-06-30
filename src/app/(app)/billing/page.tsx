@@ -60,10 +60,10 @@ interface BillingData {
 }
 
 const PACKAGES = [
-  { id: "starter_500", name: "Starter", credits: 500, priceIDR: 25000, popular: false, desc: "~50 makalah ringan" },
-  { id: "pro_1500", name: "Pro", credits: 1650, priceIDR: 65000, popular: true, desc: "Bonus 150 — satu semester" },
-  { id: "scholar_4000", name: "Scholar", credits: 4800, priceIDR: 150000, popular: false, desc: "Bonus 800 — skripsi intensif" },
-  { id: "genius_10000", name: "Genius", credits: 13000, priceIDR: 320000, popular: false, desc: "Bonus 3000 — setahun penuh" },
+  { id: "daily_500", name: "Daily", credits: 500, priceIDR: 5000, popular: false, desc: "~20 chat + 5 upload file" },
+  { id: "weekly_3000", name: "Weekly", credits: 3300, priceIDR: 25000, popular: false, desc: "~100 chat + 20 upload file" },
+  { id: "semester_15000", name: "Semester", credits: 18000, priceIDR: 100000, popular: true, desc: "Bonus 3.000 — cukup 1 semester" },
+  { id: "genius_50000", name: "Genius", credits: 65000, priceIDR: 300000, popular: false, desc: "Bonus 15.000 — setahun penuh" },
 ];
 
 const containerVariants = {

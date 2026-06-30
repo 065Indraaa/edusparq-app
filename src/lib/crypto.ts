@@ -15,14 +15,24 @@ const ALGO = "aes-256-gcm";
 const IV_LEN = 12; // 96-bit IV (rekomendasi GCM)
 
 function getMasterKey(): Buffer {
-  const raw = process.env.CREDIT_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET;
+  const isProd = process.env.NODE_ENV === "production";
+  const raw = process.env.CREDIT_ENCRYPTION_KEY;
+
   if (!raw) {
-    // Tidak boleh terjadi di produksi. Fallback deterministik agar dev tidak crash.
+    if (isProd) {
+      throw new Error(
+        "[crypto] CRITICAL SECURITY ERROR: CREDIT_ENCRYPTION_KEY wajib di-set di environment produksi!"
+      );
+    }
+    
+    // Fallback untuk development lokal
+    const fallbackSrc = process.env.NEXTAUTH_SECRET || "edusparq-dev-fallback-key";
     console.warn(
-      "[crypto] CREDIT_ENCRYPTION_KEY/NEXTAUTH_SECRET kosong — kunci BYOK TIDAK aman. Set env ini untuk produksi."
+      `[crypto] WARNING: CREDIT_ENCRYPTION_KEY kosong. Menggunakan fallback dari NEXTAUTH_SECRET/dev-key. TIDAK AMAN UNTUK PRODUKSI!`
     );
-    return crypto.createHash("sha256").update("edusparq-dev-fallback-key").digest();
+    return crypto.createHash("sha256").update(fallbackSrc).digest();
   }
+
   // Hash ke 32 byte agar panjang selalu konsisten untuk AES-256.
   return crypto.createHash("sha256").update(raw).digest();
 }

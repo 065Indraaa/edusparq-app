@@ -52,26 +52,31 @@ export async function storeOtp(userId: string): Promise<string> {
     expiresAt,
   });
 
+  console.log(`[OTP STORE] Generated OTP ${otp} for userId ${userId}. Expires at: ${expiresAt.toISOString()}`);
   return otp;
 }
 
 /** Verifikasi OTP & kembalikan userId. Hapus OTP setelah dipakai. */
 export async function verifyOtp(rawOtp: string): Promise<string | null> {
-  const otp = rawOtp.trim();
+  const otp = rawOtp.replace(/\s+/g, "").trim();
+  console.log(`[OTP VERIFY] Attempting to verify OTP: "${otp}"`);
   if (!otp) return null;
 
   await connectDB();
 
   const entry = await TelegramOtp.findOne({ otp });
-  if (!entry) return null;
+  if (!entry) {
+    console.log(`[OTP VERIFY] OTP "${otp}" not found in MongoDB.`);
+    return null;
+  }
 
   if (Date.now() > entry.expiresAt.getTime()) {
-    // Already expired (if TTL hasn't kicked in yet)
+    console.log(`[OTP VERIFY] OTP "${otp}" expired at ${entry.expiresAt.toISOString()}.`);
     await TelegramOtp.deleteOne({ _id: entry._id });
     return null;
   }
 
-  // Valid, delete and return userId
+  console.log(`[OTP VERIFY] OTP "${otp}" is valid! Belonging to userId: ${entry.userId}`);
   await TelegramOtp.deleteOne({ _id: entry._id });
   return entry.userId;
 }
@@ -284,6 +289,95 @@ export function buildModeKeyboard(userId: string): InlineKeyboardMarkup {
       [{ text: "🤖 Auto (Orchestrator)", callback_data: "setmode_auto_" + userId }],
       [{ text: "⚡ Simple (Langsung)", callback_data: "setmode_simple_" + userId }],
       [{ text: "🔙 Kembali", callback_data: "cat_akun_" + userId }],
+    ],
+  };
+}
+
+// ─── File Upload Helpers ────────────────────────────────────────────────────
+
+/** Download file dari Telegram server menggunakan file_id. */
+export async function downloadTelegramFile(fileId: string): Promise<Buffer | null> {
+  const bot = getBot();
+  if (!bot) return null;
+  try {
+    const file = await bot.getFile(fileId);
+    if (!file.file_path) return null;
+    const url = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf;
+  } catch (err) {
+    console.error("[telegram] downloadTelegramFile error:", err);
+    return null;
+  }
+}
+
+/** Upload buffer ke Cloudinary. */
+export async function uploadToCloudinary(
+  buffer: Buffer,
+  filename: string,
+  folder: string
+): Promise<{ secure_url: string; public_id: string } | null> {
+  try {
+    const cloudinary = await import("cloudinary").then((m) => m.v2);
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder,
+          resource_type: "auto",
+          public_id: filename.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 60),
+        },
+        (err, res) => {
+          if (err) reject(err);
+          else resolve(res);
+        }
+      ).end(buffer);
+    });
+    return {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+    };
+  } catch (err) {
+    console.error("[telegram] uploadToCloudinary error:", err);
+    return null;
+  }
+}
+
+// ─── Upload Wizard Keyboards ────────────────────────────────────────────────
+
+/** Inline keyboard untuk pilih mata kuliah. */
+export function buildCoursePickerMenu(
+  courses: Array<{ _id: string; name: string }>,
+  telegramId: string
+): InlineKeyboardMarkup {
+  const rows = courses.map((c) => [
+    { text: "📚 " + c.name, callback_data: `upcourse_${c._id}_${telegramId}` },
+  ]);
+  rows.push([{ text: "🔙 Batal", callback_data: `upcancel_${telegramId}` }]);
+  return { inline_keyboard: rows };
+}
+
+/** Inline keyboard konfirmasi upload. */
+export function buildUploadConfirmMenu(telegramId: string): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [
+        { text: "✅ Upload", callback_data: `upconfirm_${telegramId}` },
+        { text: "❌ Batal", callback_data: `upcancel_${telegramId}` },
+      ],
+    ],
+  };
+}
+
+/** Inline keyboard untuk aksi setelah analisis (deadline). */
+export function buildDeadlineActionMenu(telegramId: string): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [
+        { text: "✅ Buat Deadline", callback_data: `deadline_yes_${telegramId}` },
+        { text: "❌ Lewati", callback_data: `deadline_no_${telegramId}` },
+      ],
     ],
   };
 }

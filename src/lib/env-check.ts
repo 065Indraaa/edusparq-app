@@ -9,9 +9,11 @@
 const REQUIRED = ["NEXTAUTH_SECRET", "MONGODB_URI"] as const;
 
 const RECOMMENDED = [
-  "MOONSHOT_API_KEY",
+  "NVIDIA_API_KEY",
   "TELEGRAM_BOT_TOKEN",
-  "CREDIT_ENCRYPTION_KEY",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
 ] as const;
 
 const OPTIONAL_PUBLIC = [
@@ -40,9 +42,11 @@ export function validateEnv(): EnvIssue[] {
   for (const key of RECOMMENDED) {
     if (!process.env[key]) {
       const hints: Record<string, string> = {
-        MOONSHOT_API_KEY: "AI tidak akan berfungsi. Set API key platform di .env.local.",
+        NVIDIA_API_KEY: "AI utama (DeepSeek V4 Pro via NVIDIA NIM). Daftar di build.nvidia.com.",
         TELEGRAM_BOT_TOKEN: "Telegram bot tidak aktif. Set token dari @BotFather.",
-        CREDIT_ENCRYPTION_KEY: "BYOK keys terenkripsi pakai NEXTAUTH_SECRET (fallback). Set dedicated key untuk produksi.",
+        CLOUDINARY_CLOUD_NAME: "Cloud storage untuk upload file. Daftar di cloudinary.com.",
+        CLOUDINARY_API_KEY: "Cloudinary API key.",
+        CLOUDINARY_API_SECRET: "Cloudinary API secret.",
       };
       issues.push({
         key,

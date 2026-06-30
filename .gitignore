@@ -34,3 +34,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editor / tool artifacts
+.claude/
+.kimchi/
+
+# temp / scratch / logs
+scratch/
+build.log
+*.log
+*.zip
+
+# one-off / local scripts
+fix-aliases.js
+test-kimchi.js
+artizenfund.txt
+nul

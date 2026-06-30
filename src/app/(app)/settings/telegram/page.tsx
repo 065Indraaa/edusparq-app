@@ -65,7 +65,7 @@ export default function TelegramSettingsPage() {
     fetchStatus();
   }, []);
 
-  const handleGenerateOtp = async () => {
+  const handleRequestOtp = async () => {
     setIsGenerating(true);
     setError("");
     setOtp(null);
@@ -259,17 +259,17 @@ export default function TelegramSettingsPage() {
               <XCircle size={24} className="text-muted-foreground shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Belum Terhubung</p>
-                <p className="text-xs text-muted-foreground">Generate kode OTP lalu kirim ke bot Telegram.</p>
+                <p className="text-xs text-muted-foreground">Minta kode OTP lalu kirim ke bot Telegram.</p>
               </div>
             </div>
 
             <button
-              onClick={handleGenerateOtp}
+              onClick={handleRequestOtp}
               disabled={isGenerating}
               className="flex items-center gap-2 px-5 min-h-[44px] rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold transition-all shadow-sm shadow-primary/20 disabled:opacity-50"
             >
               {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-              Generate Kode OTP
+              Minta Kode OTP
             </button>
           </div>
         )}
@@ -324,7 +324,7 @@ export default function TelegramSettingsPage() {
 
             <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
               <Clock size={13} />
-              Kode berlaku 5 menit. Setelah expired, generate ulang.
+              Kode berlaku 5 menit. Setelah kedaluwarsa, minta ulang.
             </div>
           </div>
         </motion.div>

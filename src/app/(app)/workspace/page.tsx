@@ -20,6 +20,7 @@ import {
   Database as DatabaseIcon,
   RefreshCw as RefreshIcon
 } from "lucide-react";
+import WorkspaceChat from "@/components/workspace-chat";
 import { extractText, isExtractable } from "../../../lib/extract-text";
 import { CourseSelect } from "../../../components/course-select-dropdown";
 import { AddCourseForm } from "../../../components/add-course-form";
@@ -505,7 +506,7 @@ export default function WorkspacePage() {
     }
   };
 
-  const handleGenerateFlashcards = async () => {
+  const handleRancangFlashcards = async () => {
     if (!inspectingFile || flashcardGenerating) return;
     setFlashcardGenerating(true);
     try {
@@ -886,7 +887,7 @@ export default function WorkspacePage() {
                     Ringkas
                   </button>
                   <button
-                    onClick={handleGenerateFlashcards}
+                    onClick={handleRancangFlashcards}
                     disabled={flashcardGenerating}
                     className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all disabled:opacity-60"
                   >
@@ -1030,6 +1031,8 @@ export default function WorkspacePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <WorkspaceChat />
 
     </motion.div>
   );

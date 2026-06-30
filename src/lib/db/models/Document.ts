@@ -10,7 +10,17 @@ const DocumentSchema = new Schema({
   publicId: { type: String }, // Cloudinary public_id for deletion
   fileType: { type: String, enum: ["pdf", "docx", "audio", "video", "image"], required: true },
   fileSize: { type: String, default: "" },
+  source: { type: String, enum: ["web", "telegram"], default: "web" },
   status: { type: String, enum: ["processing", "indexed", "failed"], default: "processing" },
+  analysisStatus: { type: String, enum: ["pending", "analyzed", "failed"], default: "pending" },
+  analysisResult: {
+    contentType: { type: String, default: "" },
+    summary: { type: String, default: "" },
+    topics: { type: [String], default: [] },
+    keyConcepts: { type: [String], default: [] },
+    tasksDetected: { type: [Object], default: [] },
+    recommendedActions: { type: [String], default: [] },
+  },
   uploadedAt: { type: Date, default: Date.now },
 });
 

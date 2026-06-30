@@ -33,6 +33,8 @@ export type FeatureName =
   | "agent_implementer"
   | "agent_reviewer"
   | "telegram"
+  | "telegram_upload"
+  | "hybrid_analyzer"
   | "byok_test";
 
 /**
@@ -64,6 +66,8 @@ export const CREDIT_TABLE: Record<FeatureName, number> = {
   agent_implementer: 3.0,
   agent_reviewer: 2.5,
   telegram: 1.2,
+  telegram_upload: 1.0,
+  hybrid_analyzer: 2.5, // Mistral + DeepSeek pipeline
   byok_test: 0, // test koneksi BYOK tidak potong credit
 };
 
@@ -81,9 +85,19 @@ export interface CostBreakdown {
   estimated: boolean;
 }
 
-/** Rasio biaya input:output. Input 5× lebih murah dari output. */
-const INPUT_RATIO = 0.2;
-const OUTPUT_RATIO = 1.0;
+/**
+ * Rasio biaya input:output. Di-tune agar harga ke user REALISTIS untuk
+ * mahasiswa Indonesia tanpa boncos.
+ *
+ * Target harga:
+ *   - 1 chat simple  ≈ Rp 500 - 1.000
+ *   - 1 chat complex ≈ Rp 15.000 - 25.000
+ *   - 1 hybrid upload≈ Rp 5.000 - 8.000
+ *
+ * Sebelumnya (0.2 / 1.0) terlalu mahal → 1 chat simple = Rp 25.000 😱
+ */
+const INPUT_RATIO = 0.004;
+const OUTPUT_RATIO = 0.02;
 
 export function computeCost(
   feature: FeatureName,
@@ -126,41 +140,41 @@ export interface CreditPackage {
 
 export const CREDIT_PACKAGES: CreditPackage[] = [
   {
-    id: "starter_500",
-    name: "Starter",
+    id: "daily_500",
+    name: "Daily",
     baseCredits: 500,
     bonusCredits: 0,
     credits: 500,
+    priceIDR: 5000,
+    description: "~20 chat tanya AI + 5 upload file. Cocok buat jajal seminggu.",
+  },
+  {
+    id: "weekly_3000",
+    name: "Weekly",
+    baseCredits: 3000,
+    bonusCredits: 300,
+    credits: 3300,
     priceIDR: 25000,
-    description: "Cukup untuk ~50 tugas makalah ringan atau 200+ sesi tanya Tutor.",
+    description: "~100 chat + 20 upload file + 3 solver. Aktif seminggu penuh.",
   },
   {
-    id: "pro_1500",
-    name: "Pro",
-    baseCredits: 1500,
-    bonusCredits: 150,
-    credits: 1650,
-    priceIDR: 65000,
-    popular: true,
-    description: "Bonus 150 credit. Cocok satu semester aktif: makalah, solver, riset.",
-  },
-  {
-    id: "scholar_4000",
-    name: "Scholar",
-    baseCredits: 4000,
-    bonusCredits: 800,
-    credits: 4800,
-    priceIDR: 150000,
-    description: "Bonus 800 credit. Untuk mahasiswa tingkat akhir & riset skripsi intensif.",
-  },
-  {
-    id: "genius_10000",
-    name: "Genius",
-    baseCredits: 10000,
+    id: "semester_15000",
+    name: "Semester",
+    baseCredits: 15000,
     bonusCredits: 3000,
-    credits: 13000,
-    priceIDR: 320000,
-    description: "Bonus 3000 credit. Paket hemat untuk satu tahun akademik penuh.",
+    credits: 18000,
+    priceIDR: 100000,
+    popular: true,
+    description: "Bonus 3.000 credit. ~600 chat + 100 upload + 20 solver. Cukup 1 semester.",
+  },
+  {
+    id: "genius_50000",
+    name: "Genius",
+    baseCredits: 50000,
+    bonusCredits: 15000,
+    credits: 65000,
+    priceIDR: 300000,
+    description: "Bonus 15.000 credit. Full bebas 1 tahun akademik. Paling hemat.",
   },
 ];
 
@@ -169,7 +183,7 @@ export function getPackage(id: string): CreditPackage | undefined {
 }
 
 /** Credit awal user baru (onboarding bonus). */
-export const STARTER_CREDITS = 100;
+export const STARTER_CREDITS = 500;
 
 /**
  * Default platform AI config. Dipakai ketika user TIDAK enable BYOK.

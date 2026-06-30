@@ -188,7 +188,7 @@ export default function ExamsPage() {
     setIsFlipped(false);
   };
 
-  const handleGenerateFromDoc = async () => {
+  const handleRancangFromDoc = async () => {
     if (!genDocId || generating) return;
     setGenerating(true);
     setGenError("");
@@ -457,7 +457,7 @@ export default function ExamsPage() {
                   ))}
                 </select>
                 <button
-                  onClick={handleGenerateFromDoc}
+                  onClick={handleRancangFromDoc}
                   disabled={!genDocId || generating}
                   className="flex items-center gap-1.5 px-3 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all disabled:opacity-60"
                 >

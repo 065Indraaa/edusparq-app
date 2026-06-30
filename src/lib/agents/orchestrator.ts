@@ -7,10 +7,11 @@ import {
   parseTaskerOutput,
   parseReviewerOutput,
 } from "./definitions";
-import { complete } from "../../lib/ai-client";
+import { complete, completeWithTools } from "../../lib/ai-client";
 import { buildSystemPrompt, personaFromMode } from "../../lib/ai-prompts";
 import { getUserPersonaContext } from "../../lib/ai-memory";
 import { buildJurusanAwareContext } from "../../lib/jurusan-context";
+import { buildMemoryContext } from "../../lib/memory-engine";
 import type { SessionContext, ComplexityTier } from "./context";
 import { createSession } from "./context";
 
@@ -203,7 +204,6 @@ async function runHelper(
   onProgress?: (a: string, s: string, sum?: string) => void
 ): Promise<string> {
   onProgress?.("helper", "running");
-  // Helper = persona tutor langsung (kompatibel dengan chat lama).
   const persona = personaFromMode(ctx.tutorMode);
   const studentCtx: { sourceBlock?: string; courses?: string[]; name?: string; university?: string; faculty?: string; major?: string; semester?: number } = {
     sourceBlock: ctx.sourceBlock,
@@ -215,22 +215,51 @@ async function runHelper(
   };
   let system = buildSystemPrompt(persona, studentCtx);
   if (ctx.personaMemory) system = ctx.personaMemory + system;
-  // Inject jurusan-aware context
   if (ctx.jurusanPromptExtra) system += "\n\n" + ctx.jurusanPromptExtra;
 
+  // Build memory context (per-user knowledge graph)
   try {
-    const result = await complete(
-      {
-        feature: "chat",
-        system,
-        user: ctx.request,
-        temperature: 0.4,
-        maxTokens: 1200,
-        taskId: ctx.request.slice(0, 40) + ":helper",
-      },
-      ctx.userId
-    );
-    // Tambah trace manual (helper tidak lewat runAgent registry).
+    const memoryCtx = await buildMemoryContext(ctx.userId, ctx.request);
+    if (memoryCtx.contextBlock) system += memoryCtx.contextBlock;
+  } catch {
+    /* non-fatal — memory is enhancement */
+  }
+
+  // Heuristic: should we use tools?
+  const r = ctx.request.toLowerCase();
+  const toolSignals = ["cari", "berapa", "kapan", "mana", "jurnal", "referensi", "materi", "tugas", "deadline", "tenggat", "jadwal", "nilai", "ipk", "cari tau", "carikan"];
+  const useTools = toolSignals.some((s) => r.includes(s)) || ctx.tutorMode === "research";
+
+  try {
+    let result;
+    if (useTools) {
+      result = await completeWithTools(
+        {
+          feature: "chat",
+          system,
+          user: ctx.request,
+          temperature: 0.4,
+          maxTokens: 1200,
+          taskId: ctx.request.slice(0, 40) + ":helper",
+        },
+        ctx.userId,
+        true
+      );
+    } else {
+      const res = await complete(
+        {
+          feature: "chat",
+          system,
+          user: ctx.request,
+          temperature: 0.4,
+          maxTokens: 1200,
+          taskId: ctx.request.slice(0, 40) + ":helper",
+        },
+        ctx.userId
+      );
+      result = { ...res, toolsUsed: [], sources: [] };
+    }
+
     ctx.trace.push({
       agent: "helper",
       startedAt: new Date().toISOString(),

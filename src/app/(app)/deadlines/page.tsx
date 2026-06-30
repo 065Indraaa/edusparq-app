@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, Plus, X, Trash2, CheckCircle2, Clock, UploadCloud, RefreshCw, Pencil, Bell, BellRing, Wand2, FileText } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { CourseSelect } from "../../../components/course-select-dropdown";
+import { KanbanBoard } from "../../../components/kanban-board";
 
 interface Deadline {
   _id: string;
@@ -37,6 +38,7 @@ export default function DeadlinesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Purely local, non-persistent reminder markers (cleared on reload).
   const [reminders, setReminders] = useState<Record<string, boolean>>({});
+  const [viewMode, setViewMode] = useState<"calendar" | "kanban">("calendar");
 
   // AI Extraction State
   const [isExtracting, setIsExtracting] = useState(false);
@@ -379,7 +381,20 @@ export default function DeadlinesPage() {
         )}
       </AnimatePresence>
 
-      {/* Calendar + Deadline List */}
+      <div className="flex items-center justify-end gap-2 mb-2">
+        <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-bold rounded-lg ${viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>Kalender</button>
+        <button onClick={() => setViewMode("kanban")} className={`px-4 py-2 text-sm font-bold rounded-lg ${viewMode === "kanban" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>Papan Kanban</button>
+      </div>
+
+      {viewMode === "kanban" ? (
+        <KanbanBoard 
+          tasks={deadlines.map((d: any) => ({ _id: d._id, title: d.title, courseName: d.courseName, status: d.status, dueDate: d.dueDate }))}
+          onMove={async (id, newStatus) => {
+            await fetch(`/api/deadlines/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) });
+            setDeadlines(prev => prev.map(d => d._id === id ? { ...d, status: newStatus === "progress" ? "pending" : newStatus } : d));
+          }}
+        />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Calendar */}
@@ -580,6 +595,7 @@ export default function DeadlinesPage() {
           </div>
         </motion.div>
       </div>
+      )}
     </motion.div>
   );
 }

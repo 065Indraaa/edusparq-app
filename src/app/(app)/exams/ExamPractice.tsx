@@ -80,7 +80,7 @@ export default function ExamPractice({
     setResult(null);
   };
 
-  const generate = async () => {
+  const handleRancang = async () => {
     if (genBusy) return;
     if (!course.trim() && !topic.trim() && !docId) {
       setGenError("Isi mata kuliah/topik atau pilih materi dulu.");
@@ -303,7 +303,7 @@ export default function ExamPractice({
             <input type="number" min={0} max={6} value={essayCount} onChange={(e) => setEssayCount(Number(e.target.value))}
               className="w-16 px-2 min-h-[40px] rounded-xl bg-muted border border-border text-sm text-foreground text-center focus:outline-none focus:border-primary" />
           </label>
-          <button onClick={generate} disabled={genBusy}
+          <button onClick={handleRancang} disabled={genBusy}
             className="flex-1 min-w-[140px] min-h-[46px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-2xl transition-all shadow-sm shadow-primary/20 disabled:opacity-60 flex items-center justify-center gap-2">
             {genBusy ? <><RefreshCw size={16} className="animate-spin" /> Menyusun...</> : <><Sparkles size={15} /> Buat Latihan</>}
           </button>
