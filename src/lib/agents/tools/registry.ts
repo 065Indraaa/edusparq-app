@@ -126,6 +126,98 @@ const getMemoriesTool: ToolDef = {
   },
 };
 
+// Tool: KBBI lookup — cek kata ke Kamus Besar Bahasa Indonesia
+const kbbiLookupTool: ToolDef = {
+  name: "kbbi_lookup",
+  description: "Cari lema/arti kata di Kamus Besar Bahasa Indonesia (KBBI). Gunakan untuk memastikan bahasa baku Indonesia. Hanya relevan jika output dalam Bahasa Indonesia.",
+  parameters: {
+    type: "object",
+    properties: {
+      kata: { type: "string", description: "Kata yang ingin dicek" },
+    },
+    required: ["kata"],
+  },
+  async execute(args) {
+    const kata = encodeURIComponent(String(args.kata || "").trim().toLowerCase());
+    if (!kata) return { success: false, data: "Kata kosong." };
+    try {
+      // KBBI API publik (wibi offline backup atau kbbi-api)
+      const res = await fetch(`https://kbbi-api-zhirrr.vercel.app/api/v1/kbbi?kata=${kata}`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return { success: false, data: `KBBI lookup gagal (status ${res.status}).` };
+      const data = await res.json() as any;
+      const results = data?.data || data?.results || [];
+      if (!Array.isArray(results) || results.length === 0) {
+        return { success: false, data: `Kata "${decodeURIComponent(kata)}" tidak ditemukan di KBBI. Mungkin bukan bahasa baku.` };
+      }
+      const formatted = results.slice(0, 3).map((r: any, i: number) => {
+        const lema = r.lema || r.kata || "?";
+        const arti = Array.isArray(r.arti) ? r.arti.join("; ") : (r.arti || r.definisi || "");
+        return `${i + 1}. ${lema} — ${arti}`;
+      }).join("\n");
+      return { success: true, data: `KBBI "${decodeURIComponent(kata)}":\n${formatted}` };
+    } catch (err) {
+      return { success: false, data: `KBBI lookup error: ${err instanceof Error ? err.message.slice(0, 80) : "timeout"}` };
+    }
+  },
+};
+
+// Tool: Legal search via Pasal.id — cari UU/pasal Indonesia
+const searchLawTool: ToolDef = {
+  name: "search_law",
+  description: "Cari pasal/undang-undang di database hukum Indonesia (Pasal.id). Gunakan untuk pertanyaan hukum, mencari pasal spesifik, atau referensi UU.",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Topik/nomor UU/kata kunci hukum" },
+    },
+    required: ["query"],
+  },
+  async execute(args) {
+    const query = String(args.query || "").trim();
+    if (!query) return { success: false, data: "Query kosong." };
+    const token = process.env.PASAL_ID_TOKEN;
+    if (!token) {
+      return { success: false, data: "Tool hukum tidak tersedia (PASAL_ID_TOKEN belum dikonfigurasi)." };
+    }
+    try {
+      const res = await fetch("https://pasal.id/api/v1/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ query, limit: 5 }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) return { success: false, data: `Pasal.id error: ${res.status}` };
+      const data = await res.json() as any;
+      const results = data?.data || data?.results || [];
+      if (!Array.isArray(results) || results.length === 0) {
+        return { success: false, data: `Tidak ada pasal untuk "${query}".` };
+      }
+      const formatted = results.slice(0, 5).map((r: any, i: number) => {
+        const judul = r.judul || r.title || r.nama || "?";
+        const pasal = r.pasal || r.nomor || "";
+        const isi = (r.isi || r.teks || "").slice(0, 300);
+        return `${i + 1}. ${judul} — ${pasal}\n${isi}`;
+      }).join("\n\n");
+      return {
+        success: true,
+        data: `Hasil pencarian hukum "${query}":\n${formatted}`,
+        sources: results.slice(0, 5).map((r: any) => ({
+          type: "law",
+          title: r.judul || r.title || "Pasal",
+          content: (r.isi || r.teks || "").slice(0, 200),
+        })),
+      };
+    } catch (err) {
+      return { success: false, data: `Legal search error: ${err instanceof Error ? err.message.slice(0, 80) : "timeout"}` };
+    }
+  },
+};
+
 export const TOOLS: ToolDef[] = [
   searchMaterialTool,
   webSearchTool,
@@ -133,6 +225,8 @@ export const TOOLS: ToolDef[] = [
   getCoursesTool,
   getDeadlinesTool,
   getMemoriesTool,
+  kbbiLookupTool,
+  searchLawTool,
 ];
 
 export function getToolDefinitions(): OpenAI.Chat.Completions.ChatCompletionTool[] {

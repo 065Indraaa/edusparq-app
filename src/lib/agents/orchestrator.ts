@@ -1,5 +1,5 @@
 import "./definitions"; // registrasikan semua agen saat import
-import { runAgent, listAgents } from "./registry";
+import { runAgent, listAgents, getAgent } from "./registry";
 import {
   parseClassifierOutput,
   parseClarifierOutput,
@@ -332,6 +332,47 @@ async function runImplementer(
   onProgress?: (a: string, s: string, sum?: string) => void
 ): Promise<string> {
   onProgress?.("implementer", "running");
+  // Complex tier: enable tools (RAG, jurnal, web search, KBBI, legal)
+  // agar implementer bisa cari referensi real, bukan mengarang.
+  try {
+    const def = getAgent("implementer");
+    if (def) {
+      const system = def.buildPrompt(ctx);
+      const userPayload = `[SPESIFIKASI]\n${ctx.specification || ""}\n\n[RENCANA & TASK]\n${(ctx.tasks || [])
+        .map((t) => `${t.order}. [${t.agent}] ${t.title}: ${t.description}`)
+        .join("\n")}\n\n[PERMINTAAN ASLI]\n${ctx.request}`;
+      const result = await completeWithTools(
+        {
+          feature: "agent_implementer",
+          system,
+          user: userPayload,
+          temperature: 0.6,
+          maxTokens: 3000,
+          taskId: ctx.request.slice(0, 40) + ":implementer",
+        },
+        ctx.userId,
+        true // enable tools
+      );
+      const output = result.text || "";
+      onProgress?.("implementer", "done", output.slice(0, 100));
+      ctx.result = output;
+      if (result.toolsUsed && result.toolsUsed.length > 0) {
+        ctx.trace.push({
+          agent: "implementer",
+          startedAt: new Date().toISOString(),
+          finishedAt: new Date().toISOString(),
+          status: "done",
+          summary: `Tools digunakan: ${result.toolsUsed.join(", ")}`,
+          creditCost: 0,
+          tokensOut: 0,
+        });
+      }
+      return output;
+    }
+  } catch (err) {
+    console.warn("[orchestrator] implementer with tools failed, fallback:", err);
+  }
+  // Fallback: plain runAgent (no tools).
   const { output, error } = await runAgent("implementer", ctx);
   onProgress?.("implementer", "done", output.slice(0, 100));
   if (error) throw new Error("Implementer gagal: " + error);

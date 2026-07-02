@@ -33,6 +33,7 @@ import {
   BookOpen,
   ChevronDown,
   Scale,
+  Briefcase,
 } from "lucide-react";
 
 export type NavItem = {
@@ -62,11 +63,26 @@ export const navGroupsFull: NavGroup[] = [
     ],
   },
   {
-    label: "EduVault",
+    label: "AI Center",
+    items: [
+      { name: "AI Hub", desc: "6 mode AI: tutor, agent, hukum, dll", href: "/ai", icon: Cpu },
+      { name: "Agent Pipeline", desc: "Multi-agen untuk tugas kompleks", href: "/agents", icon: Brain },
+      { name: "Memori", desc: "Pengetahuan yang dipelajari AI", href: "/memory", icon: BookOpen },
+    ],
+  },
+  {
+    label: "Akademik",
     items: [
       { name: "Materi Kuliah", desc: "Basis pengetahuan pintar", href: "/workspace", icon: FolderOpen },
+      { name: "Mata Kuliah", desc: "Kelola matkul & SKS", href: "/courses", icon: GraduationCap },
+      { name: "KRS & Nilai", desc: "Import KRS, lihat IPK", href: "/krs", icon: ClipboardCheck },
       { name: "Catatan Cerdas", desc: "Rapikan coretan dengan AI", href: "/catatan", icon: NotebookPen },
-      { name: "Memori", desc: "Basis pengetahuan yang dipelajari AI", href: "/memory", icon: Brain },
+    ],
+  },
+  {
+    label: "Riset & Referensi",
+    items: [
+      { name: "Riset", desc: "Eksplorasi topik + hukum (Pasal.id)", href: "/research", icon: Search },
       { name: "Literature Matrix", desc: "Perbandingan matriks jurnal", href: "/research/matrix", icon: BookOpen },
       { name: "Pustaka Jurusan", desc: "Katalog referensi & template", href: "/jurusan", icon: Library },
     ],
@@ -77,6 +93,12 @@ export const navGroupsFull: NavGroup[] = [
       { name: "Jadwal & Tenggat", desc: "Kalender dan manajemen tugas", href: "/deadlines", icon: CalendarDays },
       { name: "Studio Menulis", desc: "Penelitian, sitasi, dan draf", href: "/writing", icon: PenTool },
       { name: "Persiapan Ujian", desc: "Soal latihan dan evaluasi", href: "/exams", icon: GraduationCap },
+    ],
+  },
+  {
+    label: "Karier",
+    items: [
+      { name: "Career Center", desc: "Tren karir, lowongan & CV", href: "/karir", icon: Briefcase },
     ],
   },
   {
@@ -98,7 +120,7 @@ export const navigation: NavItem[] = navGroups.flatMap((g) => g.items);
 const mobileNav: NavItem[] = [
   { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
   { name: "Materi", href: "/workspace", icon: FolderOpen },
-  { name: "AI", href: "/ai", icon: Bot },
+  { name: "Karir", href: "/karir", icon: Briefcase },
   { name: "Tenggat", href: "/deadlines", icon: CalendarDays },
   { name: "Profil", href: "/profile", icon: UserCircle },
 ];

@@ -188,15 +188,18 @@ export const STARTER_CREDITS = 500;
 /**
  * Default platform AI config. Dipakai ketika user TIDAK enable BYOK.
  * Ambil dari env (bisa diganti tanpa kode).
+ *
+ * Model default: DeepSeek V4 Pro via NVIDIA NIM (gratis, low-hallucination).
+ * Model lite: Llama 4 Scout untuk klasifikasi (hemat, cepat).
  */
 export const PLATFORM_AI = {
   baseURL:
     process.env.PLATFORM_AI_BASE_URL ||
-    "https://www.phanrouter.com/phanrouter/v1",
-  apiKeyEnv: "MOONSHOT_API_KEY",
-  model: process.env.PLATFORM_AI_MODEL || "kimi-k2.6",
+    "https://integrate.api.nvidia.com/v1",
+  apiKeyEnv: "NVIDIA_API_KEY",
+  model: process.env.PLATFORM_AI_MODEL || "deepseek-ai/deepseek-v4-pro",
   // Model ringan untuk klasifikasi & task hemat token (orchestrator).
-  liteModel: process.env.PLATFORM_AI_LITE_MODEL || "kimi-k2.6",
+  liteModel: process.env.PLATFORM_AI_LITE_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct",
 } as const;
 
 export const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")

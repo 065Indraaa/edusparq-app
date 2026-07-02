@@ -174,6 +174,12 @@ async function handleOrchestratorChat(
           });
         } catch {}
 
+        // FIX: Trigger persona extraction (previously only ran on simple path —
+        // memory never updated for auto/orchestrator mode users).
+        extractAndStorePersona(userId).catch((err) => {
+          console.error("[chat] persona extraction failed:", err);
+        });
+
         // Emit agent metadata (tier, credit cost) for UI.
         const agentMeta = JSON.stringify({
           text: "",
