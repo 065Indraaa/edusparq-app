@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { SidebarNav, BottomNav } from "../../components/app-nav";
+import { CommandPalette } from "../../components/command-palette";
+import { CommandPaletteButton } from "../../components/command-palette-button";
 import { OnboardingGate } from "../../components/onboarding-gate";
 import { NotificationBell } from "../../components/notification-bell";
 import { PageTransition } from "../../components/page-transition";
@@ -55,6 +57,7 @@ export default async function AppLayout({
           </div>
         </Link>
         <div className="flex items-center gap-2">
+          <CommandPaletteButton />
           <ThemeToggle />
           <NotificationBell />
           {user?.image ? (
@@ -87,16 +90,7 @@ export default async function AppLayout({
 
         <SidebarNav />
 
-        <div className="px-3 pb-3">
-          <div className="sidebar-insight-card p-4 mb-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Langkah Berikutnya</span>
-              <span className="h-2 w-2 rounded-full bg-foreground/70 shadow-[0_0_18px_hsl(var(--foreground)/0.22)]" />
-            </div>
-            <p className="mt-2 text-xs font-semibold leading-relaxed text-foreground/80">
-              Fokus hari ini: unggah materi, tanya Tutor, lalu buat latihan ujian.
-            </p>
-          </div>
+        <div className="px-3 pb-3 pt-2">
           <div className="user-dock flex items-center gap-3 px-3 py-3">
             {user?.image ? (
 
@@ -165,6 +159,9 @@ export default async function AppLayout({
 
       {/* Mobile Bottom Navigation */}
       <BottomNav />
+
+      {/* Global ⌘K command palette */}
+      <CommandPalette />
     </div>
   );
 }
