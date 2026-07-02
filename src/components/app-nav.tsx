@@ -1,205 +1,117 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
-import {
-  LayoutDashboard,
-  FolderOpen,
-  CalendarDays,
-  Bot,
-  Brain,
-  PenTool,
-  Users,
-  GraduationCap,
-  BarChart3,
-  Search,
-  UserCircle,
-  Building2,
-  Library,
-  ClipboardCheck,
-  Menu,
-  X,
-  CalendarRange,
-  NotebookPen,
-  Wallet,
-  KeyRound,
-  Cpu,
-  Send,
-  BookOpen,
-  ChevronDown,
-  Scale,
-  Briefcase,
-} from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
+import { navHubs, isHubActive, isChildActive, matchLen } from "./nav-config";
 
-export type NavItem = {
-  name: string;
-  href: string;
-  icon: LucideIcon;
-  desc?: string;
-};
-
-export type NavGroup = {
-  label: string;
-  items: NavItem[];
-};
-
-// Grouped navigation. Defined in this Client Component module so the lucide icon
-// components never cross the Server -> Client boundary as props (that throws
-// "Functions cannot be passed directly to Client Components").
-//
-// Grouping keeps the sidebar scannable: a handful of labelled sections instead
-// of one long flat list of buttons.
-// Full nav (all features) — kept for reference; navGroupsCore is what's shown.
-export const navGroupsFull: NavGroup[] = [
-  {
-    label: "Omni-Chat",
-    items: [
-      { name: "Copilot", desc: "Asisten AI & Tutor Akademik", href: "/dashboard", icon: Bot },
-    ],
-  },
-  {
-    label: "AI Center",
-    items: [
-      { name: "AI Hub", desc: "6 mode AI: tutor, agent, hukum, dll", href: "/ai", icon: Cpu },
-      { name: "Agent Pipeline", desc: "Multi-agen untuk tugas kompleks", href: "/agents", icon: Brain },
-      { name: "Memori", desc: "Pengetahuan yang dipelajari AI", href: "/memory", icon: BookOpen },
-    ],
-  },
-  {
-    label: "Akademik",
-    items: [
-      { name: "Materi Kuliah", desc: "Basis pengetahuan pintar", href: "/workspace", icon: FolderOpen },
-      { name: "Mata Kuliah", desc: "Kelola matkul & SKS", href: "/courses", icon: GraduationCap },
-      { name: "KRS & Nilai", desc: "Import KRS, lihat IPK", href: "/krs", icon: ClipboardCheck },
-      { name: "Catatan Cerdas", desc: "Rapikan coretan dengan AI", href: "/catatan", icon: NotebookPen },
-    ],
-  },
-  {
-    label: "Riset & Referensi",
-    items: [
-      { name: "Riset", desc: "Eksplorasi topik + hukum (Pasal.id)", href: "/research", icon: Search },
-      { name: "Literature Matrix", desc: "Perbandingan matriks jurnal", href: "/research/matrix", icon: BookOpen },
-      { name: "Pustaka Jurusan", desc: "Katalog referensi & template", href: "/jurusan", icon: Library },
-    ],
-  },
-  {
-    label: "Command Center",
-    items: [
-      { name: "Jadwal & Tenggat", desc: "Kalender dan manajemen tugas", href: "/deadlines", icon: CalendarDays },
-      { name: "Studio Menulis", desc: "Penelitian, sitasi, dan draf", href: "/writing", icon: PenTool },
-      { name: "Persiapan Ujian", desc: "Soal latihan dan evaluasi", href: "/exams", icon: GraduationCap },
-    ],
-  },
-  {
-    label: "Karier",
-    items: [
-      { name: "Career Center", desc: "Tren karir, lowongan & CV", href: "/karir", icon: Briefcase },
-    ],
-  },
-  {
-    label: "Pengaturan",
-    items: [
-      { name: "Analitik Belajar", desc: "Lihat pola dan progres", href: "/analytics", icon: BarChart3 },
-      { name: "Billing & Paket", desc: "Saldo credit & langganan", href: "/billing", icon: Wallet },
-      { name: "Profil & Keamanan", desc: "Data diri, Telegram & BYOK", href: "/profile", icon: UserCircle },
-    ],
-  },
-];
-
-export const navGroups: NavGroup[] = navGroupsFull;
-
-// Flat list (kept for compatibility / any consumer that wants every item).
-export const navigation: NavItem[] = navGroups.flatMap((g) => g.items);
-
-// The 5 most-used destinations for the mobile bottom bar.
-const mobileNav: NavItem[] = [
-  { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Materi", href: "/workspace", icon: FolderOpen },
-  { name: "Karir", href: "/karir", icon: Briefcase },
-  { name: "Tenggat", href: "/deadlines", icon: CalendarDays },
-  { name: "Profil", href: "/profile", icon: UserCircle },
-];
-
-function isActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-/** Desktop sidebar navigation with grouped command-center sections. */
-export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
+/**
+ * Desktop sidebar: 7 consolidated hubs. The active hub (or a manually
+ * opened one) expands into a tree of its sub-destinations so the sidebar
+ * stays short without hiding anything.
+ */
+export function SidebarNav() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [opened, setOpened] = useState<string | null>(null);
 
-  const toggleGroup = (label: string) => {
-    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
+  // Follow route changes: the hub owning the current route is expanded.
+  useEffect(() => {
+    setOpened(null);
+  }, [pathname]);
 
   return (
-    <nav className="flex-1 px-3 py-3 space-y-3 overflow-y-auto no-scrollbar">
-      {groups.map((group, groupIndex) => {
-        const isOpen = !collapsed[group.label];
+    <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto no-scrollbar">
+      {navHubs.map((hub, index) => {
+        const Icon = hub.icon;
+        const active = isHubActive(pathname, hub);
+        const visibleChildren = (hub.children ?? []).filter((c) => !c.hidden);
+        const expandable = visibleChildren.length > 0;
+        const expanded = expandable && (opened === hub.name || (opened === null && active));
+
         return (
-          <div key={group.label} className="nav-group-card p-2.5" style={{ animationDelay: `${groupIndex * 55}ms` }}>
-            <button
-              type="button"
-              onClick={() => toggleGroup(group.label)}
-              className="w-full flex items-center justify-between px-2 pb-2 group"
-              aria-expanded={isOpen}
+          <div key={hub.name} className="animate-fade-up" style={{ animationDelay: `${index * 40}ms` }}>
+            <div
+              className={`nav-command group relative flex items-center gap-3 rounded-2xl overflow-hidden ${
+                active ? "is-active" : ""
+              }`}
             >
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/75 select-none">
-                {group.label}
-              </span>
-              <ChevronDown
-                size={14}
-                className={`text-muted-foreground/60 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`}
-              />
-            </button>
+              {active && (
+                <motion.span
+                  layoutId="sidebar-active-glow"
+                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/14 via-primary/8 to-transparent"
+                  transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                />
+              )}
+              <Link
+                href={hub.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex flex-1 items-center gap-3 px-2.5 py-2.5 min-h-[52px] text-sm font-bold min-w-0 ${
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition-all ${
+                    active
+                      ? "border-primary/25 bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary))]"
+                      : "border-border/70 bg-background/70 text-muted-foreground group-hover:border-primary/25 group-hover:text-primary group-hover:bg-primary/8"
+                  }`}
+                >
+                  <Icon size={17} strokeWidth={active ? 2.8 : 2.2} />
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate tracking-tight">{hub.name}</span>
+                  {hub.desc && (
+                    <span className="mt-0.5 block truncate text-[10px] font-medium tracking-normal text-muted-foreground group-hover:text-foreground/70">
+                      {hub.desc}
+                    </span>
+                  )}
+                </span>
+              </Link>
+              {expandable && (
+                <button
+                  type="button"
+                  onClick={() => setOpened(expanded ? (active ? hub.name + ":closed" : null) : hub.name)}
+                  aria-label={expanded ? `Tutup ${hub.name}` : `Buka ${hub.name}`}
+                  aria-expanded={expanded}
+                  className="relative mr-2 grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${expanded ? "" : "-rotate-90"}`}
+                  />
+                </button>
+              )}
+            </div>
+
             <AnimatePresence initial={false}>
-              {isOpen && (
+              {expanded && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.18 }}
                   className="overflow-hidden"
                 >
-                  <div className="space-y-1">
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      const active = isActive(pathname, item.href);
+                  <div className="relative ml-[1.4rem] mt-1 mb-2 space-y-0.5 border-l border-border/70 pl-3">
+                    {visibleChildren.map((child) => {
+                      const childActive = isChildActive(pathname, hub, child);
                       return (
                         <Link
-                          key={item.name}
-                          href={item.href}
-                          aria-current={active ? "page" : undefined}
-                          className={`nav-command group relative flex items-start gap-3 px-2.5 py-2.5 text-sm font-bold rounded-2xl min-h-[58px] overflow-hidden ${
-                            active ? "is-active text-primary" : "text-muted-foreground hover:text-foreground"
+                          key={child.href}
+                          href={child.href}
+                          aria-current={childActive ? "page" : undefined}
+                          className={`relative flex items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors ${
+                            childActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                           }`}
                         >
-                          {active && (
-                            <motion.span
-                              layoutId="sidebar-active-glow"
-                              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/14 via-primary/8 to-transparent"
-                              transition={{ type: "spring", stiffness: 380, damping: 34 }}
-                            />
+                          {childActive && (
+                            <span className="absolute -left-[13px] top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary" />
                           )}
-                          <span className={`relative grid h-9 w-9 place-items-center rounded-xl border transition-all ${
-                            active
-                              ? "border-primary/25 bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary))]"
-                              : "border-border/70 bg-background/70 text-muted-foreground group-hover:border-primary/25 group-hover:text-primary group-hover:bg-primary/8"
-                          }`}>
-                            <Icon size={17} strokeWidth={active ? 2.8 : 2.2} />
-                          </span>
-                          <span className="relative min-w-0 flex-1 leading-tight">
-                            <span className="block truncate tracking-tight">{item.name}</span>
-                            {item.desc && <span className="mt-0.5 block truncate text-[10px] font-medium tracking-normal text-muted-foreground group-hover:text-foreground/70">{item.desc}</span>}
-                          </span>
-                          {active && <span className="relative ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]" />}
+                          <span className="truncate">{child.name}</span>
                         </Link>
                       );
                     })}
@@ -214,32 +126,34 @@ export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
   );
 }
 
-/** Mobile bottom navigation: 4 primary destinations + a "Menu" sheet with everything. */
+/** Mobile bottom navigation: 4 primary hubs + a "Menu" sheet with everything. */
 export function BottomNav() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const primary = mobileNav.slice(0, 4);
+  const primary = [navHubs[0], navHubs[2], navHubs[1], navHubs[6]];
 
   return (
     <>
       <nav className="md:hidden fixed bottom-3 left-3 right-3 z-40 mobile-dock px-2 py-1.5 flex justify-around items-center select-none">
-        {primary.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(pathname, item.href);
+        {primary.map((hub) => {
+          const Icon = hub.icon;
+          const active = isHubActive(pathname, hub);
           return (
             <Link
-              key={item.name}
-              href={item.href}
+              key={hub.name}
+              href={hub.href}
               aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 min-h-[52px] rounded-2xl transition-all ${
-                active ? "bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_hsl(var(--primary))]" : "text-muted-foreground hover:text-primary active:text-primary"
+                active
+                  ? "bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_hsl(var(--primary))]"
+                  : "text-muted-foreground hover:text-primary active:text-primary"
               }`}
             >
               <span className={`flex items-center justify-center transition-transform ${active ? "scale-110" : "scale-100"}`}>
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />
               </span>
               <span className={`text-[10px] tracking-tight text-center transition-all ${active ? "font-bold" : "font-medium"}`}>
-                {item.name}
+                {hub.name}
               </span>
             </Link>
           );
@@ -290,36 +204,43 @@ export function BottomNav() {
                 </button>
               </div>
               <div className="space-y-5">
-                {navGroups.map((group) => (
-                  <div key={group.label} className="space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {group.label}
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {group.items.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(pathname, item.href);
-                        return (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => setMenuOpen(false)}
-                            aria-current={active ? "page" : undefined}
-                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-colors min-h-[96px] ${
-                              active
-                                ? "border-primary/30 bg-primary/10 text-primary"
-                                : "border-border bg-muted/30 text-foreground hover:bg-muted"
-                            }`}
-                          >
-                            <Icon size={20} className={active ? "text-primary" : "text-muted-foreground"} />
-                            <span className="text-[11px] font-bold leading-tight">{item.name}</span>
-                            {item.desc && <span className="text-[9px] leading-tight text-muted-foreground line-clamp-2">{item.desc}</span>}
-                          </Link>
-                        );
-                      })}
+                {navHubs.map((hub) => {
+                  const items = hub.children?.filter((c) => !c.hidden) ?? [
+                    { name: hub.name, href: hub.href, icon: hub.icon, desc: hub.desc },
+                  ];
+                  return (
+                    <div key={hub.name} className="space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {hub.name}
+                      </span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {items.map((item) => {
+                          const Icon = item.icon;
+                          const active = matchLen(pathname, item.href) > 0;
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setMenuOpen(false)}
+                              aria-current={active ? "page" : undefined}
+                              className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-colors min-h-[96px] ${
+                                active
+                                  ? "border-primary/30 bg-primary/10 text-primary"
+                                  : "border-border bg-muted/30 text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              <Icon size={20} className={active ? "text-primary" : "text-muted-foreground"} />
+                              <span className="text-[11px] font-bold leading-tight">{item.name}</span>
+                              {item.desc && (
+                                <span className="text-[9px] leading-tight text-muted-foreground line-clamp-2">{item.desc}</span>
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>
