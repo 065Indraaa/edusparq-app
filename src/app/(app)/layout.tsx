@@ -4,13 +4,12 @@ import { SidebarNav, BottomNav } from "../../components/app-nav";
 import { OnboardingGate } from "../../components/onboarding-gate";
 import { NotificationBell } from "../../components/notification-bell";
 import { PageTransition } from "../../components/page-transition";
+import { SectionTabs } from "../../components/section-tabs";
+import { CommandPalette, CommandPaletteTrigger } from "../../components/command-palette";
 import { auth, signOut } from "../../lib/auth";
 import { User } from "../../lib/db/models/User";
 import { matchJurusan } from "../../lib/jurusan-catalog";
-import {
-  Sparkles,
-  LogOut,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export default async function AppLayout({
   children,
@@ -85,6 +84,10 @@ export default async function AppLayout({
           </div>
         </div>
 
+        <div className="px-3 pb-2">
+          <CommandPaletteTrigger />
+        </div>
+
         <SidebarNav />
 
         <div className="px-3 pb-3">
@@ -157,6 +160,7 @@ export default async function AppLayout({
       <main id="main-content" className="edus-main flex-1 overflow-y-auto w-full px-4 py-6 md:px-8 md:py-4 pb-24 md:pb-4 flex flex-col min-h-screen transition-colors duration-300">
         <div className="max-w-screen-2xl w-full mx-auto flex-1 flex flex-col"> 
           <OnboardingGate />
+          <SectionTabs />
           <PageTransition>
             {children}
           </PageTransition>
@@ -165,6 +169,8 @@ export default async function AppLayout({
 
       {/* Mobile Bottom Navigation */}
       <BottomNav />
+
+      <CommandPalette />
     </div>
   );
 }
