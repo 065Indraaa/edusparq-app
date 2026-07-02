@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const content = String(body?.content || "").trim();
   const format = String(body?.format || "md").toLowerCase();
   const title = String(body?.title || "Dokumen EduSparq").trim();
-  const author = body?.author ? String(body.author) : session.user.name;
+  const author = body?.author ? String(body.author) : session.user.name ?? undefined;
   const courseName = body?.courseName ? String(body.courseName) : undefined;
 
   if (!content) {
